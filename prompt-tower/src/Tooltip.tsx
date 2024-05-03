@@ -41,7 +41,7 @@ export const Tooltip = ({
     floating,
     strategy,
     context,
-    placement: computedPlacement,
+    placement: _computedPlacement,
   } = useFloating({
     placement,
     open,
