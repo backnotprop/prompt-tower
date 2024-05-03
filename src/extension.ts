@@ -270,7 +270,7 @@ function createWebviewPanel(
     {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist"),
+        vscode.Uri.joinPath(extensionUri, "prompt-tower", "release"),
       ],
     }
   );
@@ -285,11 +285,11 @@ function getWebviewContent(
   extensionUri: vscode.Uri
 ): string {
   const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist", "index.js")
+    vscode.Uri.joinPath(extensionUri, "prompt-tower", "release", "index.js")
   );
 
   const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist", "index.css")
+    vscode.Uri.joinPath(extensionUri, "prompt-tower", "release", "index.css")
   );
 
   const nonce = getNonce();
