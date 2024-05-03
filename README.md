@@ -4,6 +4,8 @@
 
 A tool that helps you build prompts with lots of code blocks in them.
 
+Install: https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower&ssr=false#overview
+
 ## Features
 
 Construct a prompt with multiple code blocks in it.
