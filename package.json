@@ -13,7 +13,7 @@
   "publisher": "backnotprop",
   "icon": "icon.png",
   "description": "A tool that helps you build prompts with lots of code blocks in them.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.88.0"
   },
