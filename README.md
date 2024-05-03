@@ -16,6 +16,8 @@ Commands:
 - `Send Class`: Send the current class to the prompt.
 - `Send Class Method`: Send the current class method to the prompt.
 
+See it in action:
+
 ## Requirements
 
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.

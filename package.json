@@ -2,8 +2,18 @@
   "name": "prompt-tower",
   "displayName": "prompt-tower",
   "license": "AGPL-3.0",
-  "description": "Enhance your development workflow with prompt-tower; designed for seamless prompt engineering and efficient code pasting management. Easily construct complex prompts for leading language models like ChatGPT, Claude, and Gemini, and swiftly maneuver multiple code blocks with our intuitive clipboard integration. Perfect for developers looking to streamline interactions and improve productivity.",
-  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/backnotprop/prompt-tower"
+  },
+  "author": {
+    "name": "Michael Ramos",
+    "url": "https://github.com/backnotprop"
+  },
+  "publisher": "backnotprop",
+  "icon": "icon.png",
+  "description": "A tool that helps you build prompts with lots of code blocks in them.",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.88.0"
   },
@@ -95,7 +105,7 @@
   "activationEvents": [],
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && mkdir -p out/prompt-tower && cp -r prompt-tower/release out/prompt-tower/release",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",

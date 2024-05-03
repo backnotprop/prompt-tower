@@ -9,3 +9,5 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+prompt-tower/**
+!prompt-tower/release/**
