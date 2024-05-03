@@ -3,7 +3,7 @@
   "displayName": "prompt-tower",
   "license": "AGPL-3.0",
   "description": "Enhance your development workflow with prompt-tower; designed for seamless prompt engineering and efficient code pasting management. Easily construct complex prompts for leading language models like ChatGPT, Claude, and Gemini, and swiftly maneuver multiple code blocks with our intuitive clipboard integration. Perfect for developers looking to streamline interactions and improve productivity.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.88.0"
   },

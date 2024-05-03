@@ -1,6 +1,6 @@
 # prompt-tower
 
-<img src="image.png" alt="Prompt Tower" width="200"/>
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="200"/>
 
 A tool that helps you build prompts with lots of code blocks in them.
 
