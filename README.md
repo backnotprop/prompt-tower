@@ -2,7 +2,7 @@
 
 <img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="200"/>
 
-A tool that helps you build prompts with lots of code blocks in them.
+A VS Code extension that helps you build prompts with lots of code blocks in them.
 
 Install: https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower&ssr=false#overview
 
