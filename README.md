@@ -16,7 +16,7 @@ Commands:
 - `Send Class`: Send the current class to the prompt.
 - `Send Class Method`: Send the current class method to the prompt.
 
-Each code block is added to the tower. It's height indicates the block size (more code = taller block); until a certain threshold where too many blocks normalizes sizes. Blocks are movable, and its simple to add annotations (as new blocks) above or below them.
+Each code block is added to the tower and is wrapped in ` ``` ` ticks, with appropriate newlines. It's height indicates the block size (more code = taller block); until a certain threshold where too many blocks normalizes sizes. Blocks are movable, and its simple to add annotations (as new blocks) above or below each other.
 
 See it in action:
 
