@@ -24,10 +24,6 @@ After the prompt is built, it's ready to be sent to gpt:
 
 ![GPT](https://github.com/backnotprop/prompt-tower/blob/main/gpt.gif?raw=true)
 
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
 ## Release Notes
 
 This is the first release, please submit issues!
