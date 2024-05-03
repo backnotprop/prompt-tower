@@ -13,7 +13,7 @@ interface ModalProps {
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [text, setText] = useState("");
 
-  const { x, y, reference, floating, strategy } = useFloating({
+  const { y, reference, floating, strategy } = useFloating({
     placement: "right",
     middleware: [offset(10), shift()],
   });
