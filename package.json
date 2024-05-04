@@ -46,6 +46,10 @@
       {
         "command": "prompttower.sendFile",
         "title": "Prompt Tower: Send File"
+      },
+      {
+        "command": "prompttower.selectDirectory",
+        "title": "Prompt Tower: Enable Directory Selection"
       }
     ],
     "keybindings": [
@@ -97,6 +101,11 @@
         {
           "when": "editorTextFocus",
           "command": "prompttower.sendFile",
+          "group": "navigation"
+        },
+        {
+          "when": "editorTextFocus",
+          "command": "prompttower.selectDirectory",
           "group": "navigation"
         }
       ]

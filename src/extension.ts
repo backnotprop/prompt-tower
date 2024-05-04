@@ -1,28 +1,8 @@
 import * as vscode from "vscode";
 
-let panel: vscode.WebviewPanel | undefined = undefined;
+import { findMethodSymbol, getNonce, getWorkspaceFiles } from "./utils";
 
-function findMethodSymbol(
-  symbols: vscode.DocumentSymbol[],
-  position: vscode.Position
-): vscode.DocumentSymbol | undefined {
-  for (const symbol of symbols) {
-    if (
-      symbol.range.contains(position) &&
-      symbol.kind === vscode.SymbolKind.Method
-    ) {
-      return symbol;
-    }
-    // Recurse into children if the symbol has any
-    if (symbol.children && symbol.children.length > 0) {
-      const found = findMethodSymbol(symbol.children, position);
-      if (found) {
-        return found;
-      }
-    }
-  }
-  return undefined;
-}
+let panel: vscode.WebviewPanel | undefined = undefined;
 
 export function activate(context: vscode.ExtensionContext) {
   const panelCheck = () => {
@@ -254,6 +234,18 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       vscode.window.showInformationMessage("File content sent successfully!");
+    }),
+
+    /**
+     * Enable directory tree select mode
+     */
+    vscode.commands.registerCommand("prompttower.selectDirectory", async () => {
+      panelCheck();
+
+      console.log("Select Directory");
+      const fileTree = await getWorkspaceFiles();
+      console.log("got files:"); // never gets here
+      console.log(fileTree);
     })
   );
 }
@@ -310,14 +302,4 @@ function getWebviewContent(
     </body>
   </html>
   `;
-}
-
-function getNonce() {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
 }
