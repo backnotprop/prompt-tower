@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useFloating, shift, offset } from "@floating-ui/react-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import CheckboxTree, { Node } from "react-checkbox-tree";
 
 import { TextItem } from "./types";
+
+import "react-checkbox-tree/lib/react-checkbox-tree.css";
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +13,7 @@ interface ModalProps {
   onSubmit: (item: TextItem) => void;
   mode: "input" | "select";
   selectLoading?: boolean;
+  nodes?: Node[];
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -18,8 +22,11 @@ export const Modal: React.FC<ModalProps> = ({
   onSubmit,
   mode,
   selectLoading,
+  nodes,
 }) => {
   const [text, setText] = useState("");
+  const [checked, setChecked] = useState<Array<string>>([]);
+  const [expanded, setExpanded] = useState<Array<string>>([]);
 
   const { y, reference, floating, strategy } = useFloating({
     placement: "right",
@@ -58,7 +65,7 @@ export const Modal: React.FC<ModalProps> = ({
           transition={{ duration: 0.2 }}
           style={{
             position: strategy,
-            top: y ?? "",
+            top: mode == "input" ? y ?? "" : mode === "select" ? 0 : 0,
             // left: 10,
             transform: "translateX(-100%)",
             backgroundColor: "var(--vscode-editor-background)",
@@ -94,7 +101,15 @@ export const Modal: React.FC<ModalProps> = ({
                 {selectLoading && (
                   <div style={{ marginBottom: "10px" }}>Loading...</div>
                 )}
-                {!selectLoading && <div>Loaded</div>}
+                {!selectLoading && nodes && (
+                  <CheckboxTree
+                    nodes={nodes as Node[]}
+                    checked={checked}
+                    expanded={expanded}
+                    onCheck={(checked) => setChecked(checked)}
+                    onExpand={(expanded) => setExpanded(expanded)}
+                  />
+                )}
               </>
             )}
           </div>

@@ -254,7 +254,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       panel?.webview.postMessage({
         command: "directorySelectModeLoaded",
-        fileTree: fileTree,
+        fileTree: fileTree[0].files,
       });
     })
   );
@@ -272,7 +272,7 @@ function createWebviewPanel(
     {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(extensionUri, "prompt-tower", "release"),
+        vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist"),
       ],
     }
   );
@@ -287,11 +287,11 @@ function getWebviewContent(
   extensionUri: vscode.Uri
 ): string {
   const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "prompt-tower", "release", "index.js")
+    vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist", "index.js")
   );
 
   const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "prompt-tower", "release", "index.css")
+    vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist", "index.css")
   );
 
   const nonce = getNonce();

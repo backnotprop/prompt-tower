@@ -33,15 +33,6 @@ export function getNonce() {
   return text;
 }
 
-export const uniqueId = (length = 16) => {
-  return parseInt(
-    Math.ceil(Math.random() * Date.now())
-      .toPrecision(length)
-      .toString()
-      .replace(".", "")
-  );
-};
-
 export async function getWorkspaceFiles() {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders) {
@@ -58,25 +49,24 @@ export async function getWorkspaceFiles() {
   return fileTree;
 }
 
+interface Node {
+  label: string;
+  value: string;
+  children?: Array<Node>;
+}
+
 /**
  * Recursively read the contents of a directory, filter out ignored files based on .gitignore,
- * and return a structured list of files and directories.
+ * and return a structured list of file and directory objects formatted as specified.
  * @param uri The URI of the directory to read.
  * @param ignorePatterns An array of minimatch patterns to filter out files and directories.
- * @returns A Promise that resolves to an array of file and directory objects formatted as specified.
+ * @returns A Promise that resolves to an array of nodes.
  */
 export async function readDirectory(
   uri: vscode.Uri,
   ignorePatterns: string[] = []
-): Promise<
-  Array<{
-    value: string;
-    text: string;
-    status: boolean;
-    id: number;
-    nodes: Array<any>;
-  }>
-> {
+): Promise<Node[]> {
+  // Read the directory at the given URI
   const entries = await vscode.workspace.fs.readDirectory(uri);
 
   // Check for .gitignore in the current directory
@@ -104,29 +94,27 @@ export async function readDirectory(
       )
   );
 
-  const items = filteredEntries.map(async ([name, type]) => {
+  // Map each entry to the new Node format
+  const nodes = filteredEntries.map(async ([name, type]) => {
     const filePath = vscode.Uri.joinPath(uri, name);
 
     // If the entry is a directory, recurse into it
     if (type === vscode.FileType.Directory) {
       return {
-        value: name,
-        text: name,
-        status: false,
-        id: uniqueId(),
-        nodes: await readDirectory(filePath, ignorePatterns),
+        label: name,
+        value: filePath.fsPath,
+        children: await readDirectory(filePath, ignorePatterns),
       };
     } else {
       // Otherwise, it's a file
       return {
-        value: name,
-        text: name,
-        status: false,
-        id: uniqueId(),
-        nodes: [],
+        label: name,
+        value: filePath.fsPath,
+        children: [], // No children for files
       };
     }
   });
 
-  return Promise.all(items);
+  // Wait for all promises in the map to resolve and return the array
+  return Promise.all(nodes);
 }

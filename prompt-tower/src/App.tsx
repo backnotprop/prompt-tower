@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { Reorder } from "framer-motion";
 
-import { Modal } from "./SubmitModal";
+import { Modal } from "./Modal";
 import { Item } from "./Item";
 
 import { TextItem } from "./types";
 import { calculateHeight } from "./utils";
+
+import { Node } from "react-checkbox-tree";
 
 import "./App.css";
 
@@ -21,6 +23,8 @@ export default function App() {
 
   const [isCopied, setIsCopied] = useState(false);
   const [isLoadingFileTree, setIsLoadingFileTree] = useState(false);
+  const [fileTreeNodes, setFileTreeNodes] = useState<Node[]>([]);
+
   const parentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,7 +34,8 @@ export default function App() {
     }
 
     const handleMessage = (event: MessageEvent) => {
-      const { command, text, languageId, type, fileName } = event.data;
+      const { command, text, languageId, type, fileName, fileTree } =
+        event.data;
       if (command === "sendText") {
         const newItem: TextItem = {
           languageId,
@@ -52,6 +57,7 @@ export default function App() {
       }
 
       if (command === "directorySelectModeLoaded") {
+        setFileTreeNodes(fileTree);
         setIsLoadingFileTree(false);
         return;
       }
@@ -161,6 +167,7 @@ export default function App() {
         onClose={() => setSelectModalOpen(false)}
         onSubmit={handleModalSubmit}
         selectLoading={isLoadingFileTree}
+        nodes={fileTreeNodes}
       />
       <Reorder.Group
         ref={parentRef}
