@@ -19,12 +19,6 @@ import {
 import { TextItem } from "./types";
 
 declare function acquireVsCodeApi(): any;
-// //  ^ will exist in window object
-// interface vscode {
-//   postMessage(message: any): void;
-// }
-
-// declare const vscode: vscode;
 
 const icons = {
   check: (
@@ -151,16 +145,15 @@ export const Modal: React.FC<ModalProps> = ({
   const handleMultiSubmit = () => {
     const vscode = acquireVsCodeApi();
     console.log(vscode);
-    checked.map((item) => {
+    checked.map(async (item) => {
       vscode.postMessage({
         command: "requestFileContent",
         filePath: item,
       });
+      // 0sec delay to avoid throttling
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
     onClose();
-
-    // console.log(checked);
-    // setShowChecked(true);
   };
 
   const modalAnimation = {

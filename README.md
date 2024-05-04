@@ -6,6 +6,9 @@ A tool that helps you build prompts with lots of code blocks in them.
 
 Install: https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower&ssr=false#overview
 
+**0.1.4** Batch File Selection for Prompt Creation, idea by @arthurwolf:
+![Demo](https://github.com/backnotprop/prompt-tower/blob/main/0.1.4.gif?raw=true)
+
 ## Features
 
 Construct a prompt with multiple code blocks in it.
@@ -35,3 +38,10 @@ This is the first release, please submit issues!
 ### 0.1.0
 
 Initial release
+
+### 0.1.4
+
+- **New Feature: Batch File Selection for Prompt Creation**
+  - Quickly select multiple files or folders with single clicks for prompt creation.
+  - Simplify creating prompts by sending batches of files directly.
+  - Use more context in your prompts easily with minimal clicks.

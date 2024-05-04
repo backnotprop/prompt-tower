@@ -113,8 +113,10 @@ export default function App() {
   const handleCopyPrompt = () => {
     const allText = items
       .map((item) => {
+        // item.fileName
         if (item.type !== "manual") {
-          return `\`\`\`\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting
+          // return `\`\`\`\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting
+          return `\`\`\`${item.fileName}\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting with file name
         } else {
           return `${item.text}\n`; // Just adds the text with a newline
         }
