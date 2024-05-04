@@ -89,8 +89,11 @@ export function activate(context: vscode.ExtensionContext) {
       let symbolFound = false;
 
       for (const symbol of symbols) {
+        console.log("symbol-------------------");
+        console.log(symbol);
         if (
-          symbol.kind === vscode.SymbolKind.Function &&
+          (symbol.kind === vscode.SymbolKind.Function ||
+            symbol.kind === vscode.SymbolKind.Variable) &&
           symbol.range.contains(position)
         ) {
           const functionText = document.getText(symbol.range);
@@ -241,11 +244,18 @@ export function activate(context: vscode.ExtensionContext) {
      */
     vscode.commands.registerCommand("prompttower.selectDirectory", async () => {
       panelCheck();
+      panel?.webview.postMessage({
+        command: "directorySelectModeLoading",
+      });
 
-      console.log("Select Directory");
       const fileTree = await getWorkspaceFiles();
-      console.log("got files:"); // never gets here
-      console.log(fileTree);
+
+      console.log(fileTree, "fileTree");
+
+      panel?.webview.postMessage({
+        command: "directorySelectModeLoaded",
+        fileTree: fileTree,
+      });
     })
   );
 }

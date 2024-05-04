@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Reorder } from "framer-motion";
 
-import { Modal } from "./Modal";
+import { Modal } from "./SubmitModal";
 import { Item } from "./Item";
 
 import { TextItem } from "./types";
@@ -13,13 +13,14 @@ export default function App() {
   const [items, setItems] = useState<TextItem[]>([]);
   const [parentHeight, setParentHeight] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [isInputModalOpen, setInputModalOpen] = useState(false);
+  const [isSelectModalOpen, setSelectModalOpen] = useState(false);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | undefined>(
     undefined
   );
 
   const [isCopied, setIsCopied] = useState(false);
-
+  const [isLoadingFileTree, setIsLoadingFileTree] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,6 +42,18 @@ export default function App() {
           timestamp: new Date().toLocaleTimeString(),
         };
         setItems((prevItems) => [...prevItems, newItem]);
+        return;
+      }
+
+      if (command === "directorySelectModeLoading") {
+        setIsLoadingFileTree(true);
+        setSelectModalOpen(true);
+        return;
+      }
+
+      if (command === "directorySelectModeLoaded") {
+        setIsLoadingFileTree(false);
+        return;
       }
     };
 
@@ -68,12 +81,12 @@ export default function App() {
 
   const addItemAbove = (index: number) => {
     setCurrentItemIndex(index);
-    setModalOpen(true);
+    setInputModalOpen(true);
   };
 
   const addItemBelow = (index: number) => {
     setCurrentItemIndex(index + 1);
-    setModalOpen(true);
+    setInputModalOpen(true);
   };
 
   const handleModalSubmit = (newItem: TextItem) => {
@@ -137,9 +150,17 @@ export default function App() {
       </div>
 
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
+        mode="input"
+        isOpen={isInputModalOpen}
+        onClose={() => setInputModalOpen(false)}
         onSubmit={handleModalSubmit}
+      />
+      <Modal
+        mode="select"
+        isOpen={isSelectModalOpen}
+        onClose={() => setSelectModalOpen(false)}
+        onSubmit={handleModalSubmit}
+        selectLoading={isLoadingFileTree}
       />
       <Reorder.Group
         ref={parentRef}

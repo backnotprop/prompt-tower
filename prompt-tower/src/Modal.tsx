@@ -8,9 +8,17 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (item: TextItem) => void;
+  mode: "input" | "select";
+  selectLoading?: boolean;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  mode,
+  selectLoading,
+}) => {
   const [text, setText] = useState("");
 
   const { y, reference, floating, strategy } = useFloating({
@@ -65,18 +73,30 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
           ref={floating}
         >
           <div ref={reference}>
-            <textarea
-              style={{ marginBottom: "10px", width: "100%" }}
-              placeholder="Text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={4}
-            />
+            {mode === "input" && (
+              <>
+                <textarea
+                  style={{ marginBottom: "10px", width: "100%" }}
+                  placeholder="Text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  rows={4}
+                />
 
-            <button onClick={handleSubmit} style={{ marginRight: "10px" }}>
-              Submit
-            </button>
-            <button onClick={onClose}>Close</button>
+                <button onClick={handleSubmit} style={{ marginRight: "10px" }}>
+                  Submit
+                </button>
+                <button onClick={onClose}>Close</button>
+              </>
+            )}
+            {mode === "select" && (
+              <>
+                {selectLoading && (
+                  <div style={{ marginBottom: "10px" }}>Loading...</div>
+                )}
+                {!selectLoading && <div>Loaded</div>}
+              </>
+            )}
           </div>
         </motion.div>
       )}
