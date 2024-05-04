@@ -254,7 +254,14 @@ export function activate(context: vscode.ExtensionContext) {
 
       panel?.webview.postMessage({
         command: "directorySelectModeLoaded",
-        fileTree: fileTree[0].files,
+        fileTree: fileTree[0].files.map((ft) => {
+          if (ft.children && ft.children.length === 0) {
+            // return the object without children (no key should be set), not even children:undefined
+            const { children, ...rest } = ft;
+            return rest;
+          }
+          return ft;
+        }),
       });
     })
   );

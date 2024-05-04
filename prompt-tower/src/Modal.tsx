@@ -3,9 +3,99 @@ import { useFloating, shift, offset } from "@floating-ui/react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import CheckboxTree, { Node } from "react-checkbox-tree";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCheckSquare,
+  faSquare,
+  faChevronRight,
+  faChevronDown,
+  faPlusSquare,
+  faMinusSquare,
+  faFolder,
+  faFolderOpen,
+  faFile,
+} from "@fortawesome/free-solid-svg-icons";
+
 import { TextItem } from "./types";
 
-import "react-checkbox-tree/lib/react-checkbox-tree.css";
+const icons = {
+  check: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-check"
+      icon={faCheckSquare}
+    />
+  ),
+  uncheck: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-uncheck"
+      icon={faSquare}
+    />
+  ),
+  halfCheck: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-half-check"
+      icon={faCheckSquare}
+    />
+  ),
+  expandClose: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      icon={faChevronRight}
+    />
+  ),
+  expandOpen: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="chevron-down"
+      icon={faChevronDown}
+    />
+  ),
+  expandAll: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="plus-square"
+      icon={faPlusSquare}
+    />
+  ),
+  collapseAll: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="minus-square"
+      icon={faMinusSquare}
+    />
+  ),
+  parentClose: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="folder"
+      icon={faFolder}
+    />
+  ),
+  parentOpen: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="folder-open"
+      icon={faFolderOpen}
+    />
+  ),
+  leaf: (
+    <FontAwesomeIcon
+      color="var(--vscode-textLink-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="file"
+      icon={faFile}
+    />
+  ),
+};
 
 interface ModalProps {
   isOpen: boolean;
@@ -108,6 +198,7 @@ export const Modal: React.FC<ModalProps> = ({
                     expanded={expanded}
                     onCheck={(checked) => setChecked(checked)}
                     onExpand={(expanded) => setExpanded(expanded)}
+                    icons={icons}
                   />
                 )}
               </>
