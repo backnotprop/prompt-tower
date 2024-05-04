@@ -6,7 +6,7 @@ A VS Code extension that helps you build prompts with lots of code blocks in the
 
 Install: https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower&ssr=false#overview
 
-**0.1.4** Batch File Selection for Prompt Creation, idea by @arthurwolf:
+**0.1.9** Batch File Selection for Prompt Creation, idea by @arthurwolf:
 ![Demo](https://github.com/backnotprop/prompt-tower/blob/main/0.1.4.gif?raw=true)
 
 ## Features
