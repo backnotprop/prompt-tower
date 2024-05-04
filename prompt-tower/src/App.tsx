@@ -169,33 +169,35 @@ export default function App() {
         selectLoading={isLoadingFileTree}
         nodes={fileTreeNodes}
       />
-      <Reorder.Group
-        ref={parentRef}
-        axis="y"
-        onReorder={setItems}
-        values={items}
-        style={{
-          width: "calc(100vw)",
-          height: "calc(100vh - 200px)",
-          maxHeight: "calc(100vh - 200px)",
-          overflowY: enableScroll ? "scroll" : "hidden",
-          boxSizing: "border-box",
+      <span className="reordergroup">
+        <Reorder.Group
+          ref={parentRef}
+          axis="y"
+          onReorder={setItems}
+          values={items}
+          style={{
+            width: "calc(100vw)",
+            height: "calc(100vh - 200px)",
+            maxHeight: "calc(100vh - 200px)",
+            overflowY: enableScroll ? "scroll" : "hidden",
+            boxSizing: "border-box",
 
-          paddingLeft: "25px",
-          paddingRight: "25px",
-        }}
-      >
-        {items.map((item, index) => (
-          <Item
-            key={item.languageId + item.timestamp}
-            item={item}
-            style={{ height: `${heights[index]}px`, minHeight: "50px" }}
-            onAddAbove={() => addItemAbove(index)}
-            onAddBelow={() => addItemBelow(index)}
-            parentWidth={parentWidth}
-          />
-        ))}
-      </Reorder.Group>
+            paddingLeft: "25px",
+            paddingRight: "25px",
+          }}
+        >
+          {items.map((item, index) => (
+            <Item
+              key={item.languageId + item.timestamp}
+              item={item}
+              style={{ height: `${heights[index]}px`, minHeight: "50px" }}
+              onAddAbove={() => addItemAbove(index)}
+              onAddBelow={() => addItemBelow(index)}
+              parentWidth={parentWidth}
+            />
+          ))}
+        </Reorder.Group>
+      </span>
 
       <a
         onClick={handleClearAll}

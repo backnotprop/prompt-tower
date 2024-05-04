@@ -8,6 +8,36 @@ export function activate(context: vscode.ExtensionContext) {
   const panelCheck = () => {
     if (!panel) {
       panel = createWebviewPanel(context.extensionUri, context);
+
+      panel.webview.onDidReceiveMessage(
+        async (message) => {
+          if (message.command === "requestFileContent") {
+            const filePath = message.filePath; // Get the file path from the message
+            const fileUri = vscode.Uri.file(filePath);
+
+            try {
+              const document = await vscode.workspace.openTextDocument(fileUri); // Open the document
+              const fileContent = document.getText(); // Read the content of the file
+
+              panel?.webview.postMessage({
+                command: "sendText",
+                text: fileContent,
+                type: "file",
+                languageId: document.languageId,
+                fileName: document.fileName.split("/").pop(),
+              });
+            } catch (e) {
+              panel?.webview.postMessage({
+                command: "error",
+                message: "Failed to read file content",
+              });
+            }
+          }
+        },
+        undefined,
+        context.subscriptions
+      );
+
       panel.onDidDispose(
         () => {
           panel = undefined;
@@ -254,14 +284,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       panel?.webview.postMessage({
         command: "directorySelectModeLoaded",
-        fileTree: fileTree[0].files.map((ft) => {
-          if (ft.children && ft.children.length === 0) {
-            // return the object without children (no key should be set), not even children:undefined
-            const { children, ...rest } = ft;
-            return rest;
-          }
-          return ft;
-        }),
+        fileTree: fileTree[0].files,
       });
     })
   );
@@ -316,6 +339,7 @@ function getWebviewContent(
     </head>
     <body>
       <div id="root"></div>
+
     </body>
   </html>
   `;
