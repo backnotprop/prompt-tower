@@ -33,13 +33,13 @@ After the prompt is built, it's ready to be sent to gpt:
 
 ## Release Notes
 
-This is the first release, please submit issues!
+These are very early releases, please submit issues!
 
 ### 0.1.0
 
 Initial release
 
-### 0.1.7
+### 0.1.9
 
 - **New Feature: Batch File Selection for Prompt Creation**
   - Quickly select multiple files or folders with single clicks for prompt creation.
