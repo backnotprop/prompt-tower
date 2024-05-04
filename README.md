@@ -45,3 +45,6 @@ Initial release
   - Quickly select multiple files or folders with single clicks for prompt creation.
   - Simplify creating prompts by sending batches of files directly.
   - Use more context in your prompts easily with minimal clicks.
+  - credit to [arthurwolf](https://github.com/arthurwolf) for the idea.
+
+![Demo](https://github.com/backnotprop/prompt-tower/blob/main/0.1.4.gif?raw=true)
