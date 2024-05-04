@@ -39,7 +39,7 @@ This is the first release, please submit issues!
 
 Initial release
 
-### 0.1.4
+### 0.1.7
 
 - **New Feature: Batch File Selection for Prompt Creation**
   - Quickly select multiple files or folders with single clicks for prompt creation.
