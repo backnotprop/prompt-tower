@@ -1,33 +1,43 @@
 import * as vscode from "vscode";
 
-let panel: vscode.WebviewPanel | undefined = undefined;
+import { findMethodSymbol, getNonce, getWorkspaceFiles } from "./utils";
 
-function findMethodSymbol(
-  symbols: vscode.DocumentSymbol[],
-  position: vscode.Position
-): vscode.DocumentSymbol | undefined {
-  for (const symbol of symbols) {
-    if (
-      symbol.range.contains(position) &&
-      symbol.kind === vscode.SymbolKind.Method
-    ) {
-      return symbol;
-    }
-    // Recurse into children if the symbol has any
-    if (symbol.children && symbol.children.length > 0) {
-      const found = findMethodSymbol(symbol.children, position);
-      if (found) {
-        return found;
-      }
-    }
-  }
-  return undefined;
-}
+let panel: vscode.WebviewPanel | undefined = undefined;
 
 export function activate(context: vscode.ExtensionContext) {
   const panelCheck = () => {
     if (!panel) {
       panel = createWebviewPanel(context.extensionUri, context);
+
+      panel.webview.onDidReceiveMessage(
+        async (message) => {
+          if (message.command === "requestFileContent") {
+            const filePath = message.filePath; // Get the file path from the message
+            const fileUri = vscode.Uri.file(filePath);
+
+            try {
+              const document = await vscode.workspace.openTextDocument(fileUri); // Open the document
+              const fileContent = document.getText(); // Read the content of the file
+
+              panel?.webview.postMessage({
+                command: "sendText",
+                text: fileContent,
+                type: "file",
+                languageId: document.languageId,
+                fileName: document.fileName.split("/").pop(),
+              });
+            } catch (e) {
+              panel?.webview.postMessage({
+                command: "error",
+                message: "Failed to read file content",
+              });
+            }
+          }
+        },
+        undefined,
+        context.subscriptions
+      );
+
       panel.onDidDispose(
         () => {
           panel = undefined;
@@ -109,8 +119,11 @@ export function activate(context: vscode.ExtensionContext) {
       let symbolFound = false;
 
       for (const symbol of symbols) {
+        console.log("symbol-------------------");
+        console.log(symbol);
         if (
-          symbol.kind === vscode.SymbolKind.Function &&
+          (symbol.kind === vscode.SymbolKind.Function ||
+            symbol.kind === vscode.SymbolKind.Variable) &&
           symbol.range.contains(position)
         ) {
           const functionText = document.getText(symbol.range);
@@ -254,6 +267,25 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       vscode.window.showInformationMessage("File content sent successfully!");
+    }),
+
+    /**
+     * Enable directory tree select mode
+     */
+    vscode.commands.registerCommand("prompttower.selectDirectory", async () => {
+      panelCheck();
+      panel?.webview.postMessage({
+        command: "directorySelectModeLoading",
+      });
+
+      const fileTree = await getWorkspaceFiles();
+
+      console.log(fileTree, "fileTree");
+
+      panel?.webview.postMessage({
+        command: "directorySelectModeLoaded",
+        fileTree: fileTree[0].files,
+      });
     })
   );
 }
@@ -270,7 +302,7 @@ function createWebviewPanel(
     {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(extensionUri, "prompt-tower", "release"),
+        vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist"),
       ],
     }
   );
@@ -285,11 +317,11 @@ function getWebviewContent(
   extensionUri: vscode.Uri
 ): string {
   const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "prompt-tower", "release", "index.js")
+    vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist", "index.js")
   );
 
   const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "prompt-tower", "release", "index.css")
+    vscode.Uri.joinPath(extensionUri, "prompt-tower", "dist", "index.css")
   );
 
   const nonce = getNonce();
@@ -307,17 +339,8 @@ function getWebviewContent(
     </head>
     <body>
       <div id="root"></div>
+
     </body>
   </html>
   `;
-}
-
-function getNonce() {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
 }

@@ -10,7 +10,7 @@ body {
   align-items: center;
 }
 
-li {
+.reordergroup li {
   list-style: none;
   padding: 10px;
   margin: 0;
@@ -18,14 +18,14 @@ li {
   box-sizing: border-box;
 }
 
-ul {
+.reordergroup ul {
   position: relative;
   width: 100%;
   padding: 0;
   padding-top: 50px;
 }
 
-li {
+.reordergroup li {
   margin-bottom: 10px;
   border-radius: 5px;
   display: flex;

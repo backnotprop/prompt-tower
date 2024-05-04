@@ -7,18 +7,23 @@ import { Item } from "./Item";
 import { TextItem } from "./types";
 import { calculateHeight } from "./utils";
 
+import { Node } from "react-checkbox-tree";
+
 import "./App.css";
 
 export default function App() {
   const [items, setItems] = useState<TextItem[]>([]);
   const [parentHeight, setParentHeight] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [isInputModalOpen, setInputModalOpen] = useState(false);
+  const [isSelectModalOpen, setSelectModalOpen] = useState(false);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | undefined>(
     undefined
   );
 
   const [isCopied, setIsCopied] = useState(false);
+  const [isLoadingFileTree, setIsLoadingFileTree] = useState(false);
+  const [fileTreeNodes, setFileTreeNodes] = useState<Node[]>([]);
 
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +34,8 @@ export default function App() {
     }
 
     const handleMessage = (event: MessageEvent) => {
-      const { command, text, languageId, type, fileName } = event.data;
+      const { command, text, languageId, type, fileName, fileTree } =
+        event.data;
       if (command === "sendText") {
         const newItem: TextItem = {
           languageId,
@@ -41,6 +47,19 @@ export default function App() {
           timestamp: new Date().toLocaleTimeString(),
         };
         setItems((prevItems) => [...prevItems, newItem]);
+        return;
+      }
+
+      if (command === "directorySelectModeLoading") {
+        setIsLoadingFileTree(true);
+        setSelectModalOpen(true);
+        return;
+      }
+
+      if (command === "directorySelectModeLoaded") {
+        setFileTreeNodes(fileTree);
+        setIsLoadingFileTree(false);
+        return;
       }
     };
 
@@ -68,12 +87,12 @@ export default function App() {
 
   const addItemAbove = (index: number) => {
     setCurrentItemIndex(index);
-    setModalOpen(true);
+    setInputModalOpen(true);
   };
 
   const addItemBelow = (index: number) => {
     setCurrentItemIndex(index + 1);
-    setModalOpen(true);
+    setInputModalOpen(true);
   };
 
   const handleModalSubmit = (newItem: TextItem) => {
@@ -94,8 +113,10 @@ export default function App() {
   const handleCopyPrompt = () => {
     const allText = items
       .map((item) => {
+        // item.fileName
         if (item.type !== "manual") {
-          return `\`\`\`\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting
+          // return `\`\`\`\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting
+          return `\`\`\`${item.fileName}\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting with file name
         } else {
           return `${item.text}\n`; // Just adds the text with a newline
         }
@@ -137,37 +158,48 @@ export default function App() {
       </div>
 
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
+        mode="input"
+        isOpen={isInputModalOpen}
+        onClose={() => setInputModalOpen(false)}
         onSubmit={handleModalSubmit}
       />
-      <Reorder.Group
-        ref={parentRef}
-        axis="y"
-        onReorder={setItems}
-        values={items}
-        style={{
-          width: "calc(100vw)",
-          height: "calc(100vh - 200px)",
-          maxHeight: "calc(100vh - 200px)",
-          overflowY: enableScroll ? "scroll" : "hidden",
-          boxSizing: "border-box",
+      <Modal
+        mode="select"
+        isOpen={isSelectModalOpen}
+        onClose={() => setSelectModalOpen(false)}
+        onSubmit={handleModalSubmit}
+        selectLoading={isLoadingFileTree}
+        nodes={fileTreeNodes}
+      />
+      <span className="reordergroup">
+        <Reorder.Group
+          ref={parentRef}
+          axis="y"
+          onReorder={setItems}
+          values={items}
+          style={{
+            width: "calc(100vw)",
+            height: "calc(100vh - 200px)",
+            maxHeight: "calc(100vh - 200px)",
+            overflowY: enableScroll ? "scroll" : "hidden",
+            boxSizing: "border-box",
 
-          paddingLeft: "25px",
-          paddingRight: "25px",
-        }}
-      >
-        {items.map((item, index) => (
-          <Item
-            key={item.languageId + item.timestamp}
-            item={item}
-            style={{ height: `${heights[index]}px`, minHeight: "50px" }}
-            onAddAbove={() => addItemAbove(index)}
-            onAddBelow={() => addItemBelow(index)}
-            parentWidth={parentWidth}
-          />
-        ))}
-      </Reorder.Group>
+            paddingLeft: "25px",
+            paddingRight: "25px",
+          }}
+        >
+          {items.map((item, index) => (
+            <Item
+              key={item.languageId + item.timestamp}
+              item={item}
+              style={{ height: `${heights[index]}px`, minHeight: "50px" }}
+              onAddAbove={() => addItemAbove(index)}
+              onAddBelow={() => addItemBelow(index)}
+              parentWidth={parentWidth}
+            />
+          ))}
+        </Reorder.Group>
+      </span>
 
       <a
         onClick={handleClearAll}

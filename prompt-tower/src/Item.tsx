@@ -68,16 +68,17 @@ export const Item = ({
         }}
       >
         <div>
-          <span>{item.previewText}</span>
-          <br />
-          <span>
+          <span style={{ fontWeight: "bold" }}>
             <em>{item.type}</em> {" - "}
           </span>
-          <span>
+          <span style={{ fontWeight: "bold" }}>
             {item.type !== "file" && item.type !== "manual" ? "within " : ""}
 
             {item.fileName}
           </span>
+          <br />
+          <em style={{ fontSize: ".89em", marginTop: "4px" }}>preview:</em>
+          <code style={{ fontSize: ".89em" }}>{item.previewText}</code>
         </div>
 
         <Tooltip

@@ -1,17 +1,126 @@
 import { useState } from "react";
 import { useFloating, shift, offset } from "@floating-ui/react-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import CheckboxTree, { Node } from "react-checkbox-tree";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCheckSquare,
+  faSquare,
+  faChevronRight,
+  faChevronDown,
+  faPlusSquare,
+  faMinusSquare,
+  faFolder,
+  faFolderOpen,
+  faFile,
+} from "@fortawesome/free-solid-svg-icons";
 
 import { TextItem } from "./types";
+
+declare function acquireVsCodeApi(): any;
+
+const icons = {
+  check: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-check"
+      icon={faCheckSquare}
+    />
+  ),
+  uncheck: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-uncheck"
+      icon={faSquare}
+    />
+  ),
+  halfCheck: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-half-check"
+      icon={faCheckSquare}
+    />
+  ),
+  expandClose: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      icon={faChevronRight}
+    />
+  ),
+  expandOpen: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="chevron-down"
+      icon={faChevronDown}
+    />
+  ),
+  expandAll: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="plus-square"
+      icon={faPlusSquare}
+    />
+  ),
+  collapseAll: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="minus-square"
+      icon={faMinusSquare}
+    />
+  ),
+  parentClose: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="folder"
+      icon={faFolder}
+    />
+  ),
+  parentOpen: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="folder-open"
+      icon={faFolderOpen}
+    />
+  ),
+  leaf: (
+    <FontAwesomeIcon
+      color="var(--vscode-editor-foreground)"
+      className="rct-icon rct-icon-expand-close"
+      // icon="file"
+      icon={faFile}
+    />
+  ),
+};
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (item: TextItem) => void;
+  mode: "input" | "select";
+  selectLoading?: boolean;
+  nodes?: Node[];
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  mode,
+  selectLoading,
+  nodes,
+}) => {
   const [text, setText] = useState("");
+  const [checked, setChecked] = useState<Array<string>>([]);
+  const [expanded, setExpanded] = useState<Array<string>>([]);
+
+  // const [showChecked, setShowChecked] = useState(false);
 
   const { y, reference, floating, strategy } = useFloating({
     placement: "right",
@@ -33,6 +142,20 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
     setText("");
   };
 
+  const handleMultiSubmit = () => {
+    const vscode = acquireVsCodeApi();
+    console.log(vscode);
+    checked.map(async (item) => {
+      vscode.postMessage({
+        command: "requestFileContent",
+        filePath: item,
+      });
+      // 0sec delay to avoid throttling
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    onClose();
+  };
+
   const modalAnimation = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { opacity: 1, scale: 1 },
@@ -50,7 +173,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
           transition={{ duration: 0.2 }}
           style={{
             position: strategy,
-            top: y ?? "",
+            top: mode == "input" ? y ?? "" : mode === "select" ? "25px" : 0,
             // left: 10,
             transform: "translateX(-100%)",
             backgroundColor: "var(--vscode-editor-background)",
@@ -65,18 +188,79 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
           ref={floating}
         >
           <div ref={reference}>
-            <textarea
-              style={{ marginBottom: "10px", width: "100%" }}
-              placeholder="Text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={4}
-            />
+            {mode === "input" && (
+              <>
+                <textarea
+                  style={{ marginBottom: "10px", width: "100%" }}
+                  placeholder="Text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  rows={4}
+                />
 
-            <button onClick={handleSubmit} style={{ marginRight: "10px" }}>
-              Submit
-            </button>
-            <button onClick={onClose}>Close</button>
+                <button onClick={handleSubmit} style={{ marginRight: "10px" }}>
+                  Submit
+                </button>
+                <button onClick={onClose}>Close</button>
+              </>
+            )}
+            {mode === "select" && (
+              <>
+                {selectLoading && (
+                  <div style={{ marginBottom: "10px" }}>Loading...</div>
+                )}
+                {!selectLoading && nodes && (
+                  <div
+                    // mif checkbox grows we need to be able to scroll
+                    style={{
+                      overflowY: "auto",
+                      maxHeight: "calc(100vh - 200px)",
+                      width: "100%",
+                    }}
+                  >
+                    <CheckboxTree
+                      nodes={nodes as Node[]}
+                      checked={checked}
+                      expanded={expanded}
+                      onCheck={(checked) => setChecked(checked)}
+                      onExpand={(expanded) => setExpanded(expanded)}
+                      icons={icons}
+                    />
+                    <br />
+                    <p
+                      style={{
+                        color: "var(--vscode-editor-foreground)",
+                        display: "flex",
+                        justifyContent: "center",
+                        width: "100%",
+                      }}
+                    >
+                      ({checked.length} selected)
+                    </p>
+                    <br />
+                    <a
+                      onClick={handleMultiSubmit}
+                      style={{
+                        cursor: "pointer",
+                        color: "--var( --vscode-textLink-foreground)",
+                        display: "flex",
+                        justifyContent: "center",
+                        width: "100%",
+                      }}
+                    >
+                      Submit
+                    </a>
+                    {/* {showChecked && (
+                      <div>
+                        {checked.map((item) => (
+                          <div key={item}>{item}</div>
+                        ))}
+                      </div>
+                    )} */}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </motion.div>
       )}
