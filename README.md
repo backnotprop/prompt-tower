@@ -1,6 +1,6 @@
 # prompt-tower
 
-<img src="https://github.com/backnotprop/prompt-tower/blob/main/docs/image.png?raw=true" alt="Prompt Tower" width="200"/>
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="200"/>
 
 A VS Code extension that helps you build prompts with lots of code blocks in them.
 
