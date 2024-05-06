@@ -7,6 +7,10 @@ import { Tooltip } from "./Tooltip";
 
 import { TextItem } from "./types";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+import { faEye } from "@fortawesome/free-regular-svg-icons";
+
 interface ItemProps {
   item: TextItem;
   style: React.CSSProperties;
@@ -104,11 +108,16 @@ export const Item = ({
         >
           <span
             style={{
-              fontSize: "18px",
+              fontSize: "14px",
               cursor: "default",
             }}
           >
-            👁️
+            {/* 👁️ */}
+            <FontAwesomeIcon
+              color="var(--vscode-editor-foreground)"
+              className="rct-icon rct-icon-check"
+              icon={faEye}
+            />
           </span>
         </Tooltip>
       </div>
