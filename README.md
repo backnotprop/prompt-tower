@@ -49,3 +49,7 @@ Initial release
   - credit to [arthurwolf](https://github.com/arthurwolf) for the idea.
 
 ![Demo](https://github.com/backnotprop/prompt-tower/blob/main/0.1.4.gif?raw=true)
+
+### 0.1.10
+
+Minor usability fixes (retain focus in active editor when using Send To Prompt Tower commands)
