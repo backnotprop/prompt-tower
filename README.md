@@ -1,13 +1,13 @@
 # prompt-tower
 
-<img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="200"/>
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/docs/image.png?raw=true" alt="Prompt Tower" width="200"/>
 
 A VS Code extension that helps you build prompts with lots of code blocks in them.
 
 Install: https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower&ssr=false#overview
 
-**0.1.9** Batch File Selection for Prompt Creation, idea by @arthurwolf:
-![Demo](https://github.com/backnotprop/prompt-tower/blob/main/0.1.4.gif?raw=true)
+**0.1.2** Token count, as seen with batch file selection:
+![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/token_count.gif?raw=true)
 
 ## Features
 
@@ -25,11 +25,11 @@ Each code block is added to the tower and is wrapped in ` ``` ` ticks, with appr
 
 See it in action:
 
-![Demo](https://github.com/backnotprop/prompt-tower/blob/main/vscode.gif?raw=true)
+![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/vscode.gif?raw=true)
 
 After the prompt is built, it's ready to be sent to gpt:
 
-![GPT](https://github.com/backnotprop/prompt-tower/blob/main/gpt.gif?raw=true)
+![GPT](https://github.com/backnotprop/prompt-tower/blob/main/docs/gpt.gif?raw=true)
 
 ## Release Notes
 
@@ -48,7 +48,7 @@ Initial release
   - Uses `.gitignore` to filter out files and folders.
   - credit to [arthurwolf](https://github.com/arthurwolf) for the idea.
 
-![Demo](https://github.com/backnotprop/prompt-tower/blob/main/0.1.4.gif?raw=true)
+![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/0.1.4.gif?raw=true)
 
 ### 0.1.10
 
