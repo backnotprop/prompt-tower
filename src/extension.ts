@@ -120,8 +120,6 @@ export function activate(context: vscode.ExtensionContext) {
       let symbolFound = false;
 
       for (const symbol of symbols) {
-        console.log("symbol-------------------");
-        console.log(symbol);
         if (
           (symbol.kind === vscode.SymbolKind.Function ||
             symbol.kind === vscode.SymbolKind.Variable) &&
@@ -298,17 +296,23 @@ function createWebviewPanel(
   const panel = vscode.window.createWebviewPanel(
     "prompttowerPanel",
     "Prompt Tower",
-
-    vscode.ViewColumn.Beside,
+    { preserveFocus: true, viewColumn: vscode.ViewColumn.Beside },
     {
       enableScripts: true,
       localResourceRoots: [
         vscode.Uri.joinPath(extensionUri, "prompt-tower", "release"),
       ],
+      retainContextWhenHidden: true,
     }
   );
 
   panel.webview.html = getWebviewContent(panel.webview, extensionUri);
+
+  // panel.onDidChangeViewState(({ webviewPanel }) => {
+  //   if (webviewPanel.visible) {
+  //     vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
+  //   }
+  // });
 
   return panel;
 }
