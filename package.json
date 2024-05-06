@@ -13,7 +13,7 @@
   "publisher": "backnotprop",
   "icon": "icon.png",
   "description": "A tool that helps you build prompts with lots of code blocks in them.",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "engines": {
     "vscode": "^1.88.0"
   },
@@ -79,37 +79,38 @@
     "menus": {
       "editor/context": [
         {
-          "when": "editorTextFocus",
-          "command": "prompttower.sendMethod",
-          "group": "navigation"
+          "submenu": "prompttowerMenu",
+          "group": "9_cutcopypaste",
+          "when": "editorTextFocus"
+        }
+      ],
+      "prompttowerMenu": [
+        {
+          "command": "prompttower.sendMethod"
         },
         {
-          "when": "editorTextFocus",
-          "command": "prompttower.sendClass",
-          "group": "navigation"
+          "command": "prompttower.sendClass"
         },
         {
-          "when": "editorTextFocus",
-          "command": "prompttower.sendFunction",
-          "group": "navigation"
+          "command": "prompttower.sendFunction"
         },
         {
-          "when": "editorTextFocus",
-          "command": "prompttower.sendText",
-          "group": "navigation"
+          "command": "prompttower.sendText"
         },
         {
-          "when": "editorTextFocus",
-          "command": "prompttower.sendFile",
-          "group": "navigation"
+          "command": "prompttower.sendFile"
         },
         {
-          "when": "editorTextFocus",
-          "command": "prompttower.selectDirectory",
-          "group": "navigation"
+          "command": "prompttower.selectDirectory"
         }
       ]
-    }
+    },
+    "submenus": [
+      {
+        "id": "prompttowerMenu",
+        "label": "Prompt Tower"
+      }
+    ]
   },
   "activationEvents": [],
   "scripts": {

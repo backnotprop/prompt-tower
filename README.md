@@ -53,3 +53,7 @@ Initial release
 ### 0.1.10
 
 Minor usability fixes (retain focus in active editor when using Send To Prompt Tower commands)
+
+### 0.1.11
+
+Prompt Tower menu condensed in context window, now part of copy/paste group
