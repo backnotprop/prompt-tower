@@ -13,9 +13,11 @@
   "dependencies": {
     "@floating-ui/react": "^0.23.1",
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-regular-svg-icons": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "framer-motion": "^11.1.7",
+    "gpt-tokenizer": "^2.1.2",
     "minimatch": "^9.0.4",
     "react": "^18.2.0",
     "react-checkbox-tree": "^1.8.0",

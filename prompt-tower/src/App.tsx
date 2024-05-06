@@ -1,13 +1,16 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Reorder } from "framer-motion";
+import { Node } from "react-checkbox-tree";
+// import { Tiktoken } from "tiktoken/lite";
+// import cl100k_base from "tiktoken/encoders/cl100k_base.json";
+
+import { encode } from "gpt-tokenizer/model/gpt-4";
 
 import { Modal } from "./Modal";
 import { Item } from "./Item";
 
 import { TextItem } from "./types";
 import { calculateHeight } from "./utils";
-
-import { Node } from "react-checkbox-tree";
 
 import "./App.css";
 
@@ -26,6 +29,26 @@ export default function App() {
   const [fileTreeNodes, setFileTreeNodes] = useState<Node[]>([]);
 
   const parentRef = useRef<HTMLDivElement>(null);
+
+  const [tokenCount, setTokenCount] = useState(0);
+
+  const allText = useMemo(() => {
+    return items
+      .map((item) => {
+        if (item.type !== "manual") {
+          return `\`\`\`${item.fileName}\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting with file name
+        } else {
+          return `${item.text}\n`; // Just adds the text with a newline
+        }
+      })
+      .join(""); // Joins all items' text together
+  }, [items]);
+
+  useEffect(() => {
+    console.log("allText", allText);
+    const tokens = encode(allText);
+    setTokenCount(tokens.length);
+  }, [allText]);
 
   useEffect(() => {
     if (parentRef.current) {
@@ -111,17 +134,17 @@ export default function App() {
   };
 
   const handleCopyPrompt = () => {
-    const allText = items
-      .map((item) => {
-        // item.fileName
-        if (item.type !== "manual") {
-          // return `\`\`\`\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting
-          return `\`\`\`${item.fileName}\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting with file name
-        } else {
-          return `${item.text}\n`; // Just adds the text with a newline
-        }
-      })
-      .join(""); // Joins all items' text together
+    // const allText = items
+    //   .map((item) => {
+    //     // item.fileName
+    //     if (item.type !== "manual") {
+    //       // return `\`\`\`\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting
+    //       return `\`\`\`${item.fileName}\n${item.text}\n\`\`\`\n\n`; // Adds code block formatting with file name
+    //     } else {
+    //       return `${item.text}\n`; // Just adds the text with a newline
+    //     }
+    //   })
+    //   .join(""); // Joins all items' text together
     navigator.clipboard.writeText(allText);
     setIsCopiedAndDelayedRemoved();
   };
@@ -155,6 +178,20 @@ export default function App() {
           Copy Prompt
         </a>
         {isCopied && <span style={{ marginLeft: "10px" }}>Copied!</span>}
+        <span
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 20,
+            color: "var(--vscode-editor-foreground)",
+            opacity: 0.85,
+            fontSize: "1.155em",
+            // make brighter:
+            filter: "brightness(1.2)",
+          }}
+        >
+          Tokens: {tokenCount}
+        </span>
       </div>
 
       <Modal
