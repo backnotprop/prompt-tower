@@ -6,7 +6,7 @@ A VS Code extension that helps you build prompts with lots of code blocks in the
 
 Install: https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower&ssr=false#overview
 
-**0.1.2** Token count, as seen with batch file selection:
+**0.1.12** Token count, as seen with batch file selection:
 ![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/token_count.gif?raw=true)
 
 ## Features
@@ -35,9 +35,17 @@ After the prompt is built, it's ready to be sent to gpt:
 
 These are very early releases, please submit issues!
 
-### 0.1.0
+### 0.1.12
 
-Initial release
+Token Counter added wtih `gpt-tokenizer` npm package.
+
+### 0.1.11
+
+Prompt Tower menu condensed in context window, now part of copy/paste group
+
+### 0.1.10
+
+Minor usability fixes (retain focus in active editor when using Send To Prompt Tower commands)
 
 ### 0.1.9
 
@@ -50,10 +58,6 @@ Initial release
 
 ![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/0.1.4.gif?raw=true)
 
-### 0.1.10
+### 0.1.0
 
-Minor usability fixes (retain focus in active editor when using Send To Prompt Tower commands)
-
-### 0.1.11
-
-Prompt Tower menu condensed in context window, now part of copy/paste group
+Initial release
