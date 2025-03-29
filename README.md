@@ -1,63 +1,57 @@
-# prompt-tower
+# Prompt Tower: Context Management for LLM Coding
 
-<img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="200"/>
+Prompt Tower helps you overcome the context limitations of Large Language Models (LLMs) and coding agents. It provides tools within your IDE to precisely select, structure, and template the codebase information needed for effective AI interaction. Build complex, accurate prompts locally before sending them to your chosen LLM.
 
-A VS Code extension that helps you build prompts with lots of code blocks in them.
+Supports IDEs compatible with Open VSX: **VS Code**, **Cursor**, **Windsurf**, **Google IDX**.
 
-Install: https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower&ssr=false#overview
+_(Access Prompt Tower via its icon in the Activity Bar – it opens in a dedicated UI tab.)_
 
-**0.1.12** Token count, as seen with batch file selection:
-![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/token_count.gif?raw=true)
+## Why Prompt Tower? Master Your Context
 
-## Features
+LLMs and coding agents are powerful, but their effectiveness hinges on the quality and structure of the context provided. Manually assembling this from a complex codebase is inefficient and error-prone. Prompt Tower gives you control:
 
-Construct a prompt with multiple code blocks in it.
+- **🎯 Precision Context Management:** Go beyond simple file inclusion. Select exactly what's needed, visualize the structure, and manage token counts effectively.
+- **🏗️ Structured Prompt Assembly:** Use templates and dynamic elements to build reusable, maintainable prompts that give AI the architectural understanding it needs.
+- **⚙️ Overcome Agent Limitations:** By carefully curating the context yourself, you can guide AI tools more effectively than relying on their often imperfect context gathering.
+- **🔒 Local & Integrated:** Build your prompt securely within your IDE workflow.
 
-Commands:
+## Core Features
 
-- `Send File`: Send the current file to the prompt.
-- `Send Selection`: Send the current selection to the prompt.
-- `Send Function`: Send the current function to the prompt.
-- `Send Class`: Send the current class to the prompt.
-- `Send Class Method`: Send the current class method to the prompt.
+- **🗂️ Flexible Context Selection:**
 
-Each code block is added to the tower and is wrapped in ` ``` ` ticks, with appropriate newlines. It's height indicates the block size (more code = taller block); until a certain threshold where too many blocks normalizes sizes. Blocks are movable, and its simple to add annotations (as new blocks) above or below each other.
+  - **FileTree View:** Checkboxes for rapid selection of multiple files and entire folders in a dedicated tree. Respects `.gitignore` (toggleable: `promptTower.useGitIgnore`) and `.towerignore`.
+  - **Quick Add Actions:** Right-click files/selections in the editor or explorer to add them instantly.
 
-See it in action:
+- **📝 Powerful Context Templating:**
 
-![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/vscode.gif?raw=true)
+  - Define reusable prompt structures with static instructions and dynamic placeholders.
+  - Manage multiple templates (e.g., for debugging, refactoring, documentation).
+  - **Placeholders:** Use `%path/to/file.ext` for live file content and `%snippetName` for predefined text blocks (managed in settings). This is central to dynamic prompt generation.
 
-After the prompt is built, it's ready to be sent to gpt:
+- **🗼 Visualize & Organize Context (The Tower View):**
 
-![GPT](https://github.com/backnotprop/prompt-tower/blob/main/docs/gpt.gif?raw=true)
+  - See selected files, directories, and text snippets as distinct blocks.
+  - Monitor **token estimates per block** and the total count.
+  - Expand directories to understand included structure.
+  - Preview file content directly.
+  - **Reorder blocks** via drag-and-drop to structure the final prompt logically.
 
-## Release Notes
+- **🌳 Include Directory Structures:**
 
-These are very early releases, please submit issues!
+  - Add formatted text representations of your project hierarchy (full project, selected files only, etc.) to provide vital architectural context.
 
-### 0.1.12
+- **✂️ Code Formatting & Preparation:**
 
-Token Counter added wtih `gpt-tokenizer` npm package.
+  - Option to **remove comments** automatically from included code.
+  - Configurable wrappers (e.g., XML tags, Markdown fences) around context blocks – defaults to `<file path="...">...</file>`.
 
-### 0.1.11
+- **📄 Summarization for Large Files:**
 
-Prompt Tower menu condensed in context window, now part of copy/paste group
+  - Optionally use `.summary` files instead of full file content to conserve tokens while providing high-level context.
 
-### 0.1.10
+- **📊 Live Preview:**
 
-Minor usability fixes (retain focus in active editor when using Send To Prompt Tower commands)
+  - A real-time view of the final assembled prompt based on your selections and template.
 
-### 0.1.9
-
-- **New Feature: Batch File Selection for Prompt Creation**
-  - Quickly select multiple files or folders with single clicks for prompt creation.
-  - Simplify creating prompts by sending batches of files directly.
-  - Use more context in your prompts easily with minimal clicks.
-  - Uses `.gitignore` to filter out files and folders.
-  - credit to [arthurwolf](https://github.com/arthurwolf) for the idea.
-
-![Demo](https://github.com/backnotprop/prompt-tower/blob/main/docs/0.1.4.gif?raw=true)
-
-### 0.1.0
-
-Initial release
+- **⚙️ Customizable:**
+  - Tailor behavior via IDE settings (ignores, snippets, wrappers, summarization rules, etc.).
