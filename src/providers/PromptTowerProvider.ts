@@ -5,6 +5,13 @@ import * as path from "path";
 import * as fs from "fs";
 import { FileItem } from "../models/FileItem";
 
+/**
+ * @TODO
+ * - config listeners
+ * - promptTower.useGitignore: This is the major missing piece. You need to add logic to read this setting, parse .gitignore files, and integrate those patterns (using a proper matching library) with the promptTower.ignore setting.
+ * - "format path as comment" (need config and implementation)
+ */
+
 export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<
     FileItem | undefined | void
@@ -19,10 +26,10 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
   private blockTemplate: string =
     '<file name="{fileNameWithExtension}">\n<source>{rawFilePath}</source>\n<file_content><![CDATA[\n{fileContent}\n]]>\n</file_content>\n</file>';
-  private blockSeparator: string = "\n"; // Changed from "\n\n"
-  private outputExtension: string = "txt"; // Matches
+  private blockSeparator: string = "\n";
+  private outputExtension: string = "txt";
   private wrapperTemplate: string | null =
-    "<context>\n<files>\n{blocks}\n</files>\n</context>"; // Added <files> tags
+    "<context>\n<files>\n{blocks}\n</files>\n</context>";
 
   constructor(
     private workspaceRoot: string,
@@ -334,7 +341,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         outputFileNameWithExtension
       );
 
-      // Process each checked file concurrently using the blockTemplate
       // Process each checked file concurrently using the blockTemplate
       const fileBlockPromises = checkedFiles.map(async (fullFilePath) => {
         // Calculate necessary paths and names

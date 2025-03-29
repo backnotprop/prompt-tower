@@ -1,51 +1,82 @@
-# Prompt Tower - Flexible Block Template Feature Implementation Rules
+# Cursor Rules: Prompt Tower - Token Counting Implementation
 
-1.  Your primary instructions are in the file `current_task.md`. Follow the step-by-step guide provided in that file precisely to implement the block template feature.
-2.  Apply the changes atomically as described in each step of `current_task.md`. Focus on modifying only the specified sections in the target files for each step.
-3.  Ensure the necessary files (`current_task.md`, `package.json`, `src/providers/PromptTowerProvider.ts`) are included in your context when you begin. You may also need context from other `.ts` files mentioned below.
+1.  Your primary instructions are in the file `current_task.md`. Follow the step-by-step guide provided in that file precisely.
+2.  Apply the changes atomically as described in each step of `current_task.md`. Focus on modifying only the specified files and sections for each step.
+3.  Ensure the necessary files listed below (especially those with `edit` rules) and `current_task.md` are included in your context when you start.
 
-Let me know if any step in `current_task.md` is unclear. Start with Step 1 in `current_task.md`.
+Let me know if any step in `current_task.md` is unclear. Start with Step 1.
 
 rules:
-  - file: current_task.md
-    rule: instructions
-    description: >-
-      This file contains the primary step-by-step instructions for implementing
-      the flexible block template feature. Follow these steps exactly and sequentially.
-      Refer back to this file for the specific changes required in each step.
 
-  - file: package.json
-    rule: edit
-    description: >-
-      Allow editing ONLY to replace the 'promptTower.outputFormat' configuration object
-      within 'contributes.configuration.properties' as specified in Step 1 of current_task.md.
+# --- Instruction File ---
+- file: current_task.md
+  rule: instructions
+  description: >-
+    This file contains the primary step-by-step instructions for implementing
+    the asynchronous token counting feature. Follow these steps exactly, atomically,
+    and sequentially. Refer back to this file for the specific changes required in each step.
 
-  - file: src/providers/PromptTowerProvider.ts
-    rule: edit
-    description: >-
-      Allow editing ONLY to:
-      1. Update class property declarations (remove old 'outputFormat', add new ones) as per Step 2 of current_task.md.
-      2. Replace the body of the 'loadConfig' method as per Step 3 of current_task.md.
-      3. Modify the 'generateFile' method (update outputPath, replace Promise.all block, update writeFile call) as per Step 4 of current_task.md.
+# --- Files Allowed for Editing (Based on current_task.md steps) ---
+- file: package.json
+  rule: edit
+  description: >-
+    Allow editing ONLY to add the 'gpt-tokenizer' dependency as specified
+    in Step 1 of current_task.md.
 
-  # Provide context from other relevant source files for understanding
-  - file: src/models/FileItem.ts
-    rule: context
-    description: Provide context on the data model used for tree items, which the provider interacts with.
+- file: src/models/EventEmitter.ts
+  rule: edit # Allows creation and modification
+  description: >-
+    Allow creation and editing of this new file to define the TokenUpdateEmitter
+    class and related interface as specified in Step 2 of current_task.md.
 
-  - file: src/extension.ts
-    rule: context
-    description: Provide context on how the PromptTowerProvider is instantiated and registered.
+- file: src/extension.ts
+  rule: edit
+  description: >-
+    Allow editing to:
+    1. Import the emitter and create its instance (Step 3).
+    2. Update PromptTowerProvider instantiation (Step 5).
+    3. Replace getWebviewContent function for HTML/CSS changes (Step 15).
+    4. Add JavaScript logic within getWebviewContent (Step 16).
+    5. Modify createOrShowWebviewPanel for emitter listening and webview communication (Step 17).
+    6. Update activate/deactivate functions (Step 5 & 18).
 
-  - file: src/commands.ts
-    rule: context
-    description: Provide context on how commands related to the provider (like 'generateFile') are registered.
+- file: src/providers/PromptTowerProvider.ts
+  rule: edit
+  description: >-
+    Allow significant editing to implement the core token counting logic as per current_task.md:
+    1. Add imports (Step 4).
+    2. Update constructor signature (Step 4).
+    3. Add state variables (Step 6).
+    4. Add helper methods (notifyTokenUpdate, debouncing, getters) (Step 7).
+    5. Implement the main updateTokenCount method (Step 8).
+    6. Modify constructor and refresh to trigger updates (Step 9).
+    7. Modify toggleAllFiles to trigger updates (Step 10).
+    8. Modify toggleCheck to trigger updates (Step 11).
+    9. Replace toggleDirectoryChildren (Step 12).
+    10. Replace getCheckedFiles, getChildren, and add matchesPattern (Step 13).
+    11. Replace loadConfig, savePersistedState, loadPersistedState, add getGitIgnorePatterns (Step 14).
 
-  - file: README.md
-    rule: context
-    description: Provide context on the overall extension goals and intended features.
+# --- Files Primarily for Context ---
+- file: src/commands.ts
+  rule: context
+  description: >-
+    Provide context on how commands related to the provider (like refresh, toggle)
+    are registered and how the provider/treeview instances are passed. (Not edited in this task).
 
-  # Allow context for all other source files, but prioritize specific edit rules above
-  - file: src/**/*.ts
-    rule: context
-    description: Provide context for any other TypeScript source files needed to understand the changes in PromptTowerProvider.ts.
+- file: src/models/FileItem.ts
+  rule: context
+  description: >-
+    Provide context on the data model used for tree items, which the provider interacts with heavily.
+    (Not edited in this task).
+
+- file: README.md
+  rule: context
+  description: >-
+    Provide context on the overall extension goals and intended features.
+
+# --- General Context Rules ---
+- file: src/**/*.ts
+  rule: context # Use 'context' for broader understanding if needed
+  description: >-
+    Provide general context for any other TypeScript source files if needed to understand
+    the interactions within the edited files. Prioritize the specific rules above.
