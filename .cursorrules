@@ -1,4 +1,4 @@
-# Cursor Rules: Prompt Tower - Token Counting Implementation
+# Cursor Rules: Prompt Tower - Prefix/Suffix Implementation
 
 1.  Your primary instructions are in the file `current_task.md`. Follow the step-by-step guide provided in that file precisely.
 2.  Apply the changes atomically as described in each step of `current_task.md`. Focus on modifying only the specified files and sections for each step.
@@ -9,74 +9,72 @@ Let me know if any step in `current_task.md` is unclear. Start with Step 1.
 rules:
 
 # --- Instruction File ---
+
 - file: current_task.md
   rule: instructions
   description: >-
-    This file contains the primary step-by-step instructions for implementing
-    the asynchronous token counting feature. Follow these steps exactly, atomically,
-    and sequentially. Refer back to this file for the specific changes required in each step.
+  This file contains the primary step-by-step instructions for implementing
+  the Prompt Prefix and Suffix text areas and integrating them into the export.
+  Follow these steps exactly, atomically, and sequentially. Refer back to this file
+  for the specific changes required in each step.
 
 # --- Files Allowed for Editing (Based on current_task.md steps) ---
-- file: package.json
-  rule: edit
-  description: >-
-    Allow editing ONLY to add the 'gpt-tokenizer' dependency as specified
-    in Step 1 of current_task.md.
-
-- file: src/models/EventEmitter.ts
-  rule: edit # Allows creation and modification
-  description: >-
-    Allow creation and editing of this new file to define the TokenUpdateEmitter
-    class and related interface as specified in Step 2 of current_task.md.
-
-- file: src/extension.ts
-  rule: edit
-  description: >-
-    Allow editing to:
-    1. Import the emitter and create its instance (Step 3).
-    2. Update PromptTowerProvider instantiation (Step 5).
-    3. Replace getWebviewContent function for HTML/CSS changes (Step 15).
-    4. Add JavaScript logic within getWebviewContent (Step 16).
-    5. Modify createOrShowWebviewPanel for emitter listening and webview communication (Step 17).
-    6. Update activate/deactivate functions (Step 5 & 18).
 
 - file: src/providers/PromptTowerProvider.ts
   rule: edit
   description: >-
-    Allow significant editing to implement the core token counting logic as per current_task.md:
-    1. Add imports (Step 4).
-    2. Update constructor signature (Step 4).
-    3. Add state variables (Step 6).
-    4. Add helper methods (notifyTokenUpdate, debouncing, getters) (Step 7).
-    5. Implement the main updateTokenCount method (Step 8).
-    6. Modify constructor and refresh to trigger updates (Step 9).
-    7. Modify toggleAllFiles to trigger updates (Step 10).
-    8. Modify toggleCheck to trigger updates (Step 11).
-    9. Replace toggleDirectoryChildren (Step 12).
-    10. Replace getCheckedFiles, getChildren, and add matchesPattern (Step 13).
-    11. Replace loadConfig, savePersistedState, loadPersistedState, add getGitIgnorePatterns (Step 14).
+  Allow editing to:
+
+  1. Add state variables (`promptPrefix`, `promptSuffix`) (Step 1).
+  2. Add getter/setter methods for prefix/suffix (Step 2).
+  3. Modify the `generateFile` method to incorporate prefix/suffix logic (Step 3).
+
+  # Note: Step 4 involves verification, no direct edits expected based on final code.
+
+- file: src/extension.ts
+  rule: edit
+  description: >-
+  Allow editing to:
+  1. Modify `getWebviewContent` signature, HTML, CSS, and JavaScript logic for text areas, state handling, event listeners, and message handlers (Steps 4, 5, 6, 7, 8, 9, 15).
+  2. Modify `createOrShowWebviewPanel` to handle initial state fetching, panel options update, reveal logic update, and message handling for prefix/suffix communication (Steps 10, 11, 12, 13, 14).
 
 # --- Files Primarily for Context ---
+
 - file: src/commands.ts
   rule: context
   description: >-
-    Provide context on how commands related to the provider (like refresh, toggle)
-    are registered and how the provider/treeview instances are passed. (Not edited in this task).
+  Provide context on how commands related to the provider and UI panel
+  are registered and how instances are passed. (Not directly edited in this task).
 
 - file: src/models/FileItem.ts
   rule: context
   description: >-
-    Provide context on the data model used for tree items, which the provider interacts with heavily.
-    (Not edited in this task).
+  Provide context on the data model used for tree items, which the provider interacts with.
+  (Not edited in this task).
+
+- file: src/models/EventEmitter.ts
+  rule: context
+  description: >-
+  Provide context on the event emitter used for communication between provider and webview.
+  (Not edited in this task).
+
+- file: package.json
+  rule: context
+  description: >-
+  Provide context on overall extension configuration, commands, and dependencies.
+  (Not edited in this task).
 
 - file: README.md
   rule: context
   description: >-
-    Provide context on the overall extension goals and intended features.
+  Provide context on the overall extension goals and intended features.
 
 # --- General Context Rules ---
-- file: src/**/*.ts
-  rule: context # Use 'context' for broader understanding if needed
+
+# Allows context from any TS file if needed, but prioritizes specific rules above.
+
+- file: src/\*_/_.ts
+  rule: context
   description: >-
-    Provide general context for any other TypeScript source files if needed to understand
-    the interactions within the edited files. Prioritize the specific rules above.
+  Provide general context for any other TypeScript source files if needed to understand
+  the interactions within the edited files.

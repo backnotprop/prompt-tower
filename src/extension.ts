@@ -30,7 +30,9 @@ function getNonce() {
 // Generates the HTML content for the Webview Panel
 function getWebviewContent(
   webview: vscode.Webview,
-  extensionUri: vscode.Uri
+  extensionUri: vscode.Uri,
+  initialPrefix: string = "",
+  initialSuffix: string = ""
 ): string {
   const nonce = getNonce();
   // Define styles - Consider moving to a separate CSS file (e.g., media/style.css) for larger projects
@@ -42,6 +44,11 @@ function getWebviewContent(
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
             line-height: 1.4;
+            /* Add these if not already present or modify existing */
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Use full viewport height */
+            box-sizing: border-box;
         }
         h1 {
             margin-top: 0;
@@ -51,7 +58,7 @@ function getWebviewContent(
             margin-bottom: 0.8em;
         }
         #token-info {
-            margin-top: 15px;
+            margin-bottom: 15px;
             padding: 10px 12px;
             border: 1px solid var(--vscode-editorWidget-border, #ccc);
             border-radius: 4px;
@@ -59,6 +66,8 @@ function getWebviewContent(
             display: flex; /* Use flexbox for alignment */
             align-items: center; /* Vertically align items */
             gap: 8px; /* Space between items */
+            margin-bottom: 1em; /* Add margin below token info */
+            flex-shrink: 0; /* Prevent token info from shrinking */
         }
         #token-count {
             font-weight: bold;
@@ -92,7 +101,9 @@ function getWebviewContent(
         hr {
             border: none;
             border-top: 1px solid var(--vscode-separator-foreground);
-            margin: 1.5em 0;
+            margin: 1em 0; /* Adjusted margin */
+            width: 100%;
+            flex-shrink: 0; /* Prevent hr from shrinking */
         }
         button {
              /* Use VS Code button styles */
@@ -108,6 +119,45 @@ function getWebviewContent(
         }
         button:active {
              background-color: var(--vscode-button-background); /* Or a slightly darker variant */
+        }
+        .textarea-container {
+          margin-bottom: 20px;
+          display: flex;
+          flex-direction: column;
+        }
+        label {
+          margin-bottom: 0.4em;
+          font-weight: bold;
+          color: var(--vscode-descriptionForeground);
+        }
+        textarea {
+          /* Use VS Code text area styles */
+          width: 100%; /* Take full width */
+          box-sizing: border-box; /* Include padding/border in width */
+          padding: 8px;
+          font-family: var(--vscode-font-family);
+          font-size: var(--vscode-font-size);
+          color: var(--vscode-input-foreground);
+          background-color: var(--vscode-input-background);
+          border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder));
+          border-radius: 2px;
+          min-height: 80px; /* Minimum height */
+          resize: vertical; /* Allow vertical resize */
+        }
+        textarea:focus {
+          outline: 1px solid var(--vscode-focusBorder);
+          outline-offset: -1px;
+          border-color: var(--vscode-focusBorder);
+        }
+        /* Ensure text areas take available space */
+        #prompt-prefix-container,
+        #prompt-suffix-container {
+          /* Define flex grow/shrink/basis if needed for more complex layouts */
+          min-height: 100px; /* Give them some initial height */
+        }
+        #prompt-prefix,
+        #prompt-suffix {
+          flex-grow: 1; /* Allow textareas to grow */
         }
     `;
 
@@ -128,24 +178,48 @@ function getWebviewContent(
         <body>
             <h1>Prompt Tower</h1>
 
-            <div id="token-info">
+             <div id="token-info">
                 <span>Selected Tokens:</span>
                 <span id="token-count">0</span>
                 <div id="spinner" class="spinner"></div>
                 <span id="token-status"></span>
             </div>
 
-            <hr>
+            <div style="width: 100%; height: 5px; background-color: var(--vscode-editorWidget-border); margin-bottom: 20px;"></div>
+
+            <div id="prompt-prefix-container" class="textarea-container">
+              <label for="prompt-prefix">Prompt Prefix (Prepended to export)</label>
+              <textarea id="prompt-prefix">${initialPrefix}</textarea>
+            </div>
+
+            <div id="prompt-suffix-container" class="textarea-container">
+              <label for="prompt-suffix">Prompt Suffix (Appended to export)</label>
+              <textarea id="prompt-suffix">${initialSuffix}</textarea>
+            </div>
+
             <p>Additional controls and prompt preview will go here.</p>
              <button id="testButton">Test Message</button> <script nonce="${nonce}">
                 (function() {
                     const vscode = acquireVsCodeApi(); // Get VS Code API access
 
-                    // Get references to the elements to update
+                    // Get state object (will be undefined first time, so initialize empty)
+                    const state = vscode.getState() || {};
+
+                    // --- Get references to elements ---
                     const tokenCountElement = document.getElementById('token-count');
                     const tokenStatusElement = document.getElementById('token-status');
                     const spinnerElement = document.getElementById('spinner');
-                    const testButton = document.getElementById('testButton'); // Get test button
+                    const prefixTextArea = document.getElementById("prompt-prefix");
+                    const suffixTextArea = document.getElementById("prompt-suffix");
+                    const testButton = document.getElementById('testButton');
+
+                    // --- Restore state if available ---
+                    if (prefixTextArea && state.promptPrefix) {
+                      prefixTextArea.value = state.promptPrefix;
+                    }
+                    if (suffixTextArea && state.promptSuffix) {
+                      suffixTextArea.value = state.promptSuffix;
+                    }
 
                     // --- Event Listener for Messages from Extension ---
                     window.addEventListener('message', event => {
@@ -168,13 +242,50 @@ function getWebviewContent(
                                     }
                                 }
                                 break;
-
                             // Add other command handlers here if needed in the future
                             // case 'someOtherCommand':
                             //    // ... handle other commands ...
                             //    break;
+                            // START ADD: Handle initial/updated prefix/suffix from extension
+                            case 'updatePrefix':
+                                if (prefixTextArea && typeof message.text === 'string') {
+                                    prefixTextArea.value = message.text;
+                                    // Update state
+                                    state.promptPrefix = message.text;
+                                    vscode.setState(state);
+                                }
+                                break;
+                            case 'updateSuffix':
+                                 if (suffixTextArea && typeof message.text === 'string') {
+                                    suffixTextArea.value = message.text;
+                                     // Update state
+                                     state.promptSuffix = message.text;
+                                     vscode.setState(state);
+                                }
+                                break;
+                            // END ADD
                         }
                     });
+
+                    // --- Event Listeners for Text Area Input ---
+                    if (prefixTextArea) {
+                      prefixTextArea.addEventListener("input", (e) => {
+                        const text = e.target.value;
+                        vscode.postMessage({ command: "updatePrefix", text: text });
+                        // Persist state within webview
+                        state.promptPrefix = text;
+                        vscode.setState(state);
+                      });
+                    }
+                    if (suffixTextArea) {
+                      suffixTextArea.addEventListener("input", (e) => {
+                        const text = e.target.value;
+                        vscode.postMessage({ command: "updateSuffix", text: text });
+                        // Persist state within webview
+                        state.promptSuffix = text;
+                        vscode.setState(state);
+                      });
+                    }
 
                     // --- Event Listener for Test Button ---
                      if (testButton) {
@@ -186,11 +297,10 @@ function getWebviewContent(
                         });
                     }
 
-
                     // --- Optional: Notify Extension when Webview is Ready ---
                     // Useful if the extension needs to know when to send initial data.
-                    // vscode.postMessage({ command: 'webviewReady' });
-                    // console.log('Webview script loaded and ready.');
+                    vscode.postMessage({ command: "webviewReady" });
+                    console.log("Webview script loaded and ready.");
 
                 }()); // Immediately invoke the function to scope variables
               </script>
@@ -207,6 +317,25 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
   if (webviewPanel) {
     webviewPanel.reveal(column);
     console.log("Prompt Tower UI: Revealed existing panel."); // Log for debugging
+    // START ADD: Resend state when revealed
+    if (providerInstance) {
+      webviewPanel.webview.postMessage({
+        command: "updatePrefix",
+        text: providerInstance.getPromptPrefix(),
+      });
+      webviewPanel.webview.postMessage({
+        command: "updateSuffix",
+        text: providerInstance.getPromptSuffix(),
+      });
+      webviewPanel.webview.postMessage({
+        command: "tokenUpdate",
+        payload: {
+          count: providerInstance.getCurrentTokenCount(),
+          isCounting: providerInstance.getIsCounting(),
+        },
+      });
+    }
+    // END ADD
     return;
   }
 
@@ -221,13 +350,26 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
       enableScripts: true,
       localResourceRoots: [context.extensionUri], // Allow loading from extension root for now
       retainContextWhenHidden: true, // Keep webview alive when not visible
+      // START ADD/ENSURE: Enable state persistence in webview
+      enableCommandUris: true, // Might be needed for state persistence or other commands
+      // END ADD/ENSURE
     }
   );
 
+  // START MODIFY: Get initial state from provider before setting HTML
+  let initialPrefix = "";
+  let initialSuffix = "";
+  if (providerInstance) {
+    initialPrefix = providerInstance.getPromptPrefix();
+    initialSuffix = providerInstance.getPromptSuffix();
+  }
   webviewPanel.webview.html = getWebviewContent(
     webviewPanel.webview,
-    context.extensionUri
+    context.extensionUri,
+    initialPrefix,
+    initialSuffix
   );
+  // END MODIFY
 
   // --- Listener for Token Updates from Provider ---
   // Make sure the listener is disposed only when the extension deactivates,
@@ -254,10 +396,29 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             );
           }
           return;
-        case "webviewReady": // Handle optional ready message
+        case "updatePrefix":
+          if (providerInstance && typeof message.text === "string") {
+            providerInstance.setPromptPrefix(message.text);
+          }
+          return;
+        case "updateSuffix":
+          if (providerInstance && typeof message.text === "string") {
+            providerInstance.setPromptSuffix(message.text);
+          }
+          return;
+        case "webviewReady": // Handle webview ready message
           console.log("Prompt Tower Webview reported ready.");
-          // Send initial state if needed
+          // Send initial state (already handled by setting HTML, but could be resent here)
           if (providerInstance && webviewPanel) {
+            // Resend state just in case initialization timing was off
+            webviewPanel.webview.postMessage({
+              command: "updatePrefix",
+              text: providerInstance.getPromptPrefix(),
+            });
+            webviewPanel.webview.postMessage({
+              command: "updateSuffix",
+              text: providerInstance.getPromptSuffix(),
+            });
             webviewPanel.webview.postMessage({
               command: "tokenUpdate",
               payload: {

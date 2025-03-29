@@ -38,6 +38,9 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private totalTokenCount: number = 0;
   private isCountingTokens: boolean = false;
   private currentTokenCalculationVersion = 0; // For cancellation
+  // START ADD: Prefix/Suffix State
+  private promptPrefix: string = "";
+  private promptSuffix: string = "";
   // END ADD
 
   constructor(
@@ -49,6 +52,29 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.loadPersistedState();
     this.debouncedUpdateTokenCount(100); // Initial count calculation (debounced slightly)
   }
+
+  // START ADD: Methods to update prefix/suffix
+  setPromptPrefix(text: string): void {
+    this.promptPrefix = text ?? ""; // Ensure it's a string
+    // Optionally trigger token recount if prefix/suffix should be counted
+    // this.debouncedUpdateTokenCount();
+  }
+
+  setPromptSuffix(text: string): void {
+    this.promptSuffix = text ?? ""; // Ensure it's a string
+    // Optionally trigger token recount if prefix/suffix should be counted
+    // this.debouncedUpdateTokenCount();
+  }
+
+  // Methods to get current prefix/suffix (for sending to webview)
+  getPromptPrefix(): string {
+    return this.promptPrefix;
+  }
+
+  getPromptSuffix(): string {
+    return this.promptSuffix;
+  }
+  // END ADD
 
   // START ADD
   // --- Token Counting Logic Helpers ---
@@ -763,10 +789,14 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
   async generateFile() {
     const checkedFiles = this.getCheckedFiles();
-    if (checkedFiles.length === 0) {
-      vscode.window.showWarningMessage("No files selected!");
+    // START MODIFY: Check prefix/suffix OR files selected
+    if (checkedFiles.length === 0 && !this.promptPrefix && !this.promptSuffix) {
+      vscode.window.showWarningMessage(
+        "No files selected or prefix/suffix entered!"
+      );
       return;
     }
+    // END MODIFY
     // Get file count early for potential use in wrapper
     const fileCount = checkedFiles.length;
 
@@ -834,29 +864,56 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       const joinedBlocks = contents.join(this.blockSeparator);
 
       // --- Apply the Wrapper Template (if enabled) ---
-      let finalOutput: string;
+      let combinedBlocksAndWrapper: string;
       if (this.wrapperTemplate) {
-        finalOutput = this.wrapperTemplate; // Start with the wrapper template
+        combinedBlocksAndWrapper = this.wrapperTemplate; // Start with the wrapper template
 
         // Calculate values needed for wrapper placeholders
         const timestamp = new Date().toISOString(); // Use ISO format
 
         // Replace placeholders in the wrapper template
-        finalOutput = finalOutput.replace(/{blocks}/g, joinedBlocks);
-        finalOutput = finalOutput.replace(/{timestamp}/g, timestamp);
-        finalOutput = finalOutput.replace(/{fileCount}/g, String(fileCount));
-        finalOutput = finalOutput.replace(
+        combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
+          /{blocks}/g,
+          joinedBlocks
+        );
+        combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
+          /{timestamp}/g,
+          timestamp
+        );
+        combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
+          /{fileCount}/g,
+          String(fileCount)
+        );
+        combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
           /{workspaceRoot}/g,
           this.workspaceRoot
         );
-        finalOutput = finalOutput.replace(
+        combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
           /{outputFileName}/g,
           outputFileNameWithExtension
         );
       } else {
         // No wrapper template defined, use joined blocks directly
-        finalOutput = joinedBlocks;
+        combinedBlocksAndWrapper = joinedBlocks;
       }
+
+      // --- START ADD: Prepend Prefix and Append Suffix ---
+      let finalOutput = "";
+
+      if (this.promptPrefix) {
+        finalOutput += this.promptPrefix + "\n"; // Add prefix with newline
+      }
+
+      finalOutput += combinedBlocksAndWrapper; // Add the (potentially wrapped) file blocks
+
+      if (this.promptSuffix) {
+        // Add a newline before the suffix *if* there was prefix or file content already
+        if (finalOutput.length > 0 && !finalOutput.endsWith("\n")) {
+          finalOutput += "\n";
+        }
+        finalOutput += this.promptSuffix; // Add suffix
+      }
+      // --- END ADD ---
 
       // --- Write the final combined output ---
       await fs.promises.writeFile(outputPath, finalOutput);
