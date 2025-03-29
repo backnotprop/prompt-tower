@@ -1,4 +1,5 @@
 // src/providers/PromptTowerProvider.ts
+
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
@@ -20,7 +21,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     fileSeparator: "\n\n",
     extension: "txt",
   };
-  private searchPattern: string = "";
 
   constructor(
     private workspaceRoot: string,
@@ -47,11 +47,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.items.clear();
     this.loadPersistedState();
     this._onDidChangeTreeData.fire();
-  }
-
-  setSearchPattern(pattern: string): void {
-    this.searchPattern = pattern;
-    this.refresh();
   }
 
   async toggleAllFiles() {
@@ -127,13 +122,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       const result = await Promise.all(
         entries
           .filter((entry) => !this.excludedPatterns.includes(entry.name))
-          .filter((entry) => {
-            // Apply search filter if pattern exists
-            if (!this.searchPattern) return true;
-            return entry.name
-              .toLowerCase()
-              .includes(this.searchPattern.toLowerCase());
-          })
           .map(async (entry) => {
             const filePath = path.join(dirPath, entry.name);
             const isDirectory = entry.isDirectory();
@@ -274,17 +262,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     return Array.from(this.items.values())
       .filter((item) => item.isChecked && item.contextValue === "file")
       .map((item) => item.filePath);
-  }
-
-  async searchFiles() {
-    const searchPattern = await vscode.window.showInputBox({
-      prompt: "Enter search pattern",
-      placeHolder: "e.g., .js, component, etc.",
-    });
-
-    if (searchPattern !== undefined) {
-      this.setSearchPattern(searchPattern);
-    }
   }
 
   async generateFile() {

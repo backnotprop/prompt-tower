@@ -120,11 +120,6 @@
       {
         "command": "promptTower.checkboxChanged",
         "title": "Toggle Checkbox"
-      },
-      {
-        "command": "promptTower.searchFiles",
-        "title": "Search Files",
-        "icon": "$(search)"
       }
     ],
     "menus": {
@@ -144,10 +139,6 @@
         {
           "command": "promptTower.refresh",
           "when": "view == promptTowerView"
-        },
-        {
-          "command": "promptTower.searchFiles",
-          "when": "view == promptTowerView"
         }
       ],
       "view/title": [
@@ -165,11 +156,6 @@
           "command": "promptTower.refresh",
           "when": "view == promptTowerView",
           "group": "navigation@3"
-        },
-        {
-          "command": "promptTower.searchFiles",
-          "when": "view == promptTowerView",
-          "group": "navigation@4"
         }
       ]
     }

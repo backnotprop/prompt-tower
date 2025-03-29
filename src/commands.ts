@@ -1,4 +1,5 @@
 // src/commands.ts
+
 import * as vscode from "vscode";
 import { PromptTowerProvider } from "./providers/PromptTowerProvider";
 import { FileItem } from "./models/FileItem";
@@ -25,9 +26,6 @@ export function registerCommands(
     vscode.commands.registerCommand("promptTower.checkboxChanged", (item) => {
       provider.toggleCheck(item);
     }),
-    vscode.commands.registerCommand("promptTower.searchFiles", () =>
-      provider.searchFiles()
-    ),
 
     vscode.workspace.onDidChangeConfiguration((evt) => {
       if (evt.affectsConfiguration("promptTower")) {
