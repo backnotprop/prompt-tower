@@ -1,0 +1,258 @@
+{
+  "name": "prompt-tower",
+  "displayName": "Prompt Tower",
+  "version": "1.0.0",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/backnotprop/prompt-tower"
+  },
+  "author": {
+    "name": "Michael Ramos",
+    "url": "https://github.com/backnotprop"
+  },
+  "publisher": "backnotprop",
+  "icon": "extension-assets/prompt-tower-icon.png",
+  "description": "Context creation and management tool for LLM coding agents. Build prompts with lots of code blocks in them, save templates, and dynamically manage context on your terms.",
+  "categories": [
+    "AI",
+    "Machine Learning",
+    "Programming Languages",
+    "Chat",
+    "Other"
+  ],
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Prompt Tower",
+      "properties": {
+        "promptTower.useGitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use your .gitignore file to filter out files and folders available for context"
+        },
+        "promptTower.ignore": {
+          "type": "array",
+          "default": [],
+          "description": "Manual list of files and folders to ignore. This is in addition to the .gitignore file."
+        },
+        "promptTower.persistState": {
+          "type": "boolean",
+          "default": true,
+          "description": "Persist files and folders state (checked/unchecked)."
+        },
+        "promptTower.maxFileSizeWarningKB": {
+          "type": "number",
+          "default": 500,
+          "description": "Show warning when selecting files larger than this size (in KB)"
+        },
+        "promptTower.outputFormat": {
+          "type": "object",
+          "default": {
+            "fileHeaderFormat": "// File: {filePath}",
+            "fileSeparator": "\n\n",
+            "extension": "txt"
+          },
+          "description": "Customize the output file format",
+          "properties": {
+            "fileHeaderFormat": {
+              "type": "string",
+              "description": "Header format for each file. Use {filePath} as placeholder for file path"
+            },
+            "fileSeparator": {
+              "type": "string",
+              "description": "Separator between files in the output"
+            },
+            "extension": {
+              "type": "string",
+              "enum": [
+                "txt",
+                "md",
+                "js",
+                "ts",
+                "json"
+              ],
+              "description": "Output file extension"
+            }
+          }
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "prompt-tower",
+          "title": "Prompt Tower",
+          "icon": "extension-assets/prompt-tower.svg"
+        }
+      ]
+    },
+    "views": {
+      "prompt-tower": [
+        {
+          "icon": "extension-assets/prompt-tower.svg",
+          "id": "promptTowerView",
+          "name": "Files",
+          "type": "tree"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "promptTower.generateFile",
+        "title": "Generate Context File",
+        "icon": "$(output)"
+      },
+      {
+        "command": "promptTower.toggleAllFiles",
+        "title": "Toggle All Files",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "promptTower.refresh",
+        "title": "Refresh File List",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "promptTower.checkboxChanged",
+        "title": "Toggle Checkbox"
+      },
+      {
+        "command": "promptTower.searchFiles",
+        "title": "Search Files",
+        "icon": "$(search)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "promptTower.checkboxChanged",
+          "when": "false"
+        },
+        {
+          "command": "promptTower.generateFile",
+          "when": "view == promptTowerView"
+        },
+        {
+          "command": "promptTower.toggleAllFiles",
+          "when": "view == promptTowerView"
+        },
+        {
+          "command": "promptTower.refresh",
+          "when": "view == promptTowerView"
+        },
+        {
+          "command": "promptTower.searchFiles",
+          "when": "view == promptTowerView"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "promptTower.generateFile",
+          "when": "view == promptTowerView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "promptTower.toggleAllFiles",
+          "when": "view == promptTowerView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "promptTower.refresh",
+          "when": "view == promptTowerView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "promptTower.searchFiles",
+          "when": "view == promptTowerView",
+          "group": "navigation@4"
+        }
+      ]
+    }
+  },
+  "homepage": "https://github.com/backnotprop/prompt-tower",
+  "bugs": {
+    "url": "https://github.com/backnotprop/prompt-tower/issues"
+  },
+  "keywords": [
+    "ai",
+    "AI Code Assistant",
+    "AI Context Management",
+    "AI Prompt Engineering",
+    "AI Studio",
+    "AI-Powered Coding",
+    "assistant",
+    "autocomplete",
+    "c#",
+    "c++",
+    "ChatGPT",
+    "Claude",
+    "Claude Code",
+    "code",
+    "context",
+    "context creation",
+    "context injection",
+    "context management",
+    "Copilot",
+    "Cursor",
+    "DeepSeek",
+    "Developer Productivity",
+    "free",
+    "Gemini",
+    "go",
+    "golang",
+    "Grok",
+    "HuggingChat",
+    "javascript",
+    "json",
+    "kotlin",
+    "llm code context",
+    "llm code prompts",
+    "mcp",
+    "Mistral",
+    "openai",
+    "php",
+    "prompt templates",
+    "python",
+    "refactoring",
+    "RooCode",
+    "ruby",
+    "Sonnet",
+    "tools",
+    "typescript",
+    "vibe coding",
+    "VS Code",
+    "yaml"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.96.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "eslint": "^9.16.0",
+    "esbuild": "^0.24.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.7.2",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1"
+  }
+}

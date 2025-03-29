@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+    <!-- Definitions for block faces -->
+    <defs>
+        <!-- Yellow block with highlights and shadows -->
+        <linearGradient id="yellowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffdd44" />
+            <stop offset="100%" stop-color="#ffbb00" />
+        </linearGradient>
+
+        <!-- Red block with highlights and shadows -->
+        <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff6666" />
+            <stop offset="100%" stop-color="#dd2222" />
+        </linearGradient>
+
+        <!-- Blue block with highlights and shadows -->
+        <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#66aaff" />
+            <stop offset="100%" stop-color="#3377dd" />
+        </linearGradient>
+
+        <!-- Green block with highlights and shadows -->
+        <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#66dd66" />
+            <stop offset="100%" stop-color="#33aa33" />
+        </linearGradient>
+
+        <!-- Purple block with highlights and shadows -->
+        <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#bb66ff" />
+            <stop offset="100%" stop-color="#8833cc" />
+        </linearGradient>
+
+        <!-- Orange block with highlights and shadows -->
+        <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffaa44" />
+            <stop offset="100%" stop-color="#ff7700" />
+        </linearGradient>
+    </defs>
+
+    <!-- Base layer - 7 blocks with messy fallen ones at ends -->
+    <g id="base-layer">
+        <rect x="35" y="240" width="30" height="30" rx="4" fill="url(#redGradient)" stroke="#cc0000" stroke-width="1.5" transform="rotate(18, 45, 260)"/>
+        <rect x="75" y="240" width="30" height="30" rx="4" fill="url(#blueGradient)" stroke="#0066cc" stroke-width="1.5"/>
+        <rect x="105" y="240" width="30" height="30" rx="4" fill="url(#yellowGradient)" stroke="#cc9900" stroke-width="1.5"/>
+        <rect x="135" y="240" width="30" height="30" rx="4" fill="url(#redGradient)" stroke="#cc0000" stroke-width="1.5"/>
+        <rect x="165" y="240" width="30" height="30" rx="4" fill="url(#purpleGradient)" stroke="#6600cc" stroke-width="1.5"/>
+        <rect x="195" y="240" width="30" height="30" rx="4" fill="url(#blueGradient)" stroke="#0066cc" stroke-width="1.5"/>
+        <rect x="236" y="240" width="30" height="30" rx="4" fill="url(#greenGradient)" stroke="#009900" stroke-width="1.5" transform="rotate(-15, 255, 260)"/>
+    </g>
+
+    <!-- Jenga-style tower (alternate 3-block rows) -->
+    <!-- Layer 1 (horizontal) -->
+    <g id="tower-layer-1">
+        <rect x="105" y="210" width="30" height="30" rx="4" fill="url(#yellowGradient)" stroke="#cc9900" stroke-width="1.5"/>
+        <rect x="135" y="210" width="30" height="30" rx="4" fill="url(#yellowGradient)" stroke="#cc9900" stroke-width="1.5"/>
+        <rect x="165" y="210" width="30" height="30" rx="4" fill="url(#orangeGradient)" stroke="#cc6600" stroke-width="1.5"/>
+    </g>
+
+    <!-- Layer 2 (vertical) - missing one block -->
+    <g id="tower-layer-2">
+        <rect x="120" y="180" width="30" height="30" rx="4" fill="url(#greenGradient)" stroke="#009900" stroke-width="1.5"/>
+        <rect x="150" y="180" width="30" height="30" rx="4" fill="url(#greenGradient)" stroke="#009900" stroke-width="1.5"/>
+        <!-- Third block missing -->
+    </g>
+
+    <!-- Layer 3 (horizontal) -->
+    <g id="tower-layer-3">
+        <rect x="105" y="150" width="30" height="30" rx="4" fill="url(#redGradient)" stroke="#cc0000" stroke-width="1.5"/>
+        <rect x="135" y="150" width="30" height="30" rx="4" fill="url(#redGradient)" stroke="#cc0000" stroke-width="1.5"/>
+        <rect x="165" y="150" width="30" height="30" rx="4" fill="url(#redGradient)" stroke="#cc0000" stroke-width="1.5"/>
+    </g>
+
+    <!-- Layer 4 (vertical) - only one block -->
+    <g id="tower-layer-4">
+        <rect x="135" y="120" width="30" height="30" rx="4" fill="url(#blueGradient)" stroke="#0066cc" stroke-width="1.5"/>
+        <!-- Other two blocks missing -->
+    </g>
+
+    <!-- Layer 5 (horizontal) -->
+    <g id="tower-layer-5">
+        <rect x="105" y="90" width="30" height="30" rx="4" fill="url(#yellowGradient)" stroke="#cc9900" stroke-width="1.5"/>
+        <rect x="135" y="90" width="30" height="30" rx="4" fill="url(#orangeGradient)" stroke="#cc6600" stroke-width="1.5"/>
+        <rect x="165" y="90" width="30" height="30" rx="4" fill="url(#orangeGradient)" stroke="#cc6600" stroke-width="1.5"/>
+    </g>
+
+    <!-- Layer 6 (vertical) - missing one block-->
+    <g id="tower-layer-6">
+        <rect x="120" y="60" width="30" height="30" rx="4" fill="url(#purpleGradient)" stroke="#6600cc" stroke-width="1.5"/>
+        <rect x="150" y="60" width="30" height="30" rx="4" fill="url(#blueGradient)" stroke="#0066cc" stroke-width="1.5"/>
+        <!-- Third block missing -->
+    </g>
+
+    <!-- Top Layer (horizontal) -->
+    <g id="tower-top">
+        <rect x="105" y="30" width="30" height="30" rx="4" fill="url(#greenGradient)" stroke="#009900" stroke-width="1.5"/>
+        <rect x="135" y="30" width="30" height="30" rx="4" fill="url(#greenGradient)" stroke="#009900" stroke-width="1.5"/>
+        <rect x="165" y="30" width="30" height="30" rx="4" fill="url(#greenGradient)" stroke="#009900" stroke-width="1.5"/>
+    </g>
+</svg>
