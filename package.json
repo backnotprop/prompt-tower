@@ -24,7 +24,10 @@
   "engines": {
     "vscode": "^1.96.0"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:promptTowerView",
+    "onCommand:promptTower.showTowerUI"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
@@ -120,6 +123,11 @@
       {
         "command": "promptTower.checkboxChanged",
         "title": "Toggle Checkbox"
+      },
+      {
+        "command": "promptTower.showTowerUI",
+        "title": "Show Prompt Tower UI",
+        "category": "Prompt Tower"
       }
     ],
     "menus": {
@@ -139,6 +147,9 @@
         {
           "command": "promptTower.refresh",
           "when": "view == promptTowerView"
+        },
+        {
+          "command": "promptTower.showTowerUI"
         }
       ],
       "view/title": [
