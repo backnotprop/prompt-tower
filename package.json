@@ -24,10 +24,7 @@
   "engines": {
     "vscode": "^1.96.0"
   },
-  "activationEvents": [
-    "onView:promptTowerView",
-    "onCommand:promptTower.showTowerUI"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
@@ -55,31 +52,55 @@
         },
         "promptTower.outputFormat": {
           "type": "object",
+          "description": "Customize the output format for generated context files.",
           "default": {
-            "fileHeaderFormat": "// File: {filePath}",
-            "fileSeparator": "\n\n",
-            "extension": "txt"
+            "blockTemplate": "<file name=\"{fileNameWithExtension}\">\n<source>{rawFilePath}</source>\n<file_content><![CDATA[\n{fileContent}\n]]>\n</file_content>\n</file>",
+            "blockSeparator": "\n",
+            "outputExtension": "txt",
+            "wrapperFormat": {
+              "template": "<context>\n<files>\n{blocks}\n</files>\n</context>"
+            }
           },
-          "description": "Customize the output file format",
           "properties": {
-            "fileHeaderFormat": {
+            "blockTemplate": {
               "type": "string",
-              "description": "Header format for each file. Use {filePath} as placeholder for file path"
+              "description": "Template for wrapping each file's content. Placeholders: {fileNameWithExtension}, {filePath}(commented), {rawFilePath}(raw), {fileName}, {fileExtension}, {fullPath}, {fileContent}.",
+              "default": "<file name=\"{fileNameWithExtension}\">\n<source>{rawFilePath}</source>\n<file_content><![CDATA[\n{fileContent}\n]]>\n</file_content>\n</file>"
             },
-            "fileSeparator": {
+            "blockSeparator": {
               "type": "string",
-              "description": "Separator between files in the output"
+              "description": "Separator placed *between* formatted file blocks in the final output.",
+              "default": "\n"
             },
-            "extension": {
+            "outputExtension": {
               "type": "string",
               "enum": [
                 "txt",
                 "md",
                 "js",
                 "ts",
-                "json"
+                "json",
+                "xml"
               ],
-              "description": "Output file extension"
+              "description": "Default file extension for the generated output file (without the dot).",
+              "default": "txt"
+            },
+            "wrapperFormat": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "Settings for wrapping the entire generated output. Set to null to disable wrapping.",
+              "default": {
+                "template": "<context>\n<files>\n{blocks}\n</files>\n</context>"
+              },
+              "properties": {
+                "template": {
+                  "type": "string",
+                  "description": "The template string for the entire output. Use '{blocks}' as the placeholder for where the combined file blocks will be inserted. Other available placeholders: {timestamp}, {fileCount}, {workspaceRoot}, {outputFileName}.",
+                  "default": "<context>\n<files>\n{blocks}\n</files>\n</context>"
+                }
+              }
             }
           }
         }

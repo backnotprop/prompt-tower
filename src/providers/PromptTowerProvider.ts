@@ -16,11 +16,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private excludedPatterns: string[] = [];
   private persistState: boolean = true;
   private maxFileSizeWarningKB: number = 500;
-  private outputFormat = {
-    fileHeaderFormat: "// File: {filePath}",
-    fileSeparator: "\n\n",
-    extension: "txt",
-  };
+
+  private blockTemplate: string =
+    '<file name="{fileNameWithExtension}">\n<source>{rawFilePath}</source>\n<file_content><![CDATA[\n{fileContent}\n]]>\n</file_content>\n</file>';
+  private blockSeparator: string = "\n"; // Changed from "\n\n"
+  private outputExtension: string = "txt"; // Matches
+  private wrapperTemplate: string | null =
+    "<context>\n<files>\n{blocks}\n</files>\n</context>"; // Added <files> tags
 
   constructor(
     private workspaceRoot: string,
@@ -55,7 +57,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     );
     const newState = !allChecked;
 
-    for (const [path, item] of this.items) {
+    for (const [, item] of this.items) {
       item.updateCheckState(newState);
     }
 
@@ -67,50 +69,91 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
   private loadConfig() {
     const config = vscode.workspace.getConfiguration("promptTower");
-    this.excludedPatterns = config.get<string[]>("exclude", [
-      "node_modules",
-      ".git",
-    ]);
+
+    // Load general settings (assuming 'ignore' is the correct key from package.json)
+    this.excludedPatterns = config.get<string[]>("ignore", []);
+    // Optional: You might want to ensure common ignores are always present
+    // if (!this.excludedPatterns.includes('.git')) { this.excludedPatterns.push('.git'); }
+    // if (!this.excludedPatterns.includes('node_modules')) { this.excludedPatterns.push('node_modules'); }
+
     this.persistState = config.get<boolean>("persistState", true);
     this.maxFileSizeWarningKB = config.get<number>("maxFileSizeWarningKB", 500);
 
-    const outputFormat = config.get<any>("outputFormat", {});
-    this.outputFormat = {
-      fileHeaderFormat: outputFormat.fileHeaderFormat || "// File: {filePath}",
-      fileSeparator: outputFormat.fileSeparator || "\n\n",
-      extension: outputFormat.extension || "txt",
-    };
+    // Load the new output format settings from the 'outputFormat' object
+    const outputFormat = config.get<any>("outputFormat"); // Get the whole object
+
+    // Use defaults defined in class properties if config values are missing
+    this.blockTemplate = outputFormat?.blockTemplate ?? this.blockTemplate;
+    this.blockSeparator = outputFormat?.blockSeparator ?? this.blockSeparator;
+    this.outputExtension =
+      outputFormat?.outputExtension ?? this.outputExtension;
+
+    // Load Wrapper Format - handles object or null
+    const wrapperFormat = config.get<any>("outputFormat.wrapperFormat"); // Read the whole object/null value
+
+    if (wrapperFormat === null) {
+      this.wrapperTemplate = null;
+    } else {
+      // Use template from config, or the class default if config value is undefined/null
+      this.wrapperTemplate = wrapperFormat?.template ?? this.wrapperTemplate;
+    }
+
+    // TODO: We might want to add a listener for configuration changes
+    // vscode.workspace.onDidChangeConfiguration(e => { ... this.loadConfig(); this.refresh(); ... });
   }
 
   private loadPersistedState() {
-    if (!this.persistState) return;
-
+    if (!this.persistState) {
+      this.items.clear(); // Clear items if persistence is off
+      return;
+    }
+    // Clear current items before loading persisted ones to reflect reality
+    this.items.clear();
     const state =
       this.context.globalState.get<Record<string, boolean>>("fileStates");
     if (state) {
       for (const [filePath, isChecked] of Object.entries(state)) {
+        // Check if file still exists before creating an item
         if (fs.existsSync(filePath)) {
-          this.items.set(
-            filePath,
-            new FileItem(
-              path.basename(filePath),
-              fs.statSync(filePath).isDirectory()
-                ? vscode.TreeItemCollapsibleState.Collapsed
-                : vscode.TreeItemCollapsibleState.None,
+          try {
+            const stats = fs.statSync(filePath);
+            this.items.set(
               filePath,
-              isChecked
-            )
-          );
+              new FileItem(
+                path.basename(filePath),
+                stats.isDirectory()
+                  ? vscode.TreeItemCollapsibleState.Collapsed
+                  : vscode.TreeItemCollapsibleState.None,
+                filePath,
+                isChecked
+              )
+            );
+          } catch (e) {
+            console.error(`Error stating file ${filePath}:`, e);
+            // Optionally remove invalid state entry
+            // delete state[filePath];
+            // this.context.globalState.update("fileStates", state);
+          }
         }
+        // Consider removing state for files that no longer exist
+        // else { delete state[filePath]; this.context.globalState.update("fileStates", state); }
       }
     }
   }
 
   private savePersistedState() {
-    if (!this.persistState) return;
+    if (!this.persistState) {
+      this.context.globalState.update("fileStates", undefined);
+      return;
+    }
 
     const state: Record<string, boolean> = {};
-    this.items.forEach((item, path) => (state[path] = item.isChecked));
+    // Ensure only valid items are persisted
+    this.items.forEach((item, filePath) => {
+      // Check existence? Or assume items map is already clean.
+      // Let's assume items map only contains valid paths for now.
+      state[filePath] = item.isChecked;
+    });
     this.context.globalState.update("fileStates", state);
   }
 
@@ -214,7 +257,9 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       });
 
       for (const entry of entries) {
-        if (this.excludedPatterns.includes(entry.name)) continue;
+        if (this.excludedPatterns.includes(entry.name)) {
+          continue;
+        }
 
         const filePath = path.join(dirPath, entry.name);
         const item =
@@ -270,8 +315,10 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       vscode.window.showWarningMessage("No files selected!");
       return;
     }
+    // Get file count early for potential use in wrapper
+    const fileCount = checkedFiles.length;
 
-    const fileName =
+    const fileNameRaw = // Use separate variable for input name
       (await vscode.window.showInputBox({
         prompt: "Enter output file name (without extension)",
         placeHolder: "context",
@@ -280,32 +327,94 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       })) || "context";
 
     try {
+      // Prepare final filename and path using configured extension
+      const outputFileNameWithExtension = `${fileNameRaw}.${this.outputExtension}`;
       const outputPath = path.join(
         this.workspaceRoot,
-        `${fileName}.${this.outputFormat.extension}`
-      );
-      const contents = await Promise.all(
-        checkedFiles.map(async (file) => ({
-          path: path.relative(this.workspaceRoot, file),
-          content: await fs.promises.readFile(file, "utf8"),
-        }))
+        outputFileNameWithExtension
       );
 
-      await fs.promises.writeFile(
-        outputPath,
-        contents
-          .map(
-            ({ path, content }) =>
-              this.outputFormat.fileHeaderFormat.replace("{filePath}", path) +
-              "\n" +
-              content
-          )
-          .join(this.outputFormat.fileSeparator)
-      );
+      // Process each checked file concurrently using the blockTemplate
+      // Process each checked file concurrently using the blockTemplate
+      const fileBlockPromises = checkedFiles.map(async (fullFilePath) => {
+        // Calculate necessary paths and names
+        const relativePath = path.relative(this.workspaceRoot, fullFilePath); // e.g., src/database.js
+        const fileNameWithExtension = path.basename(fullFilePath);
+        const fileExtension = path.extname(fullFilePath);
+        const fileName = path.basename(fullFilePath, fileExtension);
 
+        // Read file content
+        const fileContent = await fs.promises.readFile(fullFilePath, "utf8");
+
+        // --- Apply Block Template Placeholders ---
+        let formattedBlock = this.blockTemplate;
+
+        // *** FIX START ***
+        // Ensure relativePath starts with '/' if needed for the <source> tag
+        const sourcePath = "/" + relativePath.replace(/\\/g, "/"); // Ensure forward slashes and leading slash
+
+        formattedBlock = formattedBlock.replace(
+          /{fileNameWithExtension}/g,
+          fileNameWithExtension
+        );
+        // Replace {rawFilePath} with the calculated relative path (with leading slash)
+        formattedBlock = formattedBlock.replace(/{rawFilePath}/g, sourcePath);
+        // *** FIX END ***
+
+        // Other placeholders (if they exist in your actual template - some are not in the default)
+        // formattedBlock = formattedBlock.replace(/{filePath}/g, commentedFilePath); // REMOVE or keep ONLY if you ALSO use {filePath}
+        formattedBlock = formattedBlock.replace(/{fileName}/g, fileName);
+        formattedBlock = formattedBlock.replace(
+          /{fileExtension}/g,
+          fileExtension
+        );
+        formattedBlock = formattedBlock.replace(/{fullPath}/g, fullFilePath); // Keep if {fullPath} is ever used
+
+        // Replace fileContent last to avoid issues if content contains placeholders
+        formattedBlock = formattedBlock.replace(/{fileContent}/g, fileContent);
+
+        return formattedBlock;
+      });
+
+      // Wait for all file processing to complete
+      const contents = await Promise.all(fileBlockPromises);
+
+      // --- Join the processed blocks ---
+      const joinedBlocks = contents.join(this.blockSeparator);
+
+      // --- Apply the Wrapper Template (if enabled) ---
+      let finalOutput: string;
+      if (this.wrapperTemplate) {
+        finalOutput = this.wrapperTemplate; // Start with the wrapper template
+
+        // Calculate values needed for wrapper placeholders
+        const timestamp = new Date().toISOString(); // Use ISO format
+
+        // Replace placeholders in the wrapper template
+        finalOutput = finalOutput.replace(/{blocks}/g, joinedBlocks);
+        finalOutput = finalOutput.replace(/{timestamp}/g, timestamp);
+        finalOutput = finalOutput.replace(/{fileCount}/g, String(fileCount));
+        finalOutput = finalOutput.replace(
+          /{workspaceRoot}/g,
+          this.workspaceRoot
+        );
+        finalOutput = finalOutput.replace(
+          /{outputFileName}/g,
+          outputFileNameWithExtension
+        );
+      } else {
+        // No wrapper template defined, use joined blocks directly
+        finalOutput = joinedBlocks;
+      }
+
+      // --- Write the final combined output ---
+      await fs.promises.writeFile(outputPath, finalOutput);
+
+      // --- Open the generated file ---
       const doc = await vscode.workspace.openTextDocument(outputPath);
       await vscode.window.showTextDocument(doc);
     } catch (error) {
+      // Standard error handling
       vscode.window.showErrorMessage(
         `Error generating file: ${
           error instanceof Error ? error.message : error

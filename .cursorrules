@@ -1,0 +1,51 @@
+# Prompt Tower - Flexible Block Template Feature Implementation Rules
+
+1.  Your primary instructions are in the file `current_task.md`. Follow the step-by-step guide provided in that file precisely to implement the block template feature.
+2.  Apply the changes atomically as described in each step of `current_task.md`. Focus on modifying only the specified sections in the target files for each step.
+3.  Ensure the necessary files (`current_task.md`, `package.json`, `src/providers/PromptTowerProvider.ts`) are included in your context when you begin. You may also need context from other `.ts` files mentioned below.
+
+Let me know if any step in `current_task.md` is unclear. Start with Step 1 in `current_task.md`.
+
+rules:
+  - file: current_task.md
+    rule: instructions
+    description: >-
+      This file contains the primary step-by-step instructions for implementing
+      the flexible block template feature. Follow these steps exactly and sequentially.
+      Refer back to this file for the specific changes required in each step.
+
+  - file: package.json
+    rule: edit
+    description: >-
+      Allow editing ONLY to replace the 'promptTower.outputFormat' configuration object
+      within 'contributes.configuration.properties' as specified in Step 1 of current_task.md.
+
+  - file: src/providers/PromptTowerProvider.ts
+    rule: edit
+    description: >-
+      Allow editing ONLY to:
+      1. Update class property declarations (remove old 'outputFormat', add new ones) as per Step 2 of current_task.md.
+      2. Replace the body of the 'loadConfig' method as per Step 3 of current_task.md.
+      3. Modify the 'generateFile' method (update outputPath, replace Promise.all block, update writeFile call) as per Step 4 of current_task.md.
+
+  # Provide context from other relevant source files for understanding
+  - file: src/models/FileItem.ts
+    rule: context
+    description: Provide context on the data model used for tree items, which the provider interacts with.
+
+  - file: src/extension.ts
+    rule: context
+    description: Provide context on how the PromptTowerProvider is instantiated and registered.
+
+  - file: src/commands.ts
+    rule: context
+    description: Provide context on how commands related to the provider (like 'generateFile') are registered.
+
+  - file: README.md
+    rule: context
+    description: Provide context on the overall extension goals and intended features.
+
+  # Allow context for all other source files, but prioritize specific edit rules above
+  - file: src/**/*.ts
+    rule: context
+    description: Provide context for any other TypeScript source files needed to understand the changes in PromptTowerProvider.ts.
