@@ -101,7 +101,9 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     // --- Handle No Files Selected ---
     if (checkedFiles.length === 0) {
       // Check if a newer calculation has already started
-      if (calculationVersion !== this.currentTokenCalculationVersion) return;
+      if (calculationVersion !== this.currentTokenCalculationVersion) {
+        return;
+      }
 
       this.totalTokenCount = 0;
       this.isCountingTokens = false;
@@ -233,7 +235,9 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
           `getChildren called on non-existent or non-directory path: ${dirPath}`
         );
         // If the element itself is invalid, remove it from the map?
-        if (element) this.items.delete(element.filePath);
+        if (element) {
+          this.items.delete(element.filePath);
+        }
         return [];
       }
 
@@ -734,13 +738,19 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   // Basic pattern matching (for excludes).
   // TODO: Replace with a proper library like 'ignore' for full gitignore syntax support.
   private matchesPattern(fileName: string, pattern: string): boolean {
-    if (!pattern) return false;
+    if (!pattern) {
+      return false;
+    }
 
     // Simple exact match
-    if (fileName === pattern) return true;
+    if (fileName === pattern) {
+      return true;
+    }
 
     // Simple folder match (e.g., "node_modules/")
-    if (pattern.endsWith("/") && fileName === pattern.slice(0, -1)) return true;
+    if (pattern.endsWith("/") && fileName === pattern.slice(0, -1)) {
+      return true;
+    }
 
     // Basic wildcard support (e.g., *.log) - limited
     if (pattern.startsWith("*.")) {
