@@ -156,6 +156,12 @@ function getWebviewContent(
         #prompt-suffix {
           flex-grow: 1; /* Allow textareas to grow */
         }
+        #action-button-container {
+          margin-top: auto; /* Push button to the bottom */
+          padding-top: 1em; /* Add some space above the button */
+          flex-shrink: 0; /* Prevent button container from shrinking */
+          border-top: 1px solid var(--vscode-separator-foreground); /* Optional separator */
+        }
     `;
 
   return `<!DOCTYPE html>
@@ -195,7 +201,10 @@ function getWebviewContent(
             </div>
 
             <p>Additional controls and prompt preview will go here.</p>
-             <button id="testButton">Test Message</button> <script nonce="${nonce}">
+            <div id="action-button-container">
+              <button id="copyButton">Create Context and Copy to Clipboard</button>
+            </div>
+            <script nonce="${nonce}">
                 (function() {
                     const vscode = acquireVsCodeApi(); // Get VS Code API access
 
@@ -208,7 +217,7 @@ function getWebviewContent(
                     const spinnerElement = document.getElementById('spinner');
                     const prefixTextArea = document.getElementById("prompt-prefix");
                     const suffixTextArea = document.getElementById("prompt-suffix");
-                    const testButton = document.getElementById('testButton');
+                    const copyButton = document.getElementById('copyButton');
 
                     // --- Restore state if available ---
                     if (prefixTextArea && state.promptPrefix) {
@@ -284,14 +293,13 @@ function getWebviewContent(
                       });
                     }
 
-                    // --- Event Listener for Test Button ---
-                     if (testButton) {
-                        testButton.addEventListener('click', () => {
-                            vscode.postMessage({
-                                command: 'alert', // Command for the extension to handle
-                                text: 'Test button clicked successfully!' // Data to send
-                            });
+                    // --- Event Listener for Copy Button ---
+                    if (copyButton) {
+                      copyButton.addEventListener("click", () => {
+                        vscode.postMessage({
+                          command: "copyToClipboard", // Send new command
                         });
+                      });
                     }
 
                     // --- Optional: Notify Extension when Webview is Ready ---
@@ -421,7 +429,18 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             });
           }
           return;
-        // Add other message handlers from webview...
+        // --- NEW: Handle copy command ---
+        case "copyToClipboard":
+          if (providerInstance) {
+            // Call the new provider method
+            providerInstance.copyContextToClipboard();
+          } else {
+            vscode.window.showErrorMessage(
+              "Prompt Tower provider not available."
+            );
+          }
+          return;
+        // --- End NEW ---
       }
     },
     undefined, // thisArg

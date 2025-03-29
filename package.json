@@ -37,7 +37,14 @@
         },
         "promptTower.ignore": {
           "type": "array",
-          "default": [],
+          "default": [
+            "package-lock.json",
+            "yarn.lock",
+            "poetry.lock",
+            "Gemfile.lock",
+            "LICENCE",
+            "LICENSE"
+          ],
           "description": "Manual list of files and folders to ignore. This is in addition to the .gitignore file."
         },
         "promptTower.persistState": {
@@ -54,18 +61,18 @@
           "type": "object",
           "description": "Customize the output format for generated context files.",
           "default": {
-            "blockTemplate": "<file name=\"{fileNameWithExtension}\">\n<source>{rawFilePath}</source>\n<file_content><![CDATA[\n{fileContent}\n]]>\n</file_content>\n</file>",
+            "blockTemplate": "<file name=\"{fileNameWithExtension}\" path=\"{rawFilePath}\">\n{fileContent}\n</file>",
             "blockSeparator": "\n",
             "outputExtension": "txt",
             "wrapperFormat": {
-              "template": "<context>\n<files>\n{blocks}\n</files>\n</context>"
+              "template": "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>"
             }
           },
           "properties": {
             "blockTemplate": {
               "type": "string",
               "description": "Template for wrapping each file's content. Placeholders: {fileNameWithExtension}, {filePath}(commented), {rawFilePath}(raw), {fileName}, {fileExtension}, {fullPath}, {fileContent}.",
-              "default": "<file name=\"{fileNameWithExtension}\">\n<source>{rawFilePath}</source>\n<file_content><![CDATA[\n{fileContent}\n]]>\n</file_content>\n</file>"
+              "default": "<file name=\"{fileNameWithExtension}\" path=\"{rawFilePath}\">\n{fileContent}\n</file>"
             },
             "blockSeparator": {
               "type": "string",
@@ -92,13 +99,13 @@
               ],
               "description": "Settings for wrapping the entire generated output. Set to null to disable wrapping.",
               "default": {
-                "template": "<context>\n<files>\n{blocks}\n</files>\n</context>"
+                "template": "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>"
               },
               "properties": {
                 "template": {
                   "type": "string",
                   "description": "The template string for the entire output. Use '{blocks}' as the placeholder for where the combined file blocks will be inserted. Other available placeholders: {timestamp}, {fileCount}, {workspaceRoot}, {outputFileName}.",
-                  "default": "<context>\n<files>\n{blocks}\n</files>\n</context>"
+                  "default": "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>"
                 }
               }
             }
@@ -128,8 +135,8 @@
     "commands": [
       {
         "command": "promptTower.generateFile",
-        "title": "Generate Context File",
-        "icon": "$(output)"
+        "title": "Copy Context to Clipboard",
+        "icon": "$(clippy)"
       },
       {
         "command": "promptTower.toggleAllFiles",
@@ -197,6 +204,12 @@
     "url": "https://github.com/backnotprop/prompt-tower/issues"
   },
   "keywords": [
+    "AI",
+    "prompt",
+    "LLM",
+    "context",
+    "clipboard",
+    "copy context",
     "ai",
     "AI Code Assistant",
     "AI Context Management",
@@ -211,7 +224,6 @@
     "Claude",
     "Claude Code",
     "code",
-    "context",
     "context creation",
     "context injection",
     "context management",

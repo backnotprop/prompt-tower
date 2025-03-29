@@ -25,11 +25,11 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private maxFileSizeWarningKB: number = 500;
 
   private blockTemplate: string =
-    '<file name="{fileNameWithExtension}">\n<source>{rawFilePath}</source>\n<file_content><![CDATA[\n{fileContent}\n]]>\n</file_content>\n</file>';
+    '<file name="{fileNameWithExtension}" path="{rawFilePath}">\n{fileContent}\n</file>';
   private blockSeparator: string = "\n";
   private outputExtension: string = "txt";
   private wrapperTemplate: string | null =
-    "<context>\n<files>\n{blocks}\n</files>\n</context>";
+    "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>";
 
   // --- Token Counting State ---
   private totalTokenCount: number = 0;
@@ -775,34 +775,21 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     return false;
   }
 
-  async generateFile() {
+  private async generateContextString(): Promise<{
+    contextString: string;
+    fileCount: number;
+  }> {
     const checkedFiles = this.getCheckedFiles();
+    const fileCount = checkedFiles.length; // Add this line
 
-    if (checkedFiles.length === 0 && !this.promptPrefix && !this.promptSuffix) {
-      vscode.window.showWarningMessage(
-        "No files selected or prefix/suffix entered!"
-      );
-      return;
+    // Keep the initial check for no files/prefix/suffix, but change return
+    if (fileCount === 0 && !this.promptPrefix && !this.promptSuffix) {
+      // vscode.window.showWarningMessage( ... ); // Remove this warning for now, handle in caller
+      // return; // Remove this return
+      return { contextString: "", fileCount: 0 }; // Add this return
     }
-    // Get file count early for potential use in wrapper
-    const fileCount = checkedFiles.length;
-
-    const fileNameRaw = // Use separate variable for input name
-      (await vscode.window.showInputBox({
-        prompt: "Enter output file name (without extension)",
-        placeHolder: "context",
-        validateInput: (value) =>
-          value?.includes(".") ? "No extensions allowed" : null,
-      })) || "context";
 
     try {
-      // Prepare final filename and path using configured extension
-      const outputFileNameWithExtension = `${fileNameRaw}.${this.outputExtension}`;
-      const outputPath = path.join(
-        this.workspaceRoot,
-        outputFileNameWithExtension
-      );
-
       // Process each checked file concurrently using the blockTemplate
       const fileBlockPromises = checkedFiles.map(async (fullFilePath) => {
         // Calculate necessary paths and names
@@ -875,7 +862,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         );
         combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
           /{outputFileName}/g,
-          outputFileNameWithExtension
+          "clipboard-content" // Use a generic filename since we're not creating a file
         );
       } else {
         // No wrapper template defined, use joined blocks directly
@@ -898,19 +885,50 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         finalOutput += this.promptSuffix; // Add suffix
       }
 
-      // --- Write the final combined output ---
-      await fs.promises.writeFile(outputPath, finalOutput);
-
-      // --- Open the generated file ---
-      const doc = await vscode.workspace.openTextDocument(outputPath);
-      await vscode.window.showTextDocument(doc);
+      return { contextString: finalOutput, fileCount: fileCount };
     } catch (error) {
-      // Standard error handling
+      // Convert the error to a string message
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      // Throw the error again to be handled by the caller
+      throw new Error(`Error generating context string: ${errorMessage}`);
+    }
+  }
+
+  async copyContextToClipboard() {
+    try {
+      // Call the refactored helper method
+      const { contextString, fileCount } = await this.generateContextString();
+
+      // Handle empty case
+      if (fileCount === 0 && !contextString) {
+        vscode.window.showWarningMessage(
+          "No files selected or prefix/suffix entered to copy!"
+        );
+        return;
+      }
+
+      // Copy to clipboard
+      await vscode.env.clipboard.writeText(contextString);
+
+      // Get the most recently calculated token count for the message
+      const tokenCount = this.totalTokenCount;
+
+      // Show success message
+      vscode.window.showInformationMessage(
+        `Success: Copied context for ${fileCount} files (${tokenCount.toLocaleString()} tokens) to clipboard.`,
+        {
+          modal: true,
+        }
+      );
+    } catch (error) {
+      // Handle errors during the process
       vscode.window.showErrorMessage(
-        `Error generating file: ${
-          error instanceof Error ? error.message : error
+        `Error copying context to clipboard: ${
+          error instanceof Error ? error.message : String(error)
         }`
       );
+      console.error("Error copying context:", error);
     }
   }
 }
