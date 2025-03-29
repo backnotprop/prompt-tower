@@ -198,6 +198,9 @@ export function activate(context: vscode.ExtensionContext) {
       createOrShowWebviewPanel(context);
     })
   );
+
+  // Automatically show the panel upon activation (e.g., when Activity Bar icon is clicked)
+  vscode.commands.executeCommand("promptTower.showTowerUI");
 }
 
 export function deactivate() {
