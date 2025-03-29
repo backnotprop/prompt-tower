@@ -1,5 +1,3 @@
-// src/extension.ts
-
 import * as vscode from "vscode";
 import { PromptTowerProvider } from "./providers/PromptTowerProvider";
 import { registerCommands } from "./commands";
@@ -35,7 +33,6 @@ function getWebviewContent(
   initialSuffix: string = ""
 ): string {
   const nonce = getNonce();
-  // Define styles - Consider moving to a separate CSS file (e.g., media/style.css) for larger projects
   const styles = `
         body {
             padding: 1em;
@@ -246,7 +243,8 @@ function getWebviewContent(
                             // case 'someOtherCommand':
                             //    // ... handle other commands ...
                             //    break;
-                            // START ADD: Handle initial/updated prefix/suffix from extension
+
+                            // Handle initial/updated prefix/suffix from extension
                             case 'updatePrefix':
                                 if (prefixTextArea && typeof message.text === 'string') {
                                     prefixTextArea.value = message.text;
@@ -263,7 +261,6 @@ function getWebviewContent(
                                      vscode.setState(state);
                                 }
                                 break;
-                            // END ADD
                         }
                     });
 
@@ -317,7 +314,7 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
   if (webviewPanel) {
     webviewPanel.reveal(column);
     console.log("Prompt Tower UI: Revealed existing panel."); // Log for debugging
-    // START ADD: Resend state when revealed
+    // Resend state when revealed
     if (providerInstance) {
       webviewPanel.webview.postMessage({
         command: "updatePrefix",
@@ -335,7 +332,6 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
         },
       });
     }
-    // END ADD
     return;
   }
 
@@ -350,13 +346,11 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
       enableScripts: true,
       localResourceRoots: [context.extensionUri], // Allow loading from extension root for now
       retainContextWhenHidden: true, // Keep webview alive when not visible
-      // START ADD/ENSURE: Enable state persistence in webview
       enableCommandUris: true, // Might be needed for state persistence or other commands
-      // END ADD/ENSURE
     }
   );
 
-  // START MODIFY: Get initial state from provider before setting HTML
+  // Get initial state from provider before setting HTML
   let initialPrefix = "";
   let initialSuffix = "";
   if (providerInstance) {
@@ -369,7 +363,6 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
     initialPrefix,
     initialSuffix
   );
-  // END MODIFY
 
   // --- Listener for Token Updates from Provider ---
   // Make sure the listener is disposed only when the extension deactivates,
@@ -531,9 +524,7 @@ export function deactivate() {
     console.log("Disposing Prompt Tower UI panel."); // Log for debugging
     webviewPanel.dispose();
   }
-  // START ADD
   // Dispose the emitter to clean up listeners
   tokenUpdateEmitter.dispose();
   console.log("Disposed token update emitter.");
-  // END ADD
 }

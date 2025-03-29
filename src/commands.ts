@@ -1,5 +1,3 @@
-// src/commands.ts
-
 import * as vscode from "vscode";
 import { PromptTowerProvider } from "./providers/PromptTowerProvider";
 import { FileItem } from "./models/FileItem";

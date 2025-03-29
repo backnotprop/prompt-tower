@@ -1,5 +1,3 @@
-// src/providers/PromptTowerProvider.ts
-
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
@@ -33,15 +31,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private wrapperTemplate: string | null =
     "<context>\n<files>\n{blocks}\n</files>\n</context>";
 
-  // START ADD
   // --- Token Counting State ---
   private totalTokenCount: number = 0;
   private isCountingTokens: boolean = false;
   private currentTokenCalculationVersion = 0; // For cancellation
-  // START ADD: Prefix/Suffix State
+
   private promptPrefix: string = "";
   private promptSuffix: string = "";
-  // END ADD
 
   constructor(
     private workspaceRoot: string,
@@ -53,7 +49,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.debouncedUpdateTokenCount(100); // Initial count calculation (debounced slightly)
   }
 
-  // START ADD: Methods to update prefix/suffix
   setPromptPrefix(text: string): void {
     this.promptPrefix = text ?? ""; // Ensure it's a string
     // Optionally trigger token recount if prefix/suffix should be counted
@@ -74,9 +69,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   getPromptSuffix(): string {
     return this.promptSuffix;
   }
-  // END ADD
 
-  // START ADD
   // --- Token Counting Logic Helpers ---
 
   private notifyTokenUpdate() {
@@ -114,9 +107,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   getIsCounting(): boolean {
     return this.isCountingTokens;
   }
-  // END ADD
 
-  // START ADD
   async updateTokenCount(): Promise<void> {
     // Capture the version intended for *this specific run*
     const calculationVersion = this.currentTokenCalculationVersion;
@@ -243,7 +234,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       // If not the latest, the newer calculation's finally block will notify.
     }
   }
-  // END ADD
 
   // Required by TreeDataProvider interface
   getTreeItem(element: FileItem): vscode.TreeItem {
@@ -373,9 +363,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.items.clear();
     this.loadPersistedState(); // Loads state, potentially changing checked items
     this._onDidChangeTreeData.fire(); // Update the tree view itself
-    // START ADD
     this.debouncedUpdateTokenCount(); // Recalculate tokens after refresh completes
-    // END ADD
   }
 
   async toggleAllFiles() {
@@ -789,14 +777,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
   async generateFile() {
     const checkedFiles = this.getCheckedFiles();
-    // START MODIFY: Check prefix/suffix OR files selected
+
     if (checkedFiles.length === 0 && !this.promptPrefix && !this.promptSuffix) {
       vscode.window.showWarningMessage(
         "No files selected or prefix/suffix entered!"
       );
       return;
     }
-    // END MODIFY
     // Get file count early for potential use in wrapper
     const fileCount = checkedFiles.length;
 
@@ -830,7 +817,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         // --- Apply Block Template Placeholders ---
         let formattedBlock = this.blockTemplate;
 
-        // *** FIX START ***
         // Ensure relativePath starts with '/' if needed for the <source> tag
         const sourcePath = "/" + relativePath.replace(/\\/g, "/"); // Ensure forward slashes and leading slash
 
@@ -840,7 +826,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         );
         // Replace {rawFilePath} with the calculated relative path (with leading slash)
         formattedBlock = formattedBlock.replace(/{rawFilePath}/g, sourcePath);
-        // *** FIX END ***
 
         // Other placeholders (if they exist in your actual template - some are not in the default)
         // formattedBlock = formattedBlock.replace(/{filePath}/g, commentedFilePath); // REMOVE or keep ONLY if you ALSO use {filePath}
@@ -897,7 +882,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         combinedBlocksAndWrapper = joinedBlocks;
       }
 
-      // --- START ADD: Prepend Prefix and Append Suffix ---
       let finalOutput = "";
 
       if (this.promptPrefix) {
@@ -913,7 +897,6 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         }
         finalOutput += this.promptSuffix; // Add suffix
       }
-      // --- END ADD ---
 
       // --- Write the final combined output ---
       await fs.promises.writeFile(outputPath, finalOutput);
