@@ -843,6 +843,58 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   }
 
   /**
+   * Finds all files within the workspace, respecting configured exclusions.
+   *
+   * @returns {Promise<StructuredFilePath[]>} A promise that resolves to an array of structured file paths.
+   */
+  async getAllWorkspaceFilesStructured(): Promise<StructuredFilePath[]> {
+    // 1. Prepare the individual exclude patterns from your list.
+    //    Consider if the `p + "**"` logic is always correct.
+    //    Often, just the directory name (e.g., "node_modules") is enough for findFiles exclude.
+    //    Let's assume for now the patterns in excludedPatterns are already valid globs.
+    const individualExcludes = this.excludedPatterns; // Use patterns directly if they are valid globs
+    // Alternative if you need the trailing /** for dirs:
+    // const individualExcludes = this.excludedPatterns.map((p) =>
+    //   p.endsWith("/") ? p + "**/*" : p // More specific: match files *within* the dir
+    // );
+
+    // 2. Combine the standard hidden file/folder pattern with your excludes.
+    const allExcludes = ["**/.*", ...individualExcludes]; // Add the hidden file pattern first
+
+    // 3. Create the final exclusion glob string *with only one level of braces*.
+    //    Handle the case where there might be no custom excludes.
+    let excludeGlobPattern: string | null;
+    if (allExcludes.length > 0) {
+      // Join all patterns with commas inside a SINGLE set of curly braces
+      excludeGlobPattern = `{${allExcludes.join(",")}}`;
+    } else {
+      // If somehow allExcludes is empty (unlikely with '**/.*' added),
+      // provide an empty string or undefined if findFiles allows it.
+      // Passing null or undefined might be better than an empty string.
+      excludeGlobPattern = null; // Or null
+    }
+
+    // 4. Use the correctly formatted pattern in findFiles.
+    const allFilesUris: vscode.Uri[] = await vscode.workspace.findFiles(
+      "**/*", // Include pattern: find all files
+      excludeGlobPattern, // Exclude pattern: correctly formatted single group
+      undefined // Optional: maxResults limit
+    );
+
+    // Map the results (vscode.Uri objects) to your desired StructuredFilePath format
+    const structuredFiles: StructuredFilePath[] = allFilesUris.map((uri) => {
+      const absolutePath = uri.fsPath; // Get the absolute file system path
+      const relativePath = path.relative(this.workspaceRoot, absolutePath);
+      return {
+        origin: absolutePath,
+        tree: relativePath,
+      };
+    });
+
+    return structuredFiles;
+  }
+
+  /**
    * Generates an array of objects representing selected files,
    * including their absolute path ('origin') and relative path ('tree').
    *
@@ -850,10 +902,12 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
    */
   getSelectedFilePathsStructured(): StructuredFilePath[] {
     // Use Array.from to convert map values to an array, then filter and map
+    console.log(this.items);
     return Array.from(this.items.values())
       .filter(
         (item) =>
-          item.isChecked && // 1. Must be checked/selected
+          // only show selected files, otherwise a full tree is shown
+          item.isChecked &&
           item.contextValue === "file" && // 2. Must be a file (not a folder)
           fs.existsSync(item.filePath) // 3. Must still exist on disk (robustness check)
       )
@@ -896,11 +950,21 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   }
 
   private async generateFileTree(): Promise<string> {
-    const structuredFilePaths = this.getSelectedFilePathsStructured();
+    // Decide whether to use selected files or ALL files based on config or needs
+    let filesToInclude: StructuredFilePath[];
+    if (this.projectTreeType === "selectedOnly") {
+      // Use the existing method for selected files (relies on this.items)
+      filesToInclude = this.getSelectedFilePathsStructured();
+    } else {
+      // e.g., projectTreeType === 'full' or similar
+      // Use the new method to get ALL workspace files
+      filesToInclude = await this.getAllWorkspaceFilesStructured();
+    }
+
     return this.projectTreeEnabled
       ? generateFileStructureTree(
           this.workspaceRoot,
-          structuredFilePaths,
+          filesToInclude,
           undefined, // Default print lines limit
           {
             showFileSize: this.projectTreeShowFileSize,

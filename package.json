@@ -49,7 +49,7 @@
         },
         "promptTower.persistState": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Persist files and folders state (checked/unchecked)."
         },
         "promptTower.maxFileSizeWarningKB": {
