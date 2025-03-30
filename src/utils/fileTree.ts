@@ -1,8 +1,7 @@
-import fs from "fs"; // Added import for fs
+import fs from "fs";
 
 const FOLDER_SIZE_KEY = "/__FOlDER_SIZE__\\";
 const FOLDER_FILES_TOTAL_KEY = "/__FOLDER_CHILDREN__\\";
-const FILE_SIZE_WARNING_THRESHOLD = 0.85;
 
 function bytesToString(bytes: number): string {
   let size = 0;
@@ -51,17 +50,17 @@ function createTreeOutput(
     }
 
     // Max depth is reached, print the folder name and additional metadata
-    const folder = `${folderName}/`; // Removed chalk.bold
+    const folder = `${folderName}/`;
     const numFilesString = `(${filesCount} ${
       filesCount === 1 ? "file" : "files"
-    })`; // Removed chalk.green
+    })`;
 
     let output = `${prefix}${folder} ${numFilesString}`;
 
     // Only add folder size if showFileSize is true
     if (showFileSize) {
       const folderSizeString = bytesToString(folderSize);
-      const folderSizeFormatted = `[${folderSizeString}]`; // Removed coloring logic
+      const folderSizeFormatted = `[${folderSizeString}]`;
       output += ` ${folderSizeFormatted}`;
     }
 
@@ -134,7 +133,6 @@ export async function generateFileStructureTree(
     showFileSize: true,
   }
 ): Promise<string> {
-  // Changed return type to Promise<void>
   const folderTree: any = {};
   const depthCounts: number[] = [];
 
@@ -299,38 +297,4 @@ export async function generateFileStructureTree(
   // Join lines and log to console
   const finalOutputString = outputLines.join("\n");
   return finalOutputString;
-  // --- Function now returns void ---
 }
-// --- End of generateFileStructureTree ---
-
-// --- Example Usage (You would need to adapt this) ---
-/*
-// This is how you might call the function:
-
-// 1. Define your root folder name
-const myRoot = 'MyProjectRoot';
-
-// 2. Prepare your file paths array.
-// 'origin' is the actual path on disk to get the size.
-// 'tree' is the logical path used to build the structure.
-const myFilePaths = [
-    { origin: '/path/to/real/project/src/index.js', tree: 'src/index.js' },
-    { origin: '/path/to/real/project/src/utils/helper.js', tree: 'src/utils/helper.js' },
-    { origin: '/path/to/real/project/README.md', tree: 'README.md' },
-    { origin: '/path/to/real/project/node_modules/some_dep/large_file.bin', tree: 'node_modules/some_dep/large_file.bin' },
-    // ... more files
-];
-
-// 3. Set a line limit (optional)
-const lineLimit = 100; // Or keep default Number.MAX_VALUE
-
-// 4. Call the function
-generateFileStructureTree(myRoot, myFilePaths, lineLimit)
-    .then(() => {
-        console.log('\nFile structure tree generation complete.');
-    })
-    .catch(error => {
-        console.error('\nError generating file structure tree:', error);
-    });
-
-*/

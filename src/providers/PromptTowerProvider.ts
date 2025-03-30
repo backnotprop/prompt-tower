@@ -68,7 +68,9 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.invalidateWebviewPreview = invalidateWebviewPreview;
     this.loadConfig();
     this.loadPersistedState();
+
     this.debouncedUpdateTokenCount(100); // Initial count calculation (debounced slightly)
+    this.setupIgnoreFileWatchers();
   }
 
   setPromptPrefix(text: string): void {
@@ -693,6 +695,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         // Use Set to remove duplicates
         ...standardIgnores,
         ...(useGitIgnore ? this.getGitIgnorePatterns() : []),
+        ...this.getTowerIgnorePatterns(),
         ...manualIgnores.map((p) => p.trim()).filter((p) => p), // Trim and remove empty manual ignores
       ]),
     ];
@@ -744,6 +747,23 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       }
     }
     return []; // No .gitignore file found
+  }
+
+  private getTowerIgnorePatterns(): string[] {
+    const towerignorePath = path.join(this.workspaceRoot, ".towerignore");
+    if (fs.existsSync(towerignorePath)) {
+      try {
+        const content = fs.readFileSync(towerignorePath, "utf-8");
+        return content
+          .split(/\r?\n/) // Split lines
+          .map((line) => line.trim()) // Trim whitespace
+          .filter((line) => line && !line.startsWith("#")); // Remove empty lines and comments
+      } catch (e) {
+        console.error("Error reading or parsing .towerignore:", e);
+        return [];
+      }
+    }
+    return []; // No .towerignore file found
   }
 
   private loadPersistedState() {
@@ -1191,5 +1211,59 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       );
       console.error("Error copying context:", error);
     }
+  }
+
+  private setupIgnoreFileWatchers(): void {
+    // Create watchers for both files even if they don't exist yet
+    const gitignoreWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(this.workspaceRoot, ".gitignore")
+    );
+
+    const towerignoreWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(this.workspaceRoot, ".towerignore")
+    );
+
+    // Handle file changes for gitignore
+    gitignoreWatcher.onDidChange(() => {
+      console.log("Detected change in .gitignore, reloading patterns");
+      this.loadConfig();
+      this._onDidChangeTreeData.fire();
+    });
+
+    // Handle file creation for gitignore (will fire when file is created)
+    gitignoreWatcher.onDidCreate(() => {
+      console.log(".gitignore was created, reloading patterns");
+      this.loadConfig();
+      this._onDidChangeTreeData.fire();
+    });
+
+    // Handle file deletion for gitignore (might want to update patterns)
+    gitignoreWatcher.onDidDelete(() => {
+      console.log(".gitignore was deleted, reloading patterns");
+      this.loadConfig();
+      this._onDidChangeTreeData.fire();
+    });
+
+    // Same handlers for towerignore
+    towerignoreWatcher.onDidChange(() => {
+      console.log("Detected change in .towerignore, reloading patterns");
+      this.loadConfig();
+      this._onDidChangeTreeData.fire();
+    });
+
+    towerignoreWatcher.onDidCreate(() => {
+      console.log(".towerignore was created, reloading patterns");
+      this.loadConfig();
+      this._onDidChangeTreeData.fire();
+    });
+
+    towerignoreWatcher.onDidDelete(() => {
+      console.log(".towerignore was deleted, reloading patterns");
+      this.loadConfig();
+      this._onDidChangeTreeData.fire();
+    });
+
+    // Add to context subscriptions for proper disposal
+    this.context.subscriptions.push(gitignoreWatcher, towerignoreWatcher);
   }
 }
