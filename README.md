@@ -2,7 +2,7 @@
 
 <img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="180"/>
 
-**Effortlessly build and manage complex code context for your LLMs directly within VS Code.**
+**Effortlessly build and manage complex code context for your Coding Agents and CodeLLMs directly within VS Code.**
 
 Stop wrestling with manual copy-pasting. Prompt Tower provides a dedicated interface to select files/folders, customize formatting, and generate the exact context payload your CodeLLM needs, saving you time and reducing errors.
 
@@ -21,18 +21,6 @@ _`![Prompt Tower Demo](link/to/your/demo.gif)` - A short GIF is crucial for the 
 - 📊 **Live Token Count:** Real-time token count estimate helps manage context size.
 - 📝 **Dedicated UI Panel:** Manage prefix/suffix, preview, tokens & actions easily.
 - ⚠️ **File Size Warnings:** Get notified when selecting potentially oversized files.
-
----
-
-## Why Prompt Tower?
-
-Building effective prompts for code-focused LLMs often requires providing substantial context – multiple files, directory structures, etc. Doing this manually is:
-
-1.  **Tedious:** Copy-pasting file contents one by one is slow.
-2.  **Error-Prone:** Easy to miss files, format incorrectly, or paste outdated code.
-3.  **Inefficient:** Hard to quickly iterate on different context combinations.
-
-Prompt Tower streamlines this entire process, letting you focus on the _prompt_ itself, not the plumbing of context assembly.
 
 ---
 
@@ -144,6 +132,18 @@ This is the core of customization. Control exactly how the selected files and pr
 
 - **`promptTower.persistState`**: (Boolean, default: `false`) If `true`, remembers checked files/folders between VS Code sessions.
 - **`promptTower.maxFileSizeWarningKB`**: (Number, default: `500`) Show a warning prompt if a selected file exceeds this size in KB.
+
+---
+
+## Why Prompt Tower?
+
+Building effective prompts for code-focused LLMs often requires providing substantial context – multiple files, directory structures, etc. Doing this manually is:
+
+1.  **Tedious:** Copy-pasting file contents one by one is slow.
+2.  **Error-Prone:** Easy to miss files, format incorrectly, or paste outdated code.
+3.  **Inefficient:** Hard to quickly iterate on different context combinations.
+
+Prompt Tower streamlines this entire process, letting you focus on the _prompt_ itself, not the plumbing of context assembly.
 
 ---
 
