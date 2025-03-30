@@ -1,7 +1,9 @@
 # Prompt Tower
 
 <img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="180"/>
+
 **Comprehensive context and prompt management for your Coding Agents and CodeLLMs**
+
 <hr />
 
 Prompt Tower is a VS Code extension that is also compatible with Cursor, Windsurf, and Google IDX.
