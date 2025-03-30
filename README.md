@@ -2,9 +2,11 @@
 
 <img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="180"/>
 
-**Effortlessly build and manage complex code context for your Coding Agents and CodeLLMs directly within VS Code.**
+**Comprehensive context and prompt management for your Coding Agents and CodeLLMs**
 
 Prompt Tower provides a dedicated interface to select files/folders, customize formatting, and generate the exact context payload your CodeLLM needs, saving you time and reducing errors.
+
+Prompt Tower is a VS Code extension that is also compatible with Cursor, Windsurf, and Google IDX.
 
 **( Placeholder: Insert an animated GIF here showing the core workflow: selecting files, seeing the preview/token count update, adding prefix/suffix, and clicking 'Create & Copy' )**
 _`![Prompt Tower Demo](link/to/your/demo.gif)` - A short GIF is crucial for the marketplace!_
