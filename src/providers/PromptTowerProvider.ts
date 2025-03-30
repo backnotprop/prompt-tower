@@ -896,7 +896,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
           const relativePath =
             path.relative(this.workspaceRoot, absolutePath) || "."; // Use '.' for root itself
           return {
-            origin: absolutePath + "/", // the treee creation needs something to render as a file, we use '...'
+            origin: absolutePath + "/",
             tree: relativePath + "/",
           };
         })
