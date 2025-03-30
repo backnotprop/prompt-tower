@@ -67,11 +67,18 @@ function getWebviewContent(
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
             line-height: 1.4;
-            /* Add these if not already present or modify existing */
+            box-sizing: border-box;
+            /* Add these if not already present or modify existing 
             display: flex;
             flex-direction: column;
-            height: 100vh; /* Use full viewport height */
-            box-sizing: border-box;
+            min-height: 100vh; 
+            overflow-y: auto;
+            */
+        }
+        #app {
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh; /* Let the content grow beyond viewport if needed */
         }
         h1 {
             margin-top: 0;
@@ -201,6 +208,20 @@ function getWebviewContent(
             margin-top: 0px; /* Remove extra top margin */
             border-top: 1px solid var(--vscode-separator-foreground); /* Optional separator */
             padding-top: 1em; /* Spacing above label */
+            padding-bottom: 200px; /* so text area can grow beyond viewport */
+        }
+        .expand-preview {
+          cursor: pointer;
+          color: var(--vscode-button-primaryForeground);
+          font-size: 0.9em;
+          font-weight: 300;
+          margin-left: 5px;
+        }
+        .expand-preview:hover {
+          color: var(--vscode-button-secondaryForeground);
+        }
+        .expand-preview:active {
+          color: var(--vscode-button-secondaryBackground);
         }
         #context-preview {
             flex-grow: 1; /* Textarea takes up available space in its container */
@@ -214,6 +235,9 @@ function getWebviewContent(
             white-space: pre-wrap; /* Respect whitespace and wrap lines */
             word-wrap: break-word; /* Break long words */
             font-family: var(--vscode-editor-font-family, monospace); /* Use editor font */
+        }
+        #preview-container.expanded #context-preview {
+          height: 512px;
         }
         #preview-status {
           font-size: 0.9em;
@@ -251,40 +275,44 @@ function getWebviewContent(
             <style nonce="${nonce}">${styles}</style>
         </head>
         <body>
-            <h1>Prompt Tower</h1>
+            <div id="app">
+              <h1>Prompt Tower</h1>
 
-             <div id="token-info">
-                <span>Selected Tokens:</span>
-                <span id="token-count">0</span>
-                <div id="spinner" class="spinner"></div>
-                <span id="token-status"></span>
-            </div>
+              <div id="token-info">
+                  <span>Selected Tokens:</span>
+                  <span id="token-count">0</span>
+                  <div id="spinner" class="spinner"></div>
+                  <span id="token-status"></span>
+              </div>
 
-            <div id="clear-button-container">
-                <button id="clearButton">Clear Selections</button> 
-            </div>
+              <div id="clear-button-container">
+                  <button id="clearButton">Clear Selections</button> 
+              </div>
 
-            <div style="width: 100%; height: 5px; background-color: var(--vscode-editorWidget-border); margin-bottom: 20px;"></div>
+              <div style="width: 100%; height: 5px; background-color: var(--vscode-editorWidget-border); margin-bottom: 20px;"></div>
 
-            <div id="prompt-prefix-container" class="textarea-container">
-              <label for="prompt-prefix">Prompt Prefix (Prepended to export)</label>
-              <textarea id="prompt-prefix">${initialPrefix}</textarea>
-            </div>
+              <div id="prompt-prefix-container" class="textarea-container">
+                <label for="prompt-prefix">Prompt Prefix (Prepended to export)</label>
+                <textarea id="prompt-prefix">${initialPrefix}</textarea>
+              </div>
 
-            <div id="prompt-suffix-container" class="textarea-container">
-              <label for="prompt-suffix">Prompt Suffix (Appended to export)</label>
-              <textarea id="prompt-suffix">${initialSuffix}</textarea>
-            </div>
+              <div id="prompt-suffix-container" class="textarea-container">
+                <label for="prompt-suffix">Prompt Suffix (Appended to export)</label>
+                <textarea id="prompt-suffix">${initialSuffix}</textarea>
+              </div>
 
-            <p>Additional controls and prompt preview will go here.</p>
-            <div id="action-button-container">
-              <button id="copyButton">Create Context and Copy to Clipboard</button>
-            </div>
+              <p>Additional controls and prompt preview will go here.</p>
+              <div id="action-button-container">
+                <button id="copyButton">Create Context and Copy to Clipboard</button>
+              </div>
 
-            <div id="preview-container">
-                <label for="context-preview">Context Preview</label>
-                <textarea id="context-preview"></textarea>
-                <span id="preview-status">Click "Create Context..." to generate preview.</span>
+              <div id="preview-container">
+                  <label for="context-preview">Context Preview
+                  <a id="expand-preview" class="expand-preview" >Expand</a>
+                  </label>
+                  <textarea id="context-preview"></textarea>
+                  <span id="preview-status">Click "Create Context..." to generate preview.</span>
+              </div>
             </div>
             <script nonce="${nonce}">
                 (function() {
@@ -304,6 +332,7 @@ function getWebviewContent(
                     const previewContainer = document.getElementById("preview-container");
                     const previewTextArea = document.getElementById("context-preview");
                     const previewStatusElement = document.getElementById("preview-status");
+                    const expandPreviewLink = document.getElementById("expand-preview");
 
                     // --- State for preview validity ---
                     let isPreviewContentValid = false; // Track if the *content* in the preview is current
@@ -437,6 +466,24 @@ function getWebviewContent(
                         });
                     }
 
+                    if (expandPreviewLink && previewContainer) {
+                        expandPreviewLink.addEventListener("click", () => {
+                            previewContainer.classList.toggle("expanded");
+                            // if added, scroll down 256px (smooth)
+                            if (previewContainer.classList.contains("expanded")) {
+                              window.scrollBy({
+                                top: 256,
+                                behavior: 'smooth'
+                              });
+                            } else {
+                              window.scrollTo({
+                                top: 0,
+                                behavior: 'smooth'
+                              });
+                            }
+                        });
+                    }
+
                     // --- Optional: Notify Extension when Webview is Ready ---
                     // Useful if the extension needs to know when to send initial data.
                     vscode.postMessage({ command: "webviewReady" });
@@ -482,6 +529,7 @@ function getWebviewContent(
 
                 }()); // Immediately invoke the function to scope variables
               </script>
+
           </body>
         </html>`;
 }

@@ -5,6 +5,13 @@ import { FileItem } from "../models/FileItem";
 import { encode } from "gpt-tokenizer";
 import { TokenUpdateEmitter } from "../models/EventEmitter";
 
+import { generateFileStructureTree } from "../utils/fileTree";
+
+interface StructuredFilePath {
+  origin: string; // Absolute path on disk
+  tree: string; // Path relative to the workspace root
+}
+
 /**
  * @TODO
  * - config listeners
@@ -790,6 +797,33 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       .map((item) => item.filePath);
   }
 
+  /**
+   * Generates an array of objects representing selected files,
+   * including their absolute path ('origin') and relative path ('tree').
+   *
+   * @returns {StructuredFilePath[]} An array of objects for selected files.
+   */
+  getSelectedFilePathsStructured(): StructuredFilePath[] {
+    // Use Array.from to convert map values to an array, then filter and map
+    return Array.from(this.items.values())
+      .filter(
+        (item) =>
+          item.isChecked && // 1. Must be checked/selected
+          item.contextValue === "file" && // 2. Must be a file (not a folder)
+          fs.existsSync(item.filePath) // 3. Must still exist on disk (robustness check)
+      )
+      .map((item) => {
+        // For each valid item, create the desired object structure
+        const originPath = item.filePath; // Absolute path
+        const relativePath = path.relative(this.workspaceRoot, item.filePath); // Path relative to workspace
+
+        return {
+          origin: originPath,
+          tree: relativePath,
+        };
+      });
+  }
+
   // Basic pattern matching (for excludes).
   // TODO: Replace with a proper library like 'ignore' for full gitignore syntax support.
   private matchesPattern(fileName: string, pattern: string): boolean {
@@ -821,13 +855,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     fileCount: number;
   }> {
     const checkedFiles = this.getCheckedFiles();
-    const fileCount = checkedFiles.length; // Add this line
+    const fileCount = checkedFiles.length;
 
     // Keep the initial check for no files/prefix/suffix, but change return
     if (fileCount === 0 && !this.promptPrefix && !this.promptSuffix) {
       // vscode.window.showWarningMessage( ... ); // Remove this warning for now, handle in caller
       // return; // Remove this return
-      return { contextString: "", fileCount: 0 }; // Add this return
+      return { contextString: "", fileCount: 0 };
     }
 
     try {
@@ -870,8 +904,25 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         return formattedBlock;
       });
 
+      const structuredFilePaths = this.getSelectedFilePathsStructured();
+      const fileTreePromise = generateFileStructureTree(
+        this.workspaceRoot,
+        structuredFilePaths
+      );
+
       // Wait for all file processing to complete
-      const contents = await Promise.all(fileBlockPromises);
+      // const contents = await Promise.all(fileBlockPromises);
+
+      // Wait for all file processing to complete, including the file tree
+      const allPromises = [fileTreePromise, ...fileBlockPromises];
+      const results = await Promise.all(allPromises);
+
+      // Now the file tree is at index 0, and the file blocks start at index 1
+      const fileTree = results[0];
+      const _contents = results.slice(1);
+
+      // If you need to put them all together with fileTree at the beginning
+      const contents = [fileTree, ..._contents];
 
       // --- Join the processed blocks ---
       const joinedBlocks = contents.join(this.blockSeparator);
