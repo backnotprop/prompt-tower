@@ -4,7 +4,7 @@
 
 **Effortlessly build and manage complex code context for your Coding Agents and CodeLLMs directly within VS Code.**
 
-Stop wrestling with manual copy-pasting. Prompt Tower provides a dedicated interface to select files/folders, customize formatting, and generate the exact context payload your CodeLLM needs, saving you time and reducing errors.
+Prompt Tower provides a dedicated interface to select files/folders, customize formatting, and generate the exact context payload your CodeLLM needs, saving you time and reducing errors.
 
 **( Placeholder: Insert an animated GIF here showing the core workflow: selecting files, seeing the preview/token count update, adding prefix/suffix, and clicking 'Create & Copy' )**
 _`![Prompt Tower Demo](link/to/your/demo.gif)` - A short GIF is crucial for the marketplace!_
