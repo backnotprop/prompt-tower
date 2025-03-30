@@ -41,9 +41,7 @@
             "package-lock.json",
             "yarn.lock",
             "poetry.lock",
-            "Gemfile.lock",
-            "LICENCE",
-            "LICENSE"
+            "Gemfile.lock"
           ],
           "description": "Manual list of files and folders to ignore. This is in addition to the .gitignore file."
         },

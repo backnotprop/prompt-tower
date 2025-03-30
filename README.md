@@ -11,15 +11,14 @@ _`![Prompt Tower Demo](link/to/your/demo.gif)` - A short GIF is crucial for the 
 
 ## Key Features ✨
 
-- ✅ **Effortless File Selection:** Use a familiar tree view with checkboxes to select specific files and entire directories.
-- 🚀 **Instant Context Generation:** Build and copy intricate context payloads (including file contents and project structure) to your clipboard with a single click.
-- 🔧 **Highly Configurable Output:** Precisely tailor the context format (XML-like, Markdown, custom structures) using flexible templates to match your LLM's requirements.
-- 🌲 **Intelligent Project Tree:** Optionally include a structured overview of your project (full, selected files only, or directories only) within the context.
-- ⚙️ **Smart Filtering:** Automatically respects your project's `.gitignore` and `.towerignore` files, plus add custom ignore patterns via settings.
-- 📊 **Live Token Count:** See an estimated token count (via `gpt-tokenizer`) update in real-time as you select files, helping you stay within context limits.
-- ✨ **Dedicated UI Panel:** Manage prompt prefixes/suffixes, preview the generated context, see token counts, and trigger actions from a dedicated panel.
-- 💾 **Persistent Selections (Optional):** Remembers your chosen files across VS Code sessions.
-- ⚠️ **File Size Warnings:** Get notified if you select unusually large files that might impact performance or exceed LLM limits.
+- ✅ **Effortless File Selection:** Checkbox tree view for easy file/folder selection (Launch from the **Activity Bar**).
+- 🚀 **Instant Context Generation:** Build & copy complex context to clipboard in one click.
+- 🔧 **Highly Configurable Output:** Customize context format (XML, MD, etc.) with templates.
+- 🌲 **Project Tree Context:** Optionally include a structured project overview in context (also configurable).
+- ⚙️ **Smart Filtering:** Respects `.gitignore`, `.towerignore`, and custom ignore rules.
+- 📊 **Live Token Count:** Real-time token count estimate helps manage context size.
+- 📝 **Dedicated UI Panel:** Manage prefix/suffix, preview, tokens & actions easily.
+- ⚠️ **File Size Warnings:** Get notified when selecting potentially oversized files.
 
 ---
 
@@ -57,7 +56,7 @@ Prompt Tower uses 3 ways to exclude files from LLM context.
 
 - `.gitignore` - **Recommended: True (the Default)** - you likely never want to pass any of this to an LLM.
 - `.towerignore` - **Recommended: Per Project (You need to create this)** - for keeping reducing overall-project context.
-- `promptTower.ignore` - **IDE Setting (Workspace or User)** - use as you see fit.
+- `promptTower.ignore` - **IDE Setting (Workspace or User)** - use as you see fit. The defaults are common lock files that typically aren't in .gitignore.
 
 Control which files/folders are _excluded_ from the Prompt Tower tree view:
 
@@ -75,11 +74,10 @@ Control which files/folders are _excluded_ from the Prompt Tower tree view:
 {
   "promptTower.useGitignore": true,
   "promptTower.ignore": [
-    "package-lock.json",
+    "package-lock.json", // Prompt Tower defaults to ignore lock files
     "yarn.lock",
     "poetry.lock",
     "Gemfile.lock",
-    "LICENCE", // Note: Default includes LICENSE too
     "*.log", // Example: Ignore all log files
     "temp/" // Example: Ignore a temp directory
   ]
