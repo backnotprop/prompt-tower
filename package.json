@@ -65,7 +65,7 @@
             "blockSeparator": "\n",
             "projectTreeFormat": {
               "enabled": true,
-              "type": "full",
+              "type": "fullFilesAndDirectories",
               "showFileSize": true,
               "template": "<project_tree>\n{projectTree}\n</project_tree>\n"
             },
@@ -97,10 +97,11 @@
                   "type": "string",
                   "description": "Type of project tree block to use.",
                   "enum": [
-                    "full",
-                    "selectedOnly"
+                    "fullFilesAndDirectories",
+                    "fullDirectoriesOnly",
+                    "selectedFilesOnly"
                   ],
-                  "default": "full"
+                  "default": "fullFilesAndDirectories"
                 },
                 "showFileSize": {
                   "type": "boolean",

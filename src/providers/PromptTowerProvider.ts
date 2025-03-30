@@ -38,7 +38,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private blockSeparator: string = "\n";
 
   private projectTreeEnabled: boolean = true;
-  private projectTreeType: string = "full";
+  private projectTreeType: string = "fullFilesAndDirectories";
   private projectTreeShowFileSize: boolean = true;
   private projectTreeTemplate: string =
     "<project_tree>\n{projectTree}\n</project_tree>\n";
@@ -881,6 +881,30 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       undefined // Optional: maxResults limit
     );
 
+    if (this.projectTreeType === "fullDirectoriesOnly") {
+      const uniqueDirectoryPaths = new Set<string>();
+      allFilesUris.map((uri) => {
+        // Get the directory containing the file
+        const dirPath = path.dirname(uri.fsPath);
+        uniqueDirectoryPaths.add(dirPath);
+      });
+
+      const structuredDirectories: StructuredFilePath[] = Array.from(
+        uniqueDirectoryPaths
+      )
+        .map((absolutePath) => {
+          const relativePath =
+            path.relative(this.workspaceRoot, absolutePath) || "."; // Use '.' for root itself
+          return {
+            origin: absolutePath + "/", // the treee creation needs something to render as a file, we use '...'
+            tree: relativePath + "/",
+          };
+        })
+        .sort((a, b) => a.tree.localeCompare(b.tree)); // Optional: sort for consistency
+
+      return structuredDirectories;
+    }
+
     // Map the results (vscode.Uri objects) to your desired StructuredFilePath format
     const structuredFiles: StructuredFilePath[] = allFilesUris.map((uri) => {
       const absolutePath = uri.fsPath; // Get the absolute file system path
@@ -952,7 +976,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private async generateFileTree(): Promise<string> {
     // Decide whether to use selected files or ALL files based on config or needs
     let filesToInclude: StructuredFilePath[];
-    if (this.projectTreeType === "selectedOnly") {
+    if (this.projectTreeType === "selectedFilesOnly") {
       // Use the existing method for selected files (relies on this.items)
       filesToInclude = this.getSelectedFilePathsStructured();
     } else {
@@ -967,7 +991,10 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
           filesToInclude,
           undefined, // Default print lines limit
           {
-            showFileSize: this.projectTreeShowFileSize,
+            showFileSize:
+              this.projectTreeType === "fullDirectoriesOnly"
+                ? false
+                : this.projectTreeShowFileSize,
           }
         )
       : Promise.resolve("");
@@ -982,8 +1009,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
     // Keep the initial check for no files/prefix/suffix, but change return
     if (fileCount === 0) {
+      console.log("Project Tree Type:", this.projectTreeType);
       // vscode.window.showWarningMessage( ... ); // Remove this warning for now, handle in caller
-      if (this.projectTreeEnabled && this.projectTreeType === "full") {
+      if (
+        this.projectTreeEnabled &&
+        (this.projectTreeType === "fullFilesAndDirectories" ||
+          this.projectTreeType === "fullDirectoriesOnly")
+      ) {
         const fileTree = await this.generateFileTree();
         let treeBlockOnlyContext = this.projectTreeTemplate.replace(
           "{projectTree}",
