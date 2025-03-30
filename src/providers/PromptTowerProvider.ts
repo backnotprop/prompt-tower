@@ -916,10 +916,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
       // Show success message
       vscode.window.showInformationMessage(
-        `Success: Copied context for ${fileCount} files (${tokenCount.toLocaleString()} tokens) to clipboard.`,
-        {
-          modal: true,
-        }
+        `Success: Copied context for ${fileCount} files (${tokenCount.toLocaleString()} tokens) to clipboard.`
       );
     } catch (error) {
       // Handle errors during the process
