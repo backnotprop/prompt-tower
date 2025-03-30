@@ -37,6 +37,20 @@ function getNonce() {
   return text;
 }
 
+/**
+ * Generates the HTML content for the Webview Panel
+ *
+ * @TODO:
+ * - the preview text area invalidation style is not perfect.
+ *
+ *
+ * @param webview
+ * @param extensionUri
+ * @param initialPrefix
+ * @param initialSuffix
+ * @returns
+ */
+
 // Generates the HTML content for the Webview Panel
 function getWebviewContent(
   webview: vscode.Webview,
@@ -189,6 +203,7 @@ function getWebviewContent(
             height: 256px; /* Initial desired height */
             min-height: 100px; /* Minimum height */
             border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder));
+            border-color: var(--vscode-input-border, var(--vscode-contrastBorder)) !important;
             background-color: var(--vscode-editorWidget-background,  var(--vscode-input-background)) !important;
             color: var(--vscode-input-foreground) !important;
             overflow-y: auto; /* Add scrollbar if content exceeds height */
@@ -283,6 +298,7 @@ function getWebviewContent(
 
                     // --- State for preview validity ---
                     let isPreviewContentValid = false; // Track if the *content* in the preview is current
+                    let currentValidContext = null;   // Store the last known valid context string
 
                     // --- Restore state if available ---
                     if (prefixTextArea && state.promptPrefix) {
@@ -343,7 +359,7 @@ function getWebviewContent(
                                 }
                                 break;
                             case "invalidatePreview":
-                                invalidatePreviewState();
+                                invalidatePreviewState("extension");
                                 break;
                             // --- END NEW MESSAGE HANDLERS ---
                         }
@@ -356,7 +372,7 @@ function getWebviewContent(
                         vscode.postMessage({ command: "updatePrefix", text: text });
                         state.promptPrefix = text;
                         vscode.setState(state);
-                        invalidatePreviewState();
+                        invalidatePreviewState("extension");
                       });
                     }
                     if (suffixTextArea) {
@@ -365,7 +381,27 @@ function getWebviewContent(
                         vscode.postMessage({ command: "updateSuffix", text: text });
                         state.promptSuffix = text;
                         vscode.setState(state);
-                        invalidatePreviewState();
+                        invalidatePreviewState("extension");
+                      });
+                    }
+                    // --- NEW: Add input listener for the preview text area ---
+                    if (previewTextArea) {
+                      previewTextArea.addEventListener("input", (e) => {
+                        const currentValue = e.target.value;
+                        // Check if there's a known valid context and if the current value matches it
+                        if (currentValidContext !== null && currentValue === currentValidContext) {
+                           // User typed/pasted the exact valid content back
+                           previewContainer.classList.remove("invalidated");
+                           previewStatusElement.textContent = "Preview matches last generated content.";
+                           isPreviewContentValid = true;
+                        } else {
+                           // User typed something different, or no valid context exists yet
+                           previewContainer.classList.add("invalidated");
+                           previewStatusElement.textContent = currentValidContext !== null
+                             ? 'Preview manually modified, content is no longer the generated version.'
+                             : 'Preview content is not validated. Generate context to validate.';
+                           isPreviewContentValid = false;
+                        }
                       });
                     }
 
@@ -393,14 +429,24 @@ function getWebviewContent(
                     console.log("Webview script loaded and ready.");
 
                     // --- Function to invalidate the preview ---
-                    function invalidatePreviewState() {
-                      if (isPreviewContentValid && previewContainer && previewStatusElement) {
-                        console.log("Webview: Invalidating preview state.");
-                        previewContainer.classList.add("invalidated");
-                        previewStatusElement.textContent =
-                          'Context changed, preview outdated. Click "Create Context..." to update.';
-                        isPreviewContentValid = false;
-                        // Keep the text area readonly
+                    function invalidatePreviewState(reason = "unknown") {
+                      if (previewContainer && previewStatusElement) {
+                         currentValidContext = null; // Clear the known valid context
+                         isPreviewContentValid = false; // Mark internal state as invalid
+                         previewContainer.classList.add("invalidated");
+
+                         if (reason === "extension") {
+                            console.log("Webview: Invalidating preview state (due to extension change).");
+                            previewStatusElement.textContent =
+                             'Context source changed (files/prefix/suffix), preview outdated. Click "Create Context..." to update.';
+                         } else {
+                             console.log("Webview: Invalidating preview state (reason: " + reason + ").");
+                             // Keep existing text if user was typing, otherwise set generic message
+                              if (!previewStatusElement.textContent.startsWith('Preview manually modified')) {
+                                 previewStatusElement.textContent = 'Preview content is outdated or invalid.';
+                              }
+                         }
+                         // Keep the text area editable
                       }
                     }
 
@@ -408,12 +454,13 @@ function getWebviewContent(
                     function validatePreviewState(newContent) {
                       if (previewTextArea && previewContainer && previewStatusElement) {
                         console.log("Webview: Validating preview state.");
+                        currentValidContext = newContent; // Store the new valid content
                         previewTextArea.value = newContent;
                         previewContainer.classList.remove("invalidated");
                         previewStatusElement.textContent =
                           "Preview generated. Copied to clipboard."; // Updated status
                         isPreviewContentValid = true;
-                        // previewTextArea.readOnly = true; // Ensure it's readonly after update
+                        // previewTextArea.readOnly = true; // Make it readonly again? Decided against for now.
                         // Scroll to top after updating
                         previewTextArea.scrollTop = 0;
                       }
