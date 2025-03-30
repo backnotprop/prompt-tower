@@ -63,9 +63,14 @@
           "default": {
             "blockTemplate": "<file name=\"{fileNameWithExtension}\" path=\"{rawFilePath}\">\n{fileContent}\n</file>",
             "blockSeparator": "\n",
-            "outputExtension": "txt",
+            "projectTreeFormat": {
+              "enabled": true,
+              "type": "full",
+              "showFileSize": true,
+              "template": "<project_tree>\n{projectTree}\n</project_tree>"
+            },
             "wrapperFormat": {
-              "template": "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>"
+              "template": "<context>\n{treeBlock}\n<project_files>\n{blocks}\n</project_files>\n</context>"
             }
           },
           "properties": {
@@ -79,18 +84,35 @@
               "description": "Separator placed *between* formatted file blocks in the final output.",
               "default": "\n"
             },
-            "outputExtension": {
-              "type": "string",
-              "enum": [
-                "txt",
-                "md",
-                "js",
-                "ts",
-                "json",
-                "xml"
-              ],
-              "description": "Default file extension for the generated output file (without the dot).",
-              "default": "txt"
+            "projectTreeFormat": {
+              "type": "object",
+              "description": "Settings for the project tree block.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Enable or disable the project tree block.",
+                  "default": true
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Type of project tree block to use.",
+                  "enum": [
+                    "full",
+                    "selectedOnly"
+                  ],
+                  "default": "full"
+                },
+                "showFileSize": {
+                  "type": "boolean",
+                  "description": "Show each file's size in the project tree block.",
+                  "default": true
+                },
+                "template": {
+                  "type": "string",
+                  "description": "The template string for the project tree block. Use '{projectTree}' as the placeholder for where the tree block will be inserted.",
+                  "default": "<project_tree>\n{projectTree}\n</project_tree>"
+                }
+              }
             },
             "wrapperFormat": {
               "type": [
@@ -99,13 +121,13 @@
               ],
               "description": "Settings for wrapping the entire generated output. Set to null to disable wrapping.",
               "default": {
-                "template": "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>"
+                "template": "<context>\n{treeBlock}\n<project_files>\n{blocks}\n</project_files>\n</context>"
               },
               "properties": {
                 "template": {
                   "type": "string",
                   "description": "The template string for the entire output. Use '{blocks}' as the placeholder for where the combined file blocks will be inserted. Other available placeholders: {timestamp}, {fileCount}, {workspaceRoot}, {outputFileName}.",
-                  "default": "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>"
+                  "default": "<context>\n{treeBlock}\n<project_files>\n{blocks}\n</project_files>\n</context>"
                 }
               }
             }

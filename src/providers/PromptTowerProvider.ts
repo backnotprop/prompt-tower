@@ -36,9 +36,15 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private blockTemplate: string =
     '<file name="{fileNameWithExtension}" path="{rawFilePath}">\n{fileContent}\n</file>';
   private blockSeparator: string = "\n";
-  private outputExtension: string = "txt";
+
+  private projectTreeEnabled: boolean = true;
+  private projectTreeType: string = "full";
+  private projectTreeShowFileSize: boolean = true;
+  private projectTreeTemplate: string =
+    "<project_tree>\n{projectTree}\n</project_tree>";
+
   private wrapperTemplate: string | null =
-    "<context>\n<project_files>\n{blocks}\n</project_files>\n</context>";
+    "<context>\n{treeBlock}\n<project_files>\n{blocks}\n</project_files>\n</context>";
 
   // --- Token Counting State ---
   private totalTokenCount: number = 0;
@@ -669,8 +675,16 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     const outputFormat = config.get<any>("outputFormat");
     this.blockTemplate = outputFormat?.blockTemplate ?? this.blockTemplate;
     this.blockSeparator = outputFormat?.blockSeparator ?? this.blockSeparator;
-    this.outputExtension =
-      outputFormat?.outputExtension ?? this.outputExtension;
+
+    // Load project tree settings
+    const projectTreeFormat = config.get<any>("outputFormat.projectTreeFormat");
+    if (projectTreeFormat) {
+      this.projectTreeEnabled =
+        projectTreeFormat.enabled ?? this.projectTreeEnabled;
+      this.projectTreeType = projectTreeFormat.type ?? this.projectTreeType;
+      this.projectTreeShowFileSize =
+        projectTreeFormat.showFileSize ?? this.projectTreeShowFileSize;
+    }
 
     const wrapperFormat = config.get<any>("outputFormat.wrapperFormat");
     if (wrapperFormat === null) {
@@ -852,6 +866,18 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     return false;
   }
 
+  private async generateFileTree(): Promise<string> {
+    const structuredFilePaths = this.getSelectedFilePathsStructured();
+    return generateFileStructureTree(
+      this.workspaceRoot,
+      structuredFilePaths,
+      undefined, // Default print lines limit
+      {
+        showFileSize: this.projectTreeShowFileSize,
+      }
+    );
+  }
+
   public async generateContextString(): Promise<{
     contextString: string;
     fileCount: number;
@@ -862,7 +888,14 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     // Keep the initial check for no files/prefix/suffix, but change return
     if (fileCount === 0 && !this.promptPrefix && !this.promptSuffix) {
       // vscode.window.showWarningMessage( ... ); // Remove this warning for now, handle in caller
-      // return; // Remove this return
+      if (this.projectTreeEnabled && this.projectTreeType === "full") {
+        const fileTree = await this.generateFileTree();
+        const treeBlock = this.projectTreeTemplate.replace(
+          "{projectTree}",
+          fileTree
+        );
+        return { contextString: treeBlock, fileCount: 0 };
+      }
       return { contextString: "", fileCount: 0 };
     }
 
@@ -906,11 +939,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         return formattedBlock;
       });
 
-      const structuredFilePaths = this.getSelectedFilePathsStructured();
-      const fileTreePromise = generateFileStructureTree(
-        this.workspaceRoot,
-        structuredFilePaths
-      );
+      const fileTreePromise = this.generateFileTree();
 
       // Wait for all file processing to complete
       // const contents = await Promise.all(fileBlockPromises);
@@ -921,10 +950,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
       // Now the file tree is at index 0, and the file blocks start at index 1
       const fileTree = results[0];
-      const _contents = results.slice(1);
-
-      // If you need to put them all together with fileTree at the beginning
-      const contents = [fileTree, ..._contents];
+      const contents = results.slice(1);
 
       // --- Join the processed blocks ---
       const joinedBlocks = contents.join(this.blockSeparator);
@@ -933,6 +959,16 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       let combinedBlocksAndWrapper: string;
       if (this.wrapperTemplate) {
         combinedBlocksAndWrapper = this.wrapperTemplate; // Start with the wrapper template
+
+        const treeBlock = this.projectTreeTemplate.replace(
+          "{projectTree}",
+          fileTree
+        );
+
+        combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
+          "{treeBlock}",
+          treeBlock
+        );
 
         // Calculate values needed for wrapper placeholders
         const timestamp = new Date().toISOString(); // Use ISO format

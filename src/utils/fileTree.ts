@@ -21,7 +21,7 @@ function bytesToString(bytes: number): string {
 function createTreeOutput(
   fileSystem: any,
   maxDepth: number,
-  totalFileSizes: number
+  showFileSize: boolean = true
 ): string[] {
   const createFileOutput = (
     prefix: string,
@@ -29,8 +29,8 @@ function createTreeOutput(
     fileSize: number
   ) => {
     let fileSizeString = "";
-    if (fileSize >= 0) {
-      // Display even 0 byte files
+    if (fileSize >= 0 && showFileSize) {
+      // Display even 0 byte files, but only if showFileSize is true
       fileSizeString = `[${bytesToString(fileSize)}]`;
     }
     // Removed coloring
@@ -51,13 +51,21 @@ function createTreeOutput(
     }
 
     // Max depth is reached, print the folder name and additional metadata
-    const folderSizeString = bytesToString(folderSize);
     const folder = `${folderName}/`; // Removed chalk.bold
     const numFilesString = `(${filesCount} ${
       filesCount === 1 ? "file" : "files"
     })`; // Removed chalk.green
-    const folderSizeFormatted = `[${folderSizeString}]`; // Removed coloring logic
-    return `${prefix}${folder} ${numFilesString} ${folderSizeFormatted}`;
+
+    let output = `${prefix}${folder} ${numFilesString}`;
+
+    // Only add folder size if showFileSize is true
+    if (showFileSize) {
+      const folderSizeString = bytesToString(folderSize);
+      const folderSizeFormatted = `[${folderSizeString}]`; // Removed coloring logic
+      output += ` ${folderSizeFormatted}`;
+    }
+
+    return output;
   };
 
   const createTreeLayerOutput = (
@@ -119,7 +127,12 @@ function createTreeOutput(
 export async function generateFileStructureTree(
   rootFolder: string,
   filePaths: { origin: string; tree: string }[],
-  printLinesLimit: number = Number.MAX_VALUE
+  printLinesLimit: number = Number.MAX_VALUE,
+  options: {
+    showFileSize?: boolean;
+  } = {
+    showFileSize: true,
+  }
 ): Promise<string> {
   // Changed return type to Promise<void>
   const folderTree: any = {};
@@ -219,10 +232,9 @@ export async function generateFileStructureTree(
   );
 
   // Store all file sizes in the tree and calculate total size
-  let totalFileSizes = 0;
+
   fileSizes.forEach(([size, treePath]) => {
     // Use treePath here for consistency
-    totalFileSizes += size;
 
     const parts = treePath.split("/"); // Use treePath here
     let currentLevel = folderTree;
@@ -280,28 +292,9 @@ export async function generateFileStructureTree(
   // --- Assemble final output string ---
   let outputLines: string[] = [];
   outputLines.push(rootFolder); // Use rootFolder name directly, removed chalk.bold
-  outputLines.push(...createTreeOutput(folderTree, maxDepth, totalFileSizes)); // Get the tree lines
-
-  // Add large file warnings (plain text)
-  let warningAdded = false;
-  for (const [size, treePath] of fileSizes) {
-    // Use treePath for consistency
-    if (
-      size > FILE_SIZE_WARNING_THRESHOLD * totalFileSizes &&
-      totalFileSizes > 0
-    ) {
-      // Avoid division by zero
-      // Add a newline only before the first warning
-      if (!warningAdded) {
-        outputLines.push(""); // Add a blank line separator
-        warningAdded = true;
-      }
-      outputLines.push(
-        `WARNING: Large file detected - ${treePath} (${bytesToString(size)})`
-      ); // Plain text warning, using treePath
-      // Removed break; to report *all* large files if needed, or keep break; to report only the first. Let's keep it removed.
-    }
-  }
+  outputLines.push(
+    ...createTreeOutput(folderTree, maxDepth, options.showFileSize)
+  ); // Get the tree lines
 
   // Join lines and log to console
   const finalOutputString = outputLines.join("\n");
