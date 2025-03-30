@@ -80,6 +80,7 @@ function getWebviewContent(
           flex-direction: column;
           min-height: 100vh; /* Let the content grow beyond viewport if needed */
         }
+
         h1 {
             margin-top: 0;
             font-size: 1.5em; /* Adjust as needed */
@@ -131,6 +132,9 @@ function getWebviewContent(
         #clear-button-container {
           margin-bottom: 1em; /* Add margin below the clear button */
           flex-shrink: 0;
+          display: flex;
+          gap: 1em;
+          align-items: flex-end;
         }
         hr {
             border: none;
@@ -154,6 +158,13 @@ function getWebviewContent(
         button:active {
              background-color: var(--vscode-button-background); /* Or a slightly darker variant */
         }
+        a {
+          cursor: pointer !important;
+          margin-left: 5px !important;
+          font-size: 0.9em !important;
+          font-weight: 300 !important;
+        }
+        
         .textarea-container {
           margin-bottom: 20px;
           display: flex;
@@ -208,21 +219,9 @@ function getWebviewContent(
             margin-top: 0px; /* Remove extra top margin */
             border-top: 1px solid var(--vscode-separator-foreground); /* Optional separator */
             padding-top: 1em; /* Spacing above label */
-            padding-bottom: 200px; /* so text area can grow beyond viewport */
+            
         }
-        .expand-preview {
-          cursor: pointer;
-          color: var(--vscode-button-primaryForeground);
-          font-size: 0.9em;
-          font-weight: 300;
-          margin-left: 5px;
-        }
-        .expand-preview:hover {
-          color: var(--vscode-button-secondaryForeground);
-        }
-        .expand-preview:active {
-          color: var(--vscode-button-secondaryBackground);
-        }
+
         #context-preview {
             flex-grow: 1; /* Textarea takes up available space in its container */
             height: 256px; /* Initial desired height */
@@ -242,11 +241,9 @@ function getWebviewContent(
         #preview-status {
           font-size: 0.9em;
           color: var(--vscode-descriptionForeground);
-          margin-top: 5px;
           min-height: 1.2em; /* Reserve space for status */
         }
 
-        
         #preview-container.invalidated #context-preview,
         #preview-container.invalidated #context-preview:focus,
         #preview-container.invalidated #context-preview:hover,
@@ -276,6 +273,7 @@ function getWebviewContent(
         </head>
         <body>
             <div id="app">
+              
               <h1>Prompt Tower</h1>
 
               <div id="token-info">
@@ -286,7 +284,8 @@ function getWebviewContent(
               </div>
 
               <div id="clear-button-container">
-                  <button id="clearButton">Clear Selections</button> 
+                  <button id="clearButton">Clear Selected</button> 
+                  <a id="clear-all-button">Reset all</a>
               </div>
 
               <div style="width: 100%; height: 5px; background-color: var(--vscode-editorWidget-border); margin-bottom: 20px;"></div>
@@ -301,17 +300,20 @@ function getWebviewContent(
                 <textarea id="prompt-suffix">${initialSuffix}</textarea>
               </div>
 
-              <p>Additional controls and prompt preview will go here.</p>
+              
               <div id="action-button-container">
-                <button id="copyButton">Create Context and Copy to Clipboard</button>
+                <button id="createContextButton">Create Context</button>
+                <button id="createAndCopyButton">Create Context, Copy to Clipboard</button>
               </div>
 
               <div id="preview-container">
                   <label for="context-preview">Context Preview
-                  <a id="expand-preview" class="expand-preview" >Expand</a>
+                  <a id="copy-preview-content" class="copy-preview-content">Copy</a>
+                  <a id="expand-preview" class="expand-preview">Expand</a>
                   </label>
+                  <span id="preview-status"></span>
                   <textarea id="context-preview"></textarea>
-                  <span id="preview-status">Click "Create Context..." to generate preview.</span>
+                  
               </div>
             </div>
             <script nonce="${nonce}">
@@ -325,18 +327,26 @@ function getWebviewContent(
                     const spinnerElement = document.getElementById('spinner');
                     const prefixTextArea = document.getElementById("prompt-prefix");
                     const suffixTextArea = document.getElementById("prompt-suffix");
-                    const copyButton = document.getElementById('copyButton');
+                    const createContextButton = document.getElementById('createContextButton');
+                    const createAndCopyButton = document.getElementById('createAndCopyButton');
                     const clearButton = document.getElementById('clearButton'); 
 
                     
                     const previewContainer = document.getElementById("preview-container");
                     const previewTextArea = document.getElementById("context-preview");
                     const previewStatusElement = document.getElementById("preview-status");
+                    const copyPreviewContentLink = document.getElementById("copy-preview-content");
                     const expandPreviewLink = document.getElementById("expand-preview");
 
                     // --- State for preview validity ---
-                    let isPreviewContentValid = false; // Track if the *content* in the preview is current
-                    let currentValidContext = null;   // Store the last known valid context string
+                    // isPreviewContentValid: Tracks if the content *in* the text area
+                    //                      matches the last known *generated* context.
+                    let isPreviewContentValid = false;
+                    // currentValidContext: Stores the string of the last successfully
+                    //                  generated context received from the extension.
+                    let currentValidContext = null;
+                    // hasContextEverBeenGenerated: Tracks if 'Create Context' was ever successful.
+                    let hasContextEverBeenGenerated = false;
 
                     // --- Restore state if available ---
                     if (prefixTextArea && state.promptPrefix) {
@@ -410,7 +420,9 @@ function getWebviewContent(
                         vscode.postMessage({ command: "updatePrefix", text: text });
                         state.promptPrefix = text;
                         vscode.setState(state);
-                        invalidatePreviewState("extension");
+                        if (hasContextEverBeenGenerated) {
+                           invalidatePreviewState("prefix_input");
+                        } 
                       });
                     }
                     if (suffixTextArea) {
@@ -419,7 +431,9 @@ function getWebviewContent(
                         vscode.postMessage({ command: "updateSuffix", text: text });
                         state.promptSuffix = text;
                         vscode.setState(state);
-                        invalidatePreviewState("extension");
+                        if (hasContextEverBeenGenerated) {
+                           invalidatePreviewState("prefix_input");
+                        } 
                       });
                     }
                     
@@ -432,7 +446,7 @@ function getWebviewContent(
                            previewContainer.classList.remove("invalidated");
                            previewStatusElement.textContent = "Preview matches last generated content.";
                            isPreviewContentValid = true;
-                        } else {
+                        } else if (hasContextEverBeenGenerated) {
                            // User typed something different, or no valid context exists yet
                            previewContainer.classList.add("invalidated");
                            previewStatusElement.textContent = currentValidContext !== null
@@ -443,8 +457,27 @@ function getWebviewContent(
                       });
                     }
 
-                    if (copyButton) {
-                      copyButton.addEventListener("click", () => {
+                    if (createContextButton) {
+                      createContextButton.addEventListener("click", () => {
+                        // Clear the preview immediately and show thinking status
+                        if (previewTextArea && previewStatusElement && previewContainer) {
+                          // Check container too
+                          previewTextArea.value = ""; // Clear old content
+                          previewContainer.classList.remove("invalidated"); // Remove invalid state
+                          previewStatusElement.textContent = "Generating context...";
+                          isPreviewContentValid = false; // Mark as not valid while generating
+                        }
+                        // Tell extension to generate and send back preview content
+                        vscode.postMessage({
+                          command: "createContext", 
+                        });
+                        hasContextEverBeenGenerated = true;
+                      });
+                    }
+                    
+
+                    if (createAndCopyButton) {
+                      createAndCopyButton.addEventListener("click", () => {
                         // Clear the preview immediately and show thinking status
                         if (previewTextArea && previewStatusElement && previewContainer) {
                           // Check container too
@@ -455,14 +488,25 @@ function getWebviewContent(
                         }
                         // Tell extension to generate, copy, AND send back preview content
                         vscode.postMessage({
-                          command: "copyToClipboard", // Keep command name
+                          command: "createAndCopyToClipboard", // Keep command name
                         });
+                        hasContextEverBeenGenerated = true;
                       });
                     }
 
                     if (clearButton) {
                         clearButton.addEventListener("click", () => {
                             vscode.postMessage({ command: "clearSelections" });
+                        });
+                    }
+
+                    if (copyPreviewContentLink && previewTextArea) {
+                        copyPreviewContentLink.addEventListener("click", () => {
+                            previewTextArea.select();
+                            document.execCommand("copy");
+
+                            // show a toast notification
+                            vscode.postMessage({ command: "showToast", payload: { message: "Context copied to clipboard." } });
                         });
                     }
 
@@ -518,8 +562,7 @@ function getWebviewContent(
                         currentValidContext = newContent; // Store the new valid content
                         previewTextArea.value = newContent;
                         previewContainer.classList.remove("invalidated");
-                        previewStatusElement.textContent =
-                          "Preview generated. Copied to clipboard."; // Updated status
+                        previewStatusElement.textContent = "";
                         isPreviewContentValid = true;
                         // previewTextArea.readOnly = true; // Make it readonly again? Decided against for now.
                         // Scroll to top after updating
@@ -643,7 +686,39 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             invalidateWebviewPreview();
           }
           return;
-        case "copyToClipboard":
+
+        case "createContext":
+          if (providerInstance && webviewPanel) {
+            try {
+              // 1. Call provider to generate context
+              const { contextString } =
+                await providerInstance.generateContextString();
+
+              // 2. Send the context string back to the webview for preview
+              console.log("Extension: Sending updatePreview to webview.");
+              webviewPanel.webview.postMessage({
+                command: "updatePreview",
+                payload: { context: contextString },
+              });
+              isPreviewValid = true; // Mark preview as valid now
+            } catch (error) {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
+              vscode.window.showErrorMessage(
+                `Error handling context generation/copy: ${errorMessage}`
+              );
+              console.error("Error in createContext handling:", error);
+              isPreviewValid = false; // Ensure it's marked invalid on error
+            }
+          } else {
+            vscode.window.showErrorMessage(
+              "Prompt Tower provider not available."
+            );
+            isPreviewValid = false;
+          }
+          return;
+
+        case "createAndCopyToClipboard":
           if (providerInstance && webviewPanel) {
             try {
               // 1. Call provider to copy to clipboard (shows info message)
@@ -667,7 +742,10 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
               vscode.window.showErrorMessage(
                 `Error handling context generation/copy: ${errorMessage}`
               );
-              console.error("Error in copyToClipboard handling:", error);
+              console.error(
+                "Error in createAndCopyToClipboard handling:",
+                error
+              );
               // Optionally send an error back to webview?
               // webviewPanel.webview.postMessage({ command: 'previewError', message: 'Failed to generate context.' });
               isPreviewValid = false; // Ensure it's marked invalid on error
@@ -679,9 +757,15 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             isPreviewValid = false;
           }
           return;
+
         case "clearSelections":
           if (providerInstance) {
             providerInstance.clearAllSelections(); // Call the new provider method
+          }
+          return;
+        case "showToast":
+          if (message.payload && typeof message.payload.message === "string") {
+            vscode.window.showInformationMessage(message.payload.message);
           }
           return;
       }

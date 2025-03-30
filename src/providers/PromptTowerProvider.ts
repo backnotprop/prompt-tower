@@ -15,7 +15,9 @@ interface StructuredFilePath {
 /**
  * @TODO
  * - config listeners
- * - promptTower.useGitignore: This is the major missing piece. You need to add logic to read this setting, parse .gitignore files, and integrate those patterns (using a proper matching library) with the promptTower.ignore setting.
+ * - promptTower.useGitignore: This is the major missing piece.
+ *   - We need to add logic to read this setting, parse .gitignore files,
+ *   - and integrate those patterns (using a proper matching library) with the promptTower.ignore setting.
  * - "format path as comment" (need config and implementation)
  */
 
