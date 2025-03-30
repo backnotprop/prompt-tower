@@ -18,8 +18,9 @@ export function registerCommands(
       vscode.commands.registerCommand("promptTower.refresh", () =>
         provider.refresh()
       ),
-      vscode.commands.registerCommand("promptTower.generateFile", () =>
-        provider.copyContextToClipboard()
+      vscode.commands.registerCommand(
+        "promptTower.copyContextToClipboard",
+        () => provider.copyContextToClipboard()
       ),
       vscode.commands.registerCommand("promptTower.toggleAllFiles", () =>
         provider.toggleAllFiles()

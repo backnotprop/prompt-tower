@@ -134,7 +134,7 @@
     },
     "commands": [
       {
-        "command": "promptTower.generateFile",
+        "command": "promptTower.copyContextToClipboard",
         "title": "Copy Context to Clipboard",
         "icon": "$(clippy)"
       },
@@ -171,8 +171,7 @@
           "when": "false"
         },
         {
-          "command": "promptTower.generateFile",
-          "when": "view == promptTowerView"
+          "command": "promptTower.copyContextToClipboard"
         },
         {
           "command": "promptTower.toggleAllFiles",
@@ -186,13 +185,12 @@
           "command": "promptTower.showTowerUI"
         },
         {
-          "command": "promptTower.clearSelections",
-          "when": "view == promptTowerView"
+          "command": "promptTower.clearSelections"
         }
       ],
       "view/title": [
         {
-          "command": "promptTower.generateFile",
+          "command": "promptTower.copyContextToClipboard",
           "when": "view == promptTowerView",
           "group": "navigation@1"
         },
@@ -209,7 +207,7 @@
         {
           "command": "promptTower.clearSelections",
           "when": "view == promptTowerView",
-          "group": "navigation@4" 
+          "group": "navigation@4"
         }
       ]
     }
