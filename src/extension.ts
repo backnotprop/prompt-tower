@@ -26,6 +26,12 @@ function invalidateWebviewPreview() {
   }
 }
 
+function resetWebviewPreview() {
+  if (webviewPanel) {
+    webviewPanel.webview.postMessage({ command: "resetPreview" });
+  }
+}
+
 // Generates a random nonce string for Content Security Policy
 function getNonce() {
   let text = "";
@@ -285,7 +291,7 @@ function getWebviewContent(
 
               <div id="clear-button-container">
                   <button id="clearButton">Clear Selected</button> 
-                  <a id="clear-all-button">Reset all</a>
+                  <a id="resetAllButton">Reset all</a>
               </div>
 
               <div style="width: 100%; height: 5px; background-color: var(--vscode-editorWidget-border); margin-bottom: 20px;"></div>
@@ -330,7 +336,7 @@ function getWebviewContent(
                     const createContextButton = document.getElementById('createContextButton');
                     const createAndCopyButton = document.getElementById('createAndCopyButton');
                     const clearButton = document.getElementById('clearButton'); 
-
+                    const resetAllButton = document.getElementById('resetAllButton');
                     
                     const previewContainer = document.getElementById("preview-container");
                     const previewTextArea = document.getElementById("context-preview");
@@ -408,6 +414,9 @@ function getWebviewContent(
                                 break;
                             case "invalidatePreview":
                                 invalidatePreviewState("extension");
+                                break;
+                            case "resetPreview":
+                                resetWebviewPreviewState();
                                 break;
                             // --- END NEW MESSAGE HANDLERS ---
                         }
@@ -500,6 +509,12 @@ function getWebviewContent(
                         });
                     }
 
+                    if (resetAllButton) {
+                      resetAllButton.addEventListener("click", () => {
+                        vscode.postMessage({ command: "resetAll" });
+                      });
+                    }
+
                     if (copyPreviewContentLink && previewTextArea) {
                         copyPreviewContentLink.addEventListener("click", () => {
                             previewTextArea.select();
@@ -553,6 +568,19 @@ function getWebviewContent(
                          }
                          // Keep the text area editable
                       }
+                    }
+
+                    // --- Function to reset the preview ---
+                    function resetWebviewPreviewState() {
+                      hasContextEverBeenGenerated = false;
+                      if (previewContainer && previewStatusElement) {
+                        previewContainer.classList.remove("invalidated");
+                        previewStatusElement.textContent = "";
+                        previewTextArea.value = "";
+                      }
+                      // clear the prefix and suffix values
+                      prefixTextArea.value = "";
+                      suffixTextArea.value = "";
                     }
 
                     // --- Function to validate the preview ---
@@ -763,6 +791,13 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             providerInstance.clearAllSelections(); // Call the new provider method
           }
           return;
+
+        case "resetAll":
+          if (providerInstance) {
+            providerInstance.resetAll(); // Call the new provider method
+          }
+          return;
+
         case "showToast":
           if (message.payload && typeof message.payload.message === "string") {
             vscode.window.showInformationMessage(message.payload.message);
@@ -807,6 +842,7 @@ export function activate(context: vscode.ExtensionContext) {
         rootPath,
         context,
         tokenUpdateEmitter,
+        resetWebviewPreview,
         invalidateWebviewPreview
       );
       treeView = vscode.window.createTreeView("promptTowerView", {

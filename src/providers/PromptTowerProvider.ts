@@ -41,10 +41,10 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private projectTreeType: string = "full";
   private projectTreeShowFileSize: boolean = true;
   private projectTreeTemplate: string =
-    "<project_tree>\n{projectTree}\n</project_tree>";
+    "<project_tree>\n{projectTree}\n</project_tree>\n";
 
   private wrapperTemplate: string | null =
-    "<context>\n{treeBlock}\n<project_files>\n{blocks}\n</project_files>\n</context>";
+    "<context>\n{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>";
 
   // --- Token Counting State ---
   private totalTokenCount: number = 0;
@@ -54,14 +54,17 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private promptPrefix: string = "";
   private promptSuffix: string = "";
 
+  private resetWebviewPreview: () => void;
   private invalidateWebviewPreview: () => void;
 
   constructor(
     private workspaceRoot: string,
     private context: vscode.ExtensionContext,
     private tokenUpdateEmitter: TokenUpdateEmitter,
+    resetWebviewPreview: () => void,
     invalidateWebviewPreview: () => void
   ) {
+    this.resetWebviewPreview = resetWebviewPreview;
     this.invalidateWebviewPreview = invalidateWebviewPreview;
     this.loadConfig();
     this.loadPersistedState();
@@ -384,6 +387,32 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this._onDidChangeTreeData.fire(); // Update the tree view itself
     this.debouncedUpdateTokenCount(); // Recalculate tokens after refresh completes
     this.invalidateWebviewPreview();
+  }
+
+  resetAll(): void {
+    for (const [, item] of this.items) {
+      if (item.isChecked) {
+        item.updateCheckState(false); // Set to unchecked
+      }
+    }
+
+    if (this.persistState) {
+      this.savePersistedState();
+    }
+
+    this.resetWebviewPreview();
+
+    this.currentTokenCalculationVersion++; // Invalidate any ongoing count *immediately*
+    this.totalTokenCount = 0;
+    this.isCountingTokens = false;
+    this.notifyTokenUpdate(); // Instantly update UI to 0
+    console.log("Token count reset to 0 (Cleared all selections).");
+
+    this.setPromptPrefix("");
+    this.setPromptSuffix("");
+
+    // Refresh the TreeView UI AFTER updating state and tokens
+    this._onDidChangeTreeData.fire();
   }
 
   clearAllSelections(): void {
@@ -868,14 +897,16 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
   private async generateFileTree(): Promise<string> {
     const structuredFilePaths = this.getSelectedFilePathsStructured();
-    return generateFileStructureTree(
-      this.workspaceRoot,
-      structuredFilePaths,
-      undefined, // Default print lines limit
-      {
-        showFileSize: this.projectTreeShowFileSize,
-      }
-    );
+    return this.projectTreeEnabled
+      ? generateFileStructureTree(
+          this.workspaceRoot,
+          structuredFilePaths,
+          undefined, // Default print lines limit
+          {
+            showFileSize: this.projectTreeShowFileSize,
+          }
+        )
+      : Promise.resolve("");
   }
 
   public async generateContextString(): Promise<{
@@ -886,15 +917,23 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     const fileCount = checkedFiles.length;
 
     // Keep the initial check for no files/prefix/suffix, but change return
-    if (fileCount === 0 && !this.promptPrefix && !this.promptSuffix) {
+    if (fileCount === 0) {
       // vscode.window.showWarningMessage( ... ); // Remove this warning for now, handle in caller
       if (this.projectTreeEnabled && this.projectTreeType === "full") {
         const fileTree = await this.generateFileTree();
-        const treeBlock = this.projectTreeTemplate.replace(
+        let treeBlockOnlyContext = this.projectTreeTemplate.replace(
           "{projectTree}",
           fileTree
         );
-        return { contextString: treeBlock, fileCount: 0 };
+        if (this.promptPrefix) {
+          treeBlockOnlyContext =
+            this.promptPrefix + "\n" + treeBlockOnlyContext;
+        }
+        if (this.promptSuffix) {
+          treeBlockOnlyContext =
+            treeBlockOnlyContext + "\n" + this.promptSuffix;
+        }
+        return { contextString: treeBlockOnlyContext, fileCount: 0 };
       }
       return { contextString: "", fileCount: 0 };
     }
@@ -960,10 +999,9 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       if (this.wrapperTemplate) {
         combinedBlocksAndWrapper = this.wrapperTemplate; // Start with the wrapper template
 
-        const treeBlock = this.projectTreeTemplate.replace(
-          "{projectTree}",
-          fileTree
-        );
+        const treeBlock = this.projectTreeEnabled
+          ? this.projectTreeTemplate.replace("{projectTree}", fileTree)
+          : "";
 
         combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
           "{treeBlock}",

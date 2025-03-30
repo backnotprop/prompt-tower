@@ -28,6 +28,9 @@ export function registerCommands(
       vscode.commands.registerCommand("promptTower.clearSelections", () =>
         provider.clearAllSelections()
       ),
+      vscode.commands.registerCommand("promptTower.resetAll", () =>
+        provider.resetAll()
+      ),
       vscode.commands.registerCommand("promptTower.checkboxChanged", (item) => {
         provider.toggleCheck(item);
       })
