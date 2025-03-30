@@ -149,6 +149,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "promptTower.clearSelections",
+        "title": "Clear All Selections",
+        "category": "Prompt Tower",
+        "icon": "$(clear-all)"
+      },
+      {
         "command": "promptTower.checkboxChanged",
         "title": "Toggle Checkbox"
       },
@@ -178,6 +184,10 @@
         },
         {
           "command": "promptTower.showTowerUI"
+        },
+        {
+          "command": "promptTower.clearSelections",
+          "when": "view == promptTowerView"
         }
       ],
       "view/title": [
@@ -195,6 +205,11 @@
           "command": "promptTower.refresh",
           "when": "view == promptTowerView",
           "group": "navigation@3"
+        },
+        {
+          "command": "promptTower.clearSelections",
+          "when": "view == promptTowerView",
+          "group": "navigation@4" 
         }
       ]
     }

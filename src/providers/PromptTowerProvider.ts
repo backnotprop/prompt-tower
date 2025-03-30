@@ -371,6 +371,43 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.invalidateWebviewPreview();
   }
 
+  clearAllSelections(): void {
+    console.log("Prompt Tower: Clearing all selections.");
+    let changed = false;
+    // Update internal state first
+    for (const [, item] of this.items) {
+      if (item.isChecked) {
+        item.updateCheckState(false); // Set to unchecked
+        changed = true;
+      }
+    }
+
+    if (!changed) {
+      console.log("Prompt Tower: No selections to clear.");
+      // Optionally show a message? vscode.window.showInformationMessage("No files were selected.");
+      return; // Exit if nothing changed
+    }
+
+    if (this.persistState) {
+      this.savePersistedState();
+    }
+
+    this.invalidateWebviewPreview();
+
+    // --- Token Count Update ---
+    this.currentTokenCalculationVersion++; // Invalidate any ongoing count *immediately*
+    this.totalTokenCount = 0;
+    this.isCountingTokens = false;
+    this.notifyTokenUpdate(); // Instantly update UI to 0
+    console.log("Token count reset to 0 (Cleared all selections).");
+
+    // Refresh the TreeView UI AFTER updating state and tokens
+    this._onDidChangeTreeData.fire();
+
+    // Optionally provide feedback
+    vscode.window.showInformationMessage("Cleared all file selections.");
+  }
+
   async toggleAllFiles() {
     const allChecked = Array.from(this.items.values()).every(
       (item) => item.isChecked

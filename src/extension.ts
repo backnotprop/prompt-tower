@@ -81,7 +81,7 @@ function getWebviewContent(
             margin-bottom: 0.8em;
         }
         #token-info {
-            margin-bottom: 15px;
+            margin-bottom: 1em;
             padding: 10px 12px;
             border: 1px solid var(--vscode-editorWidget-border, #ccc);
             border-radius: 4px;
@@ -120,6 +120,10 @@ function getWebviewContent(
         }
         @keyframes spinner-border {
             to { transform: rotate(360deg); }
+        }
+        #clear-button-container {
+          margin-bottom: 1em; /* Add margin below the clear button */
+          flex-shrink: 0;
         }
         hr {
             border: none;
@@ -256,6 +260,10 @@ function getWebviewContent(
                 <span id="token-status"></span>
             </div>
 
+            <div id="clear-button-container">
+                <button id="clearButton">Clear Selections</button> 
+            </div>
+
             <div style="width: 100%; height: 5px; background-color: var(--vscode-editorWidget-border); margin-bottom: 20px;"></div>
 
             <div id="prompt-prefix-container" class="textarea-container">
@@ -290,8 +298,9 @@ function getWebviewContent(
                     const prefixTextArea = document.getElementById("prompt-prefix");
                     const suffixTextArea = document.getElementById("prompt-suffix");
                     const copyButton = document.getElementById('copyButton');
+                    const clearButton = document.getElementById('clearButton'); 
+
                     
-                    // --- NEW PREVIEW ELEMENTS ---
                     const previewContainer = document.getElementById("preview-container");
                     const previewTextArea = document.getElementById("context-preview");
                     const previewStatusElement = document.getElementById("preview-status");
@@ -384,7 +393,7 @@ function getWebviewContent(
                         invalidatePreviewState("extension");
                       });
                     }
-                    // --- NEW: Add input listener for the preview text area ---
+                    
                     if (previewTextArea) {
                       previewTextArea.addEventListener("input", (e) => {
                         const currentValue = e.target.value;
@@ -405,7 +414,6 @@ function getWebviewContent(
                       });
                     }
 
-                    // --- Event Listener for Copy Button ---
                     if (copyButton) {
                       copyButton.addEventListener("click", () => {
                         // Clear the preview immediately and show thinking status
@@ -421,6 +429,12 @@ function getWebviewContent(
                           command: "copyToClipboard", // Keep command name
                         });
                       });
+                    }
+
+                    if (clearButton) {
+                        clearButton.addEventListener("click", () => {
+                            vscode.postMessage({ command: "clearSelections" });
+                        });
                     }
 
                     // --- Optional: Notify Extension when Webview is Ready ---
@@ -615,6 +629,11 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
               "Prompt Tower provider not available."
             );
             isPreviewValid = false;
+          }
+          return;
+        case "clearSelections":
+          if (providerInstance) {
+            providerInstance.clearAllSelections(); // Call the new provider method
           }
           return;
       }
