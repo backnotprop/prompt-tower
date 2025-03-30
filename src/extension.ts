@@ -153,7 +153,8 @@ function getWebviewContent(
           min-height: 80px; /* Minimum height */
           resize: vertical; /* Allow vertical resize */
         }
-        textarea:focus {
+        #prompt-prefix-container textarea:focus,
+        #prompt-suffix-container textarea:focus {
           outline: 1px solid var(--vscode-focusBorder);
           outline-offset: -1px;
           border-color: var(--vscode-focusBorder);
@@ -174,7 +175,6 @@ function getWebviewContent(
           flex-shrink: 0; /* Prevent button container from shrinking */
         }
 
-        /* --- NEW PREVIEW STYLES --- */
         #preview-container {
             display: flex;
             flex-direction: column;
@@ -188,9 +188,8 @@ function getWebviewContent(
             flex-grow: 1; /* Textarea takes up available space in its container */
             height: 256px; /* Initial desired height */
             min-height: 100px; /* Minimum height */
-            /* Use !important sparingly, but useful here to override potential conflicts */
-            border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder)) !important;
-            background-color: var(--vscode-input-background) !important;
+            border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder));
+            background-color: var(--vscode-editorWidget-background,  var(--vscode-input-background)) !important;
             color: var(--vscode-input-foreground) !important;
             overflow-y: auto; /* Add scrollbar if content exceeds height */
             white-space: pre-wrap; /* Respect whitespace and wrap lines */
@@ -204,10 +203,13 @@ function getWebviewContent(
           min-height: 1.2em; /* Reserve space for status */
         }
 
-        #preview-container.invalidated #context-preview {
-            border-color: var(--vscode-inputValidation-warningBorder, orange) !important;
-            /* Optionally add a subtle background change */
-            /* background-color: var(--vscode-list-warningForeground, #ffcc0020) !important; */
+        
+        #preview-container.invalidated #context-preview,
+        #preview-container.invalidated #context-preview:focus,
+        #preview-container.invalidated #context-preview:hover,
+        #preview-container.invalidated #context-preview:active {
+          border: 1px solid var(--vscode-input-border, var(--vscode-inputValidation-warningForeground, orange)) !important;
+          border-color: var(--vscode-inputValidation-warningForeground, orange) !important;
         }
         #preview-container.invalidated #preview-status {
             color: var(--vscode-inputValidation-warningForeground, orange);
@@ -258,7 +260,7 @@ function getWebviewContent(
 
             <div id="preview-container">
                 <label for="context-preview">Context Preview</label>
-                <textarea id="context-preview" readonly></textarea>
+                <textarea id="context-preview"></textarea>
                 <span id="preview-status">Click "Create Context..." to generate preview.</span>
             </div>
             <script nonce="${nonce}">
@@ -411,7 +413,7 @@ function getWebviewContent(
                         previewStatusElement.textContent =
                           "Preview generated. Copied to clipboard."; // Updated status
                         isPreviewContentValid = true;
-                        previewTextArea.readOnly = true; // Ensure it's readonly after update
+                        // previewTextArea.readOnly = true; // Ensure it's readonly after update
                         // Scroll to top after updating
                         previewTextArea.scrollTop = 0;
                       }
