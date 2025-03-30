@@ -1,2 +1,16 @@
 test
 extension-assets
+
+.gitignore
+.cursorrules
+.towerignore
+.vscodeignore
+
+CHANGELOG.md
+esbuild.js
+eslint.config.mjs
+tsconfig.json
+
+.vscode-test.mjs
+
+

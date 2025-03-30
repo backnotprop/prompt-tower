@@ -1,57 +1,186 @@
-# Prompt Tower: Context Management for LLM Coding
+# Prompt Tower 🗼
 
-Prompt Tower helps you overcome the context limitations of Large Language Models (LLMs) and coding agents. It provides tools within your IDE to precisely select, structure, and template the codebase information needed for effective AI interaction. Build complex, accurate prompts locally before sending them to your chosen LLM.
+**Effortlessly build and manage complex code context for your LLMs directly within VS Code.**
 
-Supports IDEs compatible with Open VSX: **VS Code**, **Cursor**, **Windsurf**, **Google IDX**.
+Stop wrestling with manual copy-pasting. Prompt Tower provides a dedicated interface to select files/folders, customize formatting, and generate the exact context payload your CodeLLM needs, saving you time and reducing errors.
 
-_(Access Prompt Tower via its icon in the Activity Bar – it opens in a dedicated UI tab.)_
+**( Placeholder: Insert an animated GIF here showing the core workflow: selecting files, seeing the preview/token count update, adding prefix/suffix, and clicking 'Create & Copy' )**
+_`![Prompt Tower Demo](link/to/your/demo.gif)` - A short GIF is crucial for the marketplace!_
 
-## Why Prompt Tower? Master Your Context
+---
 
-LLMs and coding agents are powerful, but their effectiveness hinges on the quality and structure of the context provided. Manually assembling this from a complex codebase is inefficient and error-prone. Prompt Tower gives you control:
+## Key Features ✨
 
-- **🎯 Precision Context Management:** Go beyond simple file inclusion. Select exactly what's needed, visualize the structure, and manage token counts effectively.
-- **🏗️ Structured Prompt Assembly:** Use templates and dynamic elements to build reusable, maintainable prompts that give AI the architectural understanding it needs.
-- **⚙️ Overcome Agent Limitations:** By carefully curating the context yourself, you can guide AI tools more effectively than relying on their often imperfect context gathering.
-- **🔒 Local & Integrated:** Build your prompt securely within your IDE workflow.
+- ✅ **Effortless File Selection:** Use a familiar tree view with checkboxes to select specific files and entire directories.
+- 🚀 **Instant Context Generation:** Build and copy intricate context payloads (including file contents and project structure) to your clipboard with a single click.
+- 🔧 **Highly Configurable Output:** Precisely tailor the context format (XML-like, Markdown, custom structures) using flexible templates to match your LLM's requirements.
+- 🌲 **Intelligent Project Tree:** Optionally include a structured overview of your project (full, selected files only, or directories only) within the context.
+- ⚙️ **Smart Filtering:** Automatically respects your project's `.gitignore` and `.towerignore` files, plus add custom ignore patterns via settings.
+- 📊 **Live Token Count:** See an estimated token count (via `gpt-tokenizer`) update in real-time as you select files, helping you stay within context limits.
+- ✨ **Dedicated UI Panel:** Manage prompt prefixes/suffixes, preview the generated context, see token counts, and trigger actions from a dedicated panel.
+- 💾 **Persistent Selections (Optional):** Remembers your chosen files across VS Code sessions.
+- ⚠️ **File Size Warnings:** Get notified if you select unusually large files that might impact performance or exceed LLM limits.
 
-## Core Features
+---
 
-- **🗂️ Flexible Context Selection:**
+## Why Prompt Tower?
 
-  - **FileTree View:** Checkboxes for rapid selection of multiple files and entire folders in a dedicated tree. Respects `.gitignore` (toggleable: `promptTower.useGitIgnore`) and `.towerignore`.
-  - **Quick Add Actions:** Right-click files/selections in the editor or explorer to add them instantly.
+Building effective prompts for code-focused LLMs often requires providing substantial context – multiple files, directory structures, etc. Doing this manually is:
 
-- **📝 Powerful Context Templating:**
+1.  **Tedious:** Copy-pasting file contents one by one is slow.
+2.  **Error-Prone:** Easy to miss files, format incorrectly, or paste outdated code.
+3.  **Inefficient:** Hard to quickly iterate on different context combinations.
 
-  - Define reusable prompt structures with static instructions and dynamic placeholders.
-  - Manage multiple templates (e.g., for debugging, refactoring, documentation).
-  - **Placeholders:** Use `%path/to/file.ext` for live file content and `%snippetName` for predefined text blocks (managed in settings). This is central to dynamic prompt generation.
+Prompt Tower streamlines this entire process, letting you focus on the _prompt_ itself, not the plumbing of context assembly.
 
-- **🗼 Visualize & Organize Context (The Tower View):**
+---
 
-  - See selected files, directories, and text snippets as distinct blocks.
-  - Monitor **token estimates per block** and the total count.
-  - Expand directories to understand included structure.
-  - Preview file content directly.
-  - **Reorder blocks** via drag-and-drop to structure the final prompt logically.
+## Core Concepts
 
-- **🌳 Include Directory Structures:**
+- **File Tree View:** Located in the Activity Bar section. This is where you select files/folders using checkboxes. It respects ignore files (`.towerignore`, `.gitignore`, `promptTower.ignore`, config).
+- **UI Panel:** Opens as a separate tab. This is your control center:
+  - **Token Count:** Shows the live estimated token count for selected files.
+  - **Prefix/Suffix:** Add text before or after the generated file context blocks.
+  - **Actions:** Buttons to generate context, copy it, clear selections, etc.
+  - **Preview:** Shows what the generated context will look like based on your selections and formatting settings. _Note: The preview becomes "invalidated" (orange border) if you change selections/prefix/suffix after generating it – click "Create Context" again to update._
 
-  - Add formatted text representations of your project hierarchy (full project, selected files only, etc.) to provide vital architectural context.
+---
 
-- **✂️ Code Formatting & Preparation:**
+## Configuration Deep Dive
 
-  - Option to **remove comments** automatically from included code.
-  - Configurable wrappers (e.g., XML tags, Markdown fences) around context blocks – defaults to `<file path="...">...</file>`.
+Fine-tune Prompt Tower via VS Code Settings (UI or `settings.json`). Access via `File > Preferences > Settings` and search for "Prompt Tower".
 
-- **📄 Summarization for Large Files:**
+### Ignoring Files (`.towerignore`, `promptTower.useGitignore`, `promptTower.ignore`)
 
-  - Optionally use `.summary` files instead of full file content to conserve tokens while providing high-level context.
+Prompt Tower uses 3 ways to exclude files from LLM context.
+<em>Exclusion is inclusive</em> - every rule found across the three sources is used for exclusion.
 
-- **📊 Live Preview:**
+- `.gitignore` - **Recommended: True (the Default)** - you likely never want to pass any of this to an LLM.
+- `.towerignore` - **Recommended: Per Project (You need to create this)** - for keeping reducing overall-project context.
+- `promptTower.ignore` - **IDE Setting (Workspace or User)** - use as you see fit.
 
-  - A real-time view of the final assembled prompt based on your selections and template.
+Control which files/folders are _excluded_ from the Prompt Tower tree view:
 
-- **⚙️ Customizable:**
-  - Tailor behavior via IDE settings (ignores, snippets, wrappers, summarization rules, etc.).
+- **`.towerignore` File**:
+  - Create a `.towerignore` file in your workspace root (same format as `.gitignore`). Patterns here are _also_ used for exclusion, alongside `.gitignore` and manual settings. This is useful for ignoring things specific to context generation but not general Git usage.
+- **`promptTower.useGitignore`**: (Boolean, default: `true`)
+  - If `true`, patterns from `.gitignore` in your workspace root are used for exclusion.
+- **`promptTower.ignore`**: (Array of strings, default: `["package-lock.json", "yarn.lock", ...]`)
+  - A manual list of file/folder names or simple patterns to _always_ ignore, in _addition_ to `.gitignore` / `.towerignore`.
+  - Standard ignores like `.git`, `node_modules`, `.vscode`, `dist`, `out` are included by default unless overridden by complex configurations.
+
+**Example (`settings.json`):**
+
+```json
+{
+  "promptTower.useGitignore": true,
+  "promptTower.ignore": [
+    "package-lock.json",
+    "yarn.lock",
+    "poetry.lock",
+    "Gemfile.lock",
+    "LICENCE", // Note: Default includes LICENSE too
+    "*.log", // Example: Ignore all log files
+    "temp/" // Example: Ignore a temp directory
+  ]
+}
+```
+
+### Output Formatting (`promptTower.outputFormat`)
+
+This is the core of customization. Control exactly how the selected files and project tree are formatted.
+
+- **`blockTemplate`**: (String)
+
+  - Defines the format for _each_ selected file's content.
+  - **Placeholders:**
+    - `{fileContent}`: The actual content of the file.
+    - `{rawFilePath}`: The workspace-relative path (e.g., `/src/utils/helpers.ts`). _Ensures leading slash and uses forward slashes._
+    - `{fileNameWithExtension}`: The file name including extension (e.g., `helpers.ts`).
+    - `{fileName}`: File name without extension (e.g., `helpers`).
+    - `{fileExtension}`: The file extension (e.g., `.ts`).
+    - `{fullPath}`: The absolute path on your disk.
+  - **Default (XML-like):**
+    ```json
+    "promptTower.outputFormat.blockTemplate": "<file name=\"{fileNameWithExtension}\" path=\"{rawFilePath}\">\n{fileContent}\n</file>"
+    ```
+  - **Example (Markdown):**
+    ````json
+    "promptTower.outputFormat.blockTemplate": "``` {fileExtension}\n# Path: {rawFilePath}\n\n{fileContent}\n```"
+    ````
+
+- **`blockSeparator`**: (String, default: `\n`)
+
+  - The string inserted _between_ each formatted file block.
+
+- **`projectTreeFormat`**: (Object)
+
+  - Controls the optional project tree block.
+  - `enabled`: (Boolean, default: `true`) Include the project tree block?
+  - `type`: (String, default: `"fullFilesAndDirectories"`)
+    - `"fullFilesAndDirectories"`: Show all non-ignored files and folders in the workspace.
+    - `"fullDirectoriesOnly"`: Show all non-ignored directories in the workspace.
+    - `"selectedFilesOnly"`: Only include the _selected_ files in the tree structure.
+  - `showFileSize`: (Boolean, default: `true`) Display file sizes in the tree (ignored if `type` is `"fullDirectoriesOnly"`).
+  - `template`: (String, default: `"<project_tree>\n{projectTree}\n</project_tree>\n"`) Wrapper for the generated tree. Use `{projectTree}` as the placeholder.
+
+- **`wrapperFormat`**: (Object | null, default: Object)
+  - Controls the overall wrapper around the _entire_ output (tree + file blocks). Set to `null` to disable wrapping entirely.
+  - `template`: (String) The wrapper template.
+  - **Placeholders:**
+    - `{treeBlock}`: Where the formatted `projectTreeFormat.template` (if enabled) is inserted.
+    - `{blocks}`: Where the combined, separated file blocks (using `blockTemplate`) are inserted.
+    - `{timestamp}`: ISO timestamp of generation (replaces `2025-03-30T23:18:01.031Z` placeholder in default).
+    - `{fileCount}`: Number of files included (replaces `6` placeholder in default).
+    - `{workspaceRoot}`: Absolute path to the workspace root (replaces `/Users/ramos/prompt-tower` placeholder in default).
+  - **Default (XML-like):**
+    ```json
+    "promptTower.outputFormat.wrapperFormat": {
+      "template": "<context>\n{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
+    }
+    ```
+
+### Other Settings
+
+- **`promptTower.persistState`**: (Boolean, default: `false`) If `true`, remembers checked files/folders between VS Code sessions.
+- **`promptTower.maxFileSizeWarningKB`**: (Number, default: `500`) Show a warning prompt if a selected file exceeds this size in KB.
+
+---
+
+## Getting Started
+
+1.  **Install:** Search for "Prompt Tower" in the VS Code Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X`) and click Install.
+2.  **Open:** Click the Prompt Tower icon in the **Activity Bar** (it looks like a tower of blocks).
+3.  **Select:** Use the checkboxes in the "Prompt Tower" file tree view to select the files and folders you want to include as context.
+4.  **Configure (Optional):** Use the "Prompt Tower UI" panel to add a prefix or suffix to your prompt.
+5.  **Generate:**
+    - Click **"Create Context, Copy to Clipboard"** in the UI Panel (or use the `Copy Context to Clipboard` command/icon) to generate the context and copy it.
+    - Click **"Create Context"** to generate and view it in the preview area without copying.
+6.  **Paste:** Paste the generated context into your LLM chat/interface.
+
+---
+
+## Available Commands (Command Palette: `Ctrl+Shift+P` or `Cmd+Shift+P`)
+
+- `Prompt Tower: Show Prompt Tower UI`: Opens the main UI panel.
+- `Prompt Tower: Copy Context to Clipboard`: Generates context from selected files and copies it.
+- `Prompt Tower: Refresh File List`: Reloads the file tree view.
+- `Prompt Tower: Toggle All Files`: Checks/unchecks all files in the tree view.
+- `Prompt Tower: Clear All Selections`: Unchecks all files.
+- `Prompt Tower: Reset all`: Clears selections _and_ resets prefix/suffix in the UI panel.
+
+---
+
+## Contributing & Issues
+
+Found a bug or have a feature request? Please [open an issue](https://github.com/backnotprop/prompt-tower/issues) on the GitHub repository.
+
+Contributions are welcome!
+
+## License
+
+This extension is licensed under the **AGPL-3.0 License**. Please review the license before contributing or using the code in other projects. See the [LICENSE](LICENSE) file for details. (Note: AGPL has specific implications regarding distribution and modification).
+
+---
+
+Made by [Michael Ramos](https://github.com/backnotprop) ([@backnotprop](https://github.com/backnotprop)).
