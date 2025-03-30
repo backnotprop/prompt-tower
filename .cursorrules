@@ -1,0 +1,58 @@
+# Instructions for implementing the Context Preview Feature in the Prompt Tower Extension.
+
+1.  Your primary instructions are in the file `current_task.md`. Follow the step-by-step guide provided in that file precisely to implement the context preview feature.
+2.  Apply the changes atomically as described in each step of `current_task.md`. Verify compilation/basic function after each step.
+3.  The main files being modified for this task are `src/extension.ts` and `src/providers/PromptTowerProvider.ts`. Ensure these files, along with `current_task.md`, are included in your context when you start. Minor changes might occur in `src/commands.ts`.
+
+Let me know if any step in `current_task.md` is unclear. Start with Step 1 from that file.
+
+rules:
+
+# Primary Instructions File
+- file: current_task.md
+  rule: instructions
+  description: >-
+    This file contains the primary step-by-step instructions for implementing the
+    Context Preview feature. Follow these steps precisely and atomically. Refer back
+    to this file for each step.
+
+# Files Requiring Edits for this Task
+- file: src/extension.ts
+  rule: edit
+  description: >-
+    Allow editing to add Webview Panel content (HTML, CSS, JS for preview),
+    modify message handling (`onDidReceiveMessage`), update panel creation logic
+    (`createOrShowWebviewPanel`), add invalidation logic, and update `activate`
+    function as specified in current_task.md.
+- file: src/providers/PromptTowerProvider.ts
+  rule: edit
+  description: >-
+    Allow editing the constructor to accept the invalidation callback, and modify
+    methods (`refresh`, `toggleAllFiles`, `toggleCheck`) to call the invalidation
+    callback as specified in current_task.md. Ensure `generateContextString` is public.
+- file: src/commands.ts
+  rule: edit
+  description: >-
+    Allow potential minor edits (e.g., making parameters optional in function
+    signatures) as specified in current_task.md.
+
+# Provide context from other relevant source files
+- file: src/models/FileItem.ts
+  rule: context
+  description: Provide context on the data model for tree items.
+- file: src/models/EventEmitter.ts
+  rule: context
+  description: Provide context on the event emitter used for token/state updates between components.
+
+# Provide context from configuration and documentation
+- file: package.json
+  rule: context
+  description: Provide context on configuration settings, registered commands, views, and dependencies.
+- file: README.md
+  rule: context
+  description: Provide context on the overall extension goals and features.
+
+# Allow context for all other source files, but prioritize specific edit rules above
+- file: src/**/*.ts
+  rule: context # Use 'context' to guide understanding
+  description: Provide context for all other TypeScript source files as needed to understand the modifications.

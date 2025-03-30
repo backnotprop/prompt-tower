@@ -14,6 +14,18 @@ const tokenUpdateEmitter = new TokenUpdateEmitter();
 // --- Reference to the provider instance ---
 let providerInstance: PromptTowerProvider | undefined;
 
+// --- Flag to track if preview needs invalidation ---
+let isPreviewValid = false;
+
+// --- Helper to send invalidate message ---
+function invalidateWebviewPreview() {
+  if (webviewPanel && isPreviewValid) {
+    console.log("Extension: Sending invalidatePreview to webview.");
+    webviewPanel.webview.postMessage({ command: "invalidatePreview" });
+    isPreviewValid = false; // Mark as invalidated
+  }
+}
+
 // Generates a random nonce string for Content Security Policy
 function getNonce() {
   let text = "";
@@ -157,11 +169,50 @@ function getWebviewContent(
           flex-grow: 1; /* Allow textareas to grow */
         }
         #action-button-container {
-          margin-top: auto; /* Push button to the bottom */
-          padding-top: 1em; /* Add some space above the button */
+          margin-top: 1em; /* Adjusted spacing */
+          margin-bottom: 1em; /* Added margin below button */
           flex-shrink: 0; /* Prevent button container from shrinking */
-          border-top: 1px solid var(--vscode-separator-foreground); /* Optional separator */
         }
+
+        /* --- NEW PREVIEW STYLES --- */
+        #preview-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Allow preview to take remaining space */
+            min-height: 0; /* Allow shrinking below intrinsic size */
+            margin-top: 0px; /* Remove extra top margin */
+            border-top: 1px solid var(--vscode-separator-foreground); /* Optional separator */
+            padding-top: 1em; /* Spacing above label */
+        }
+        #context-preview {
+            flex-grow: 1; /* Textarea takes up available space in its container */
+            height: 256px; /* Initial desired height */
+            min-height: 100px; /* Minimum height */
+            /* Use !important sparingly, but useful here to override potential conflicts */
+            border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder)) !important;
+            background-color: var(--vscode-input-background) !important;
+            color: var(--vscode-input-foreground) !important;
+            overflow-y: auto; /* Add scrollbar if content exceeds height */
+            white-space: pre-wrap; /* Respect whitespace and wrap lines */
+            word-wrap: break-word; /* Break long words */
+            font-family: var(--vscode-editor-font-family, monospace); /* Use editor font */
+        }
+        #preview-status {
+          font-size: 0.9em;
+          color: var(--vscode-descriptionForeground);
+          margin-top: 5px;
+          min-height: 1.2em; /* Reserve space for status */
+        }
+
+        #preview-container.invalidated #context-preview {
+            border-color: var(--vscode-inputValidation-warningBorder, orange) !important;
+            /* Optionally add a subtle background change */
+            /* background-color: var(--vscode-list-warningForeground, #ffcc0020) !important; */
+        }
+        #preview-container.invalidated #preview-status {
+            color: var(--vscode-inputValidation-warningForeground, orange);
+        }
+        /* --- END PREVIEW STYLES --- */
     `;
 
   return `<!DOCTYPE html>
@@ -204,11 +255,15 @@ function getWebviewContent(
             <div id="action-button-container">
               <button id="copyButton">Create Context and Copy to Clipboard</button>
             </div>
+
+            <div id="preview-container">
+                <label for="context-preview">Context Preview</label>
+                <textarea id="context-preview" readonly></textarea>
+                <span id="preview-status">Click "Create Context..." to generate preview.</span>
+            </div>
             <script nonce="${nonce}">
                 (function() {
                     const vscode = acquireVsCodeApi(); // Get VS Code API access
-
-                    // Get state object (will be undefined first time, so initialize empty)
                     const state = vscode.getState() || {};
 
                     // --- Get references to elements ---
@@ -218,6 +273,14 @@ function getWebviewContent(
                     const prefixTextArea = document.getElementById("prompt-prefix");
                     const suffixTextArea = document.getElementById("prompt-suffix");
                     const copyButton = document.getElementById('copyButton');
+                    
+                    // --- NEW PREVIEW ELEMENTS ---
+                    const previewContainer = document.getElementById("preview-container");
+                    const previewTextArea = document.getElementById("context-preview");
+                    const previewStatusElement = document.getElementById("preview-status");
+
+                    // --- State for preview validity ---
+                    let isPreviewContentValid = false; // Track if the *content* in the preview is current
 
                     // --- Restore state if available ---
                     if (prefixTextArea && state.promptPrefix) {
@@ -270,6 +333,17 @@ function getWebviewContent(
                                      vscode.setState(state);
                                 }
                                 break;
+
+                            // --- NEW MESSAGE HANDLERS ---
+                            case "updatePreview":
+                                if (message.payload && typeof message.payload.context === "string") {
+                                    validatePreviewState(message.payload.context);
+                                }
+                                break;
+                            case "invalidatePreview":
+                                invalidatePreviewState();
+                                break;
+                            // --- END NEW MESSAGE HANDLERS ---
                         }
                     });
 
@@ -278,26 +352,35 @@ function getWebviewContent(
                       prefixTextArea.addEventListener("input", (e) => {
                         const text = e.target.value;
                         vscode.postMessage({ command: "updatePrefix", text: text });
-                        // Persist state within webview
                         state.promptPrefix = text;
                         vscode.setState(state);
+                        invalidatePreviewState();
                       });
                     }
                     if (suffixTextArea) {
                       suffixTextArea.addEventListener("input", (e) => {
                         const text = e.target.value;
                         vscode.postMessage({ command: "updateSuffix", text: text });
-                        // Persist state within webview
                         state.promptSuffix = text;
                         vscode.setState(state);
+                        invalidatePreviewState();
                       });
                     }
 
                     // --- Event Listener for Copy Button ---
                     if (copyButton) {
                       copyButton.addEventListener("click", () => {
+                        // Clear the preview immediately and show thinking status
+                        if (previewTextArea && previewStatusElement && previewContainer) {
+                          // Check container too
+                          previewTextArea.value = ""; // Clear old content
+                          previewContainer.classList.remove("invalidated"); // Remove invalid state
+                          previewStatusElement.textContent = "Generating context...";
+                          isPreviewContentValid = false; // Mark as not valid while generating
+                        }
+                        // Tell extension to generate, copy, AND send back preview content
                         vscode.postMessage({
-                          command: "copyToClipboard", // Send new command
+                          command: "copyToClipboard", // Keep command name
                         });
                       });
                     }
@@ -306,6 +389,33 @@ function getWebviewContent(
                     // Useful if the extension needs to know when to send initial data.
                     vscode.postMessage({ command: "webviewReady" });
                     console.log("Webview script loaded and ready.");
+
+                    // --- Function to invalidate the preview ---
+                    function invalidatePreviewState() {
+                      if (isPreviewContentValid && previewContainer && previewStatusElement) {
+                        console.log("Webview: Invalidating preview state.");
+                        previewContainer.classList.add("invalidated");
+                        previewStatusElement.textContent =
+                          'Context changed, preview outdated. Click "Create Context..." to update.';
+                        isPreviewContentValid = false;
+                        // Keep the text area readonly
+                      }
+                    }
+
+                    // --- Function to validate the preview ---
+                    function validatePreviewState(newContent) {
+                      if (previewTextArea && previewContainer && previewStatusElement) {
+                        console.log("Webview: Validating preview state.");
+                        previewTextArea.value = newContent;
+                        previewContainer.classList.remove("invalidated");
+                        previewStatusElement.textContent =
+                          "Preview generated. Copied to clipboard."; // Updated status
+                        isPreviewContentValid = true;
+                        previewTextArea.readOnly = true; // Ensure it's readonly after update
+                        // Scroll to top after updating
+                        previewTextArea.scrollTop = 0;
+                      }
+                    }
 
                 }()); // Immediately invoke the function to scope variables
               </script>
@@ -316,12 +426,13 @@ function getWebviewContent(
 function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
   const column = vscode.window.activeTextEditor
     ? vscode.window.activeTextEditor.viewColumn
-    : vscode.ViewColumn.One; // Default to column One if no editor is active
+    : vscode.ViewColumn.Beside;
 
   // If we already have a panel, show it.
   if (webviewPanel) {
     webviewPanel.reveal(column);
-    console.log("Prompt Tower UI: Revealed existing panel."); // Log for debugging
+    console.log("Prompt Tower UI: Revealed existing panel.");
+    isPreviewValid = false;
     // Resend state when revealed
     if (providerInstance) {
       webviewPanel.webview.postMessage({
@@ -339,37 +450,34 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
           isCounting: providerInstance.getIsCounting(),
         },
       });
+      invalidateWebviewPreview();
     }
     return;
   }
 
-  console.log("Prompt Tower UI: Creating new panel."); // Log for debugging
+  console.log("Prompt Tower UI: Creating new panel.");
+  isPreviewValid = false;
+
   // Otherwise, create a new panel.
   webviewPanel = vscode.window.createWebviewPanel(
-    VIEW_TYPE, // Identifies the type of the webview. Used internally
-    "Prompt Tower UI", // Title of the panel displayed to the user
-    column || vscode.ViewColumn.One, // Editor column to show the new webview panel in.
+    VIEW_TYPE,
+    "Prompt Tower",
+    column || vscode.ViewColumn.Beside,
     {
-      // Enable javascript in the webview
+      // Enable JS in webview
       enableScripts: true,
-      localResourceRoots: [context.extensionUri], // Allow loading from extension root for now
-      retainContextWhenHidden: true, // Keep webview alive when not visible
-      enableCommandUris: true, // Might be needed for state persistence or other commands
+      // Keep panel alive when not visible (important)
+      retainContextWhenHidden: true,
+      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "media")],
     }
   );
 
-  // Get initial state from provider before setting HTML
-  let initialPrefix = "";
-  let initialSuffix = "";
-  if (providerInstance) {
-    initialPrefix = providerInstance.getPromptPrefix();
-    initialSuffix = providerInstance.getPromptSuffix();
-  }
+  // ... set webviewPanel.webview.html ...
   webviewPanel.webview.html = getWebviewContent(
     webviewPanel.webview,
     context.extensionUri,
-    initialPrefix,
-    initialSuffix
+    providerInstance ? providerInstance.getPromptPrefix() : "",
+    providerInstance ? providerInstance.getPromptSuffix() : ""
   );
 
   // --- Listener for Token Updates from Provider ---
@@ -387,31 +495,25 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
 
   // --- Handle messages FROM the webview ---
   webviewPanel.webview.onDidReceiveMessage(
-    (message) => {
+    async (message) => {
       console.log("Message received from webview:", message);
       switch (message.command) {
-        case "alert": // Handle the alert command from the test button
-          if (message.text) {
-            vscode.window.showInformationMessage(
-              `Webview Message: ${message.text}`
-            );
-          }
-          return;
         case "updatePrefix":
           if (providerInstance && typeof message.text === "string") {
             providerInstance.setPromptPrefix(message.text);
+            invalidateWebviewPreview();
           }
           return;
         case "updateSuffix":
           if (providerInstance && typeof message.text === "string") {
             providerInstance.setPromptSuffix(message.text);
+            invalidateWebviewPreview();
           }
           return;
         case "webviewReady": // Handle webview ready message
           console.log("Prompt Tower Webview reported ready.");
-          // Send initial state (already handled by setting HTML, but could be resent here)
           if (providerInstance && webviewPanel) {
-            // Resend state just in case initialization timing was off
+            // Send initial state
             webviewPanel.webview.postMessage({
               command: "updatePrefix",
               text: providerInstance.getPromptPrefix(),
@@ -427,20 +529,45 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
                 isCounting: providerInstance.getIsCounting(),
               },
             });
+            invalidateWebviewPreview();
           }
           return;
-        // --- NEW: Handle copy command ---
         case "copyToClipboard":
-          if (providerInstance) {
-            // Call the new provider method
-            providerInstance.copyContextToClipboard();
+          if (providerInstance && webviewPanel) {
+            try {
+              // 1. Call provider to copy to clipboard (shows info message)
+              await providerInstance.copyContextToClipboard();
+
+              // 2. Generate the context *again* to get the string for preview
+              // Use await as generateContextString is async
+              const { contextString } =
+                await providerInstance.generateContextString();
+
+              // 3. Send the context string back to the webview for preview
+              console.log("Extension: Sending updatePreview to webview.");
+              webviewPanel.webview.postMessage({
+                command: "updatePreview",
+                payload: { context: contextString },
+              });
+              isPreviewValid = true; // Mark preview as valid now
+            } catch (error) {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
+              vscode.window.showErrorMessage(
+                `Error handling context generation/copy: ${errorMessage}`
+              );
+              console.error("Error in copyToClipboard handling:", error);
+              // Optionally send an error back to webview?
+              // webviewPanel.webview.postMessage({ command: 'previewError', message: 'Failed to generate context.' });
+              isPreviewValid = false; // Ensure it's marked invalid on error
+            }
           } else {
             vscode.window.showErrorMessage(
               "Prompt Tower provider not available."
             );
+            isPreviewValid = false;
           }
           return;
-        // --- End NEW ---
       }
     },
     undefined, // thisArg
@@ -457,22 +584,7 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
     context.subscriptions // Add disposable to context
   );
 
-  console.log("Prompt Tower UI: Panel created and listeners set."); // Log for debugging
-
-  // --- Send Initial State to newly created panel ---
-  // Give the webview a fraction of a second to load its script
-  setTimeout(() => {
-    if (providerInstance && webviewPanel) {
-      console.log("Prompt Tower UI: Sending initial token state.");
-      webviewPanel.webview.postMessage({
-        command: "tokenUpdate",
-        payload: {
-          count: providerInstance.getCurrentTokenCount(),
-          isCounting: providerInstance.getIsCounting(),
-        },
-      });
-    }
-  }, 100); // 100ms delay, adjust if needed
+  console.log("Prompt Tower UI: Panel created and listeners set.");
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -494,7 +606,8 @@ export function activate(context: vscode.ExtensionContext) {
       providerInstance = new PromptTowerProvider(
         rootPath,
         context,
-        tokenUpdateEmitter
+        tokenUpdateEmitter,
+        invalidateWebviewPreview
       );
       treeView = vscode.window.createTreeView("promptTowerView", {
         treeDataProvider: providerInstance,
@@ -523,16 +636,27 @@ export function activate(context: vscode.ExtensionContext) {
   }
   // --- End Tree View Setup ---
 
+  // --- ADD tokenUpdateEmitter listener registration here ---
+  const tokenUpdateListener = tokenUpdateEmitter.event(
+    (payload: TokenUpdatePayload) => {
+      if (webviewPanel) {
+        webviewPanel.webview.postMessage({ command: "tokenUpdate", payload });
+        invalidateWebviewPreview(); // Invalidate on token update
+      }
+    }
+  );
+  context.subscriptions.push(tokenUpdateListener); // Add listener to subscriptions
+
   // --- Register Webview Panel Command ---
-  console.log("Prompt Tower: Registering command promptTower.showTowerUI"); // Log for debugging
+  console.log("Prompt Tower: Registering command promptTower.showTowerUI");
   context.subscriptions.push(
     vscode.commands.registerCommand("promptTower.showTowerUI", () => {
-      console.log("Prompt Tower: Command promptTower.showTowerUI executed."); // Log for debugging
+      console.log("Prompt Tower: Command promptTower.showTowerUI executed.");
       createOrShowWebviewPanel(context);
     })
   );
 
-  // Automatically show the panel upon activation (e.g., when Activity Bar icon is clicked)
+  // Automatically show the panel upon activation (CRITICAL UX, DO NOT REMOVE)
   vscode.commands.executeCommand("promptTower.showTowerUI");
 }
 

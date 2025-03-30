@@ -39,11 +39,15 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private promptPrefix: string = "";
   private promptSuffix: string = "";
 
+  private invalidateWebviewPreview: () => void;
+
   constructor(
     private workspaceRoot: string,
     private context: vscode.ExtensionContext,
-    private tokenUpdateEmitter: TokenUpdateEmitter
+    private tokenUpdateEmitter: TokenUpdateEmitter,
+    invalidateWebviewPreview: () => void
   ) {
+    this.invalidateWebviewPreview = invalidateWebviewPreview;
     this.loadConfig();
     this.loadPersistedState();
     this.debouncedUpdateTokenCount(100); // Initial count calculation (debounced slightly)
@@ -364,6 +368,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.loadPersistedState(); // Loads state, potentially changing checked items
     this._onDidChangeTreeData.fire(); // Update the tree view itself
     this.debouncedUpdateTokenCount(); // Recalculate tokens after refresh completes
+    this.invalidateWebviewPreview();
   }
 
   async toggleAllFiles() {
@@ -374,14 +379,15 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
     // Update internal state first
     for (const [, item] of this.items) {
-      // Consider large files warning here? Might be slow for many files.
-      // Let's skip the warning on toggle-all for now.
+      // consider large files warning here?
       item.updateCheckState(newState);
     }
 
     if (this.persistState) {
       this.savePersistedState();
     }
+
+    this.invalidateWebviewPreview();
 
     // --- Token Count Update ---
     if (!newState) {
@@ -391,18 +397,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       this.isCountingTokens = false;
       this.notifyTokenUpdate(); // Instantly update UI to 0
       console.log("Token count reset to 0 (Toggled all off).");
-      // No need to trigger a new calculation, it's already 0.
     } else {
       // If toggling ON, trigger a debounced update
       this.debouncedUpdateTokenCount();
     }
 
     // Refresh the TreeView UI AFTER updating state and potentially tokens
-    this._onDidChangeTreeData.fire(); // Use fire() for full refresh
-
-    // Note: We removed the call to this.refresh() because it was redundant
-    // and could potentially interfere with the immediate token reset logic.
-    // Firing _onDidChangeTreeData is enough to update the visual checkboxes.
+    this._onDidChangeTreeData.fire();
   }
 
   // Add back the missing toggleCheck method
@@ -427,8 +428,10 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       // Ignore other errors during checkFileSize
     }
 
-    // Only proceed if the final intended state is different from the original
-    if (newState !== originalState || userCancelled) {
+    const stateEffectivelyChanged = newState !== originalState || userCancelled; // Determine if actual change occurred
+
+    // Only proceed if the final intended state is different from the original OR user cancelled
+    if (stateEffectivelyChanged) {
       item.updateCheckState(newState); // Update the item's visual state
 
       let childrenCancelled = false;
@@ -447,9 +450,10 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       // Refresh the specific item and its children visually
       this._onDidChangeTreeData.fire(item);
 
-      // Trigger Token Update (only if state wasn't cancelled back to original)
+      // Trigger Token Update and Invalidation only if state wasn't cancelled back to original
       // Or if children were cancelled (meaning effective selection changed)
       if (newState !== originalState || childrenCancelled) {
+        this.invalidateWebviewPreview();
         this.debouncedUpdateTokenCount();
       }
     }
@@ -775,7 +779,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     return false;
   }
 
-  private async generateContextString(): Promise<{
+  public async generateContextString(): Promise<{
     contextString: string;
     fileCount: number;
   }> {
