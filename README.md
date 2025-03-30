@@ -17,10 +17,10 @@ _`![Prompt Tower Demo](link/to/your/demo.gif)` - A short GIF is crucial for the 
 - 🚀 **Instant Context Generation:** Build & copy complex context to clipboard in one click.
 - 🔧 **Highly Configurable Output:** Customize context format (XML, MD, etc.) with templates.
 - 🌲 **Project Tree Context:** Optionally include a structured project overview in context (also configurable).
-- ⚙️ **Smart Filtering:** Respects `.gitignore`, `.towerignore`, and custom ignore rules.
+- 🔍 **Robust Filtering:** Respects `.gitignore`, `.towerignore`, and custom ignore rules to keep context lean.
 - 📊 **Live Token Count:** Real-time token count estimate helps manage context size.
 - 📝 **Dedicated UI Panel:** Manage prefix/suffix, preview, tokens & actions easily.
-- ⚠️ **File Size Warnings:** Get notified when selecting potentially oversized files.
+- 🔔 **File Size Warnings:** Get notified when selecting potentially oversized files.
 
 ---
 
