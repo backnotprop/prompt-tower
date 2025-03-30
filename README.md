@@ -1,4 +1,6 @@
-# Prompt Tower 🗼
+# Prompt Tower
+
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="180"/>
 
 **Effortlessly build and manage complex code context for your LLMs directly within VS Code.**
 
