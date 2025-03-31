@@ -6,6 +6,7 @@ import { encode } from "gpt-tokenizer";
 import { TokenUpdateEmitter } from "../models/EventEmitter";
 
 import { generateFileStructureTree } from "../utils/fileTree";
+import { ALWAYS_IGNORE } from "../utils/alwaysIgnore";
 
 interface StructuredFilePath {
   origin: string; // Absolute path on disk
@@ -29,7 +30,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this._onDidChangeTreeData.event;
 
   private items = new Map<string, FileItem>();
-  private excludedPatterns: string[] = [];
+  private excludedPatterns: string[] = ALWAYS_IGNORE;
   private persistState: boolean = true;
   private maxFileSizeWarningKB: number = 500;
 
@@ -693,6 +694,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     this.excludedPatterns = [
       ...new Set([
         // Use Set to remove duplicates
+        ...ALWAYS_IGNORE,
         ...standardIgnores,
         ...(useGitIgnore ? this.getGitIgnorePatterns() : []),
         ...this.getTowerIgnorePatterns(),

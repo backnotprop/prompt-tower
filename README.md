@@ -68,9 +68,8 @@ Control which files/folders are _excluded_ from the Prompt Tower tree view:
     "package-lock.json", // Prompt Tower defaults to ignore lock files
     "yarn.lock",
     "poetry.lock",
-    "Gemfile.lock",
-    "*.log", // Example: Ignore all log files
-    "temp/" // Example: Ignore a temp directory
+    "Gemfile.lock"
+    // The default also includes many common binary files (documents, images, videos, audio, etc.)
   ]
 }
 ```
