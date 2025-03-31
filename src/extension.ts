@@ -849,7 +849,9 @@ export function activate(context: vscode.ExtensionContext) {
         treeDataProvider: providerInstance,
         canSelectMany: true,
         showCollapseAll: true,
+        manageCheckboxStateManually: true, // this is crtical for selection (unchecking) to work how we want.
       });
+
       context.subscriptions.push(treeView);
 
       registerCommands(context, providerInstance, treeView);

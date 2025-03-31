@@ -1,6 +1,6 @@
 # Prompt Tower
 
-<img src="https://github.com/backnotprop/prompt-tower/blob/main/extension-assets/image.png?raw=true" alt="Prompt Tower" width="180"/>
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/assets/image-tny.png?raw=true" alt="Prompt Tower" width="180"/>
 
 **Comprehensive context and prompt management for your Coding Agents and CodeLLMs**
 
@@ -8,7 +8,7 @@ Prompt Tower is a VS Code extension that is also compatible with Cursor, Windsur
 
 A dedicated interface to select files/folders, include directory trees, customize formatting, and to generate the exact context your coding agents need to be more effective while saving you tokens.
 
-![Prompt Tower Demo](https://github.com/backnotprop/prompt-tower/blob/main/extension-assets/prompt-tower-v1.0.0.gif?raw=true)
+![Prompt Tower Demo](https://github.com/backnotprop/prompt-tower/blob/main/assets/prompt-tower-v1.0.0.gif?raw=true)
 
 ---
 
@@ -68,9 +68,8 @@ Control which files/folders are _excluded_ from the Prompt Tower tree view:
     "package-lock.json", // Prompt Tower defaults to ignore lock files
     "yarn.lock",
     "poetry.lock",
-    "Gemfile.lock",
-    "*.log", // Example: Ignore all log files
-    "temp/" // Example: Ignore a temp directory
+    "Gemfile.lock"
+    // The default also includes many common binary files (documents, images, videos, audio, etc.)
   ]
 }
 ```
@@ -131,7 +130,6 @@ This is the core of customization. Control exactly how the selected files and pr
 
 ### Other Settings
 
-- **`promptTower.persistState`**: (Boolean, default: `false`) If `true`, remembers checked files/folders between VS Code sessions.
 - **`promptTower.maxFileSizeWarningKB`**: (Number, default: `500`) Show a warning prompt if a selected file exceeds this size in KB.
 
 ---
