@@ -1044,8 +1044,18 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         );
         formattedBlock = formattedBlock.replace(/{fullPath}/g, fullFilePath); // Keep if {fullPath} is ever used
 
+        // @TODO: probably needs to be a config option
+        // Remove all leading blank lines:
+        let trimmedFileContent = fileContent.replace(/^(\s*\r?\n)+/, "");
+
+        // Remove all trailing blank lines:
+        trimmedFileContent = fileContent.replace(/(\r?\n\s*)+$/, "");
+
         // Replace fileContent last to avoid issues if content contains placeholders
-        formattedBlock = formattedBlock.replace(/{fileContent}/g, fileContent);
+        formattedBlock = formattedBlock.replace(
+          /{fileContent}/g,
+          trimmedFileContent
+        );
 
         return formattedBlock;
       });
