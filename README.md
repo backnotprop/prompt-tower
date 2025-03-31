@@ -6,7 +6,7 @@
 
 Prompt Tower is a VS Code extension that is also compatible with Cursor, Windsurf, and Google IDX.
 
-It provides a dedicated interface to select files/folders, customize formatting, and generate the exact context payload your CodeLLM needs, saving you time and reducing errors.
+It provides a dedicated interface to select files/folders, include directory trees, customize context formatting, and generate the exact context payload your CodeLLM needs, saving you tokens, time and making coding agents more effective.
 
 ![Prompt Tower Demo](https://github.com/backnotprop/prompt-tower/blob/v1-prototype/extension-assets/prompt-tower-v1.0.0.gif?raw=true)
 
