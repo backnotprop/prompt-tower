@@ -85,7 +85,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       });
 
     this.setupIgnoreFileWatchers();
-    this.setupWorkspaceFileWatcher();
+    // this.setupWorkspaceFileWatcher();
   }
 
   setPromptPrefix(text: string): void {
@@ -109,119 +109,219 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     return this.promptSuffix;
   }
 
-  private async initializeWorkspaceItems(): Promise<void> {
-    console.log("Prompt Tower: Initializing workspace items...");
-    this.items.clear(); // Start fresh
+  // private async initializeWorkspaceItems(): Promise<void> {
+  //   console.log("Prompt Tower: Initializing workspace items...");
+  //   this.items.clear(); // Start fresh
 
-    const configExcludes = this.getExcludedGlobsForFindFiles(); // Helper needed (see below)
+  //   const configExcludes = this.getExcludedGlobsForFindFiles(); // Helper needed (see below)
+  //   const excludePattern =
+  //     configExcludes.length > 0 ? `{${configExcludes.join(",")}}` : null;
+
+  //   // Use findFiles to get all FILES efficiently, respecting ignores
+  //   const fileUris = await vscode.workspace.findFiles(
+  //     "**/*", // Include pattern: find everything initially
+  //     excludePattern, // Exclude pattern based on config/ignores
+  //     undefined // maxResults (optional)
+  //   );
+
+  //   console.log(`Prompt Tower: Found ${fileUris.length} files via findFiles.`);
+
+  //   // Process found files and implicitly add necessary directories
+  //   const discoveredPaths = new Set<string>(); // Track paths we've added to items
+
+  //   for (const uri of fileUris) {
+  //     const filePath = uri.fsPath;
+
+  //     // Skip if already processed (e.g., if findFiles returned a dir somehow)
+  //     if (discoveredPaths.has(filePath)) {
+  //       continue;
+  //     }
+
+  //     // Add the file itself
+  //     if (!this.items.has(filePath)) {
+  //       try {
+  //         // Double check existence and type (though findFiles should be accurate for files)
+  //         const stats = await fs.promises.stat(filePath);
+  //         if (stats.isFile()) {
+  //           const fileItem = new FileItem(
+  //             path.basename(filePath),
+  //             vscode.TreeItemCollapsibleState.None,
+  //             filePath,
+  //             false // Default to unchecked initially
+  //           );
+  //           this.items.set(filePath, fileItem);
+  //           discoveredPaths.add(filePath);
+  //           // console.log(`Added file: ${filePath}`);
+  //         } else {
+  //           console.warn(
+  //             `findFiles returned a non-file, skipping: ${filePath}`
+  //           );
+  //           continue; // Skip if it's somehow not a file
+  //         }
+  //       } catch (e) {
+  //         console.warn(`Error stating file during init ${filePath}:`, e);
+  //         continue; // Skip if error stating
+  //       }
+  //     }
+
+  //     // Add all parent directories leading up to this file
+  //     let currentDirPath = path.dirname(filePath);
+  //     while (
+  //       currentDirPath !== this.workspaceRoot &&
+  //       currentDirPath !== path.dirname(currentDirPath)
+  //     ) {
+  //       if (discoveredPaths.has(currentDirPath)) {
+  //         break; // Stop if we hit an already processed parent
+  //       }
+
+  //       // Check if directory actually exists and isn't excluded itself
+  //       // (A file might be included while its parent dir name matches an exclude pattern)
+  //       if (
+  //         !this.isPathExcluded(currentDirPath) &&
+  //         fs.existsSync(currentDirPath) &&
+  //         fs.statSync(currentDirPath).isDirectory()
+  //       ) {
+  //         if (!this.items.has(currentDirPath)) {
+  //           const dirItem = new FileItem(
+  //             path.basename(currentDirPath),
+  //             vscode.TreeItemCollapsibleState.Collapsed, // Default state
+  //             currentDirPath,
+  //             false // Default to unchecked
+  //           );
+  //           this.items.set(currentDirPath, dirItem);
+  //           discoveredPaths.add(currentDirPath);
+  //           //  console.log(`Added directory: ${currentDirPath}`);
+  //         }
+  //       } else {
+  //         // If the directory is excluded or doesn't exist, stop traversing up this path
+  //         break;
+  //       }
+
+  //       currentDirPath = path.dirname(currentDirPath);
+  //     }
+  //     // Add workspace root explicitly if needed? Usually handled by getChildren(undefined)
+  //     // if (!discoveredPaths.has(this.workspaceRoot) && fs.existsSync(this.workspaceRoot)) {
+  //     //      this.items.set(this.workspaceRoot, new FileItem(path.basename(this.workspaceRoot), vscode.TreeItemCollapsibleState.Expanded, this.workspaceRoot, false));
+  //     //      discoveredPaths.add(this.workspaceRoot);
+  //     // }
+  //   }
+  //   console.log(
+  //     `Prompt Tower: Populated ${this.items.size} items (files and directories).`
+  //   );
+  // }
+
+  // Helper to format patterns for findFiles exclude
+  // Add an optional parameter to accept paths that should remain checked
+  private async initializeWorkspaceItems(
+    preserveCheckedPaths?: Set<string>
+  ): Promise<void> {
+    console.log("Prompt Tower: Initializing workspace items...");
+    // Keep track of the new items being built
+    const newItems = new Map<string, FileItem>();
+    // NOTE: We don't clear this.items immediately anymore,
+    // but build newItems first and replace at the end.
+
+    const configExcludes = this.getExcludedGlobsForFindFiles();
     const excludePattern =
       configExcludes.length > 0 ? `{${configExcludes.join(",")}}` : null;
 
-    // Use findFiles to get all FILES efficiently, respecting ignores
     const fileUris = await vscode.workspace.findFiles(
-      "**/*", // Include pattern: find everything initially
-      excludePattern, // Exclude pattern based on config/ignores
-      undefined // maxResults (optional)
+      "**/*",
+      excludePattern,
+      undefined
     );
 
     console.log(`Prompt Tower: Found ${fileUris.length} files via findFiles.`);
-
-    // Process found files and implicitly add necessary directories
-    const discoveredPaths = new Set<string>(); // Track paths we've added to items
+    const discoveredPaths = new Set<string>();
 
     for (const uri of fileUris) {
       const filePath = uri.fsPath;
-
-      // Skip if already processed (e.g., if findFiles returned a dir somehow)
       if (discoveredPaths.has(filePath)) {
         continue;
       }
 
-      // Add the file itself
-      if (!this.items.has(filePath)) {
+      // --- Process the File ---
+      if (!newItems.has(filePath)) {
+        // Check newItems map
         try {
-          // Double check existence and type (though findFiles should be accurate for files)
           const stats = await fs.promises.stat(filePath);
           if (stats.isFile()) {
+            // *** KEY CHANGE HERE: Check if this path should be checked ***
+            const isChecked = preserveCheckedPaths?.has(filePath) ?? false;
             const fileItem = new FileItem(
               path.basename(filePath),
               vscode.TreeItemCollapsibleState.None,
               filePath,
-              false // Default to unchecked initially
+              isChecked // Use preserved state or default false
             );
-            this.items.set(filePath, fileItem);
+            newItems.set(filePath, fileItem); // Add to newItems
             discoveredPaths.add(filePath);
-            // console.log(`Added file: ${filePath}`);
           } else {
             console.warn(
               `findFiles returned a non-file, skipping: ${filePath}`
             );
-            continue; // Skip if it's somehow not a file
+            continue;
           }
         } catch (e) {
           console.warn(`Error stating file during init ${filePath}:`, e);
-          continue; // Skip if error stating
+          continue;
         }
       }
 
-      // Add all parent directories leading up to this file
+      // --- Process Parent Directories ---
       let currentDirPath = path.dirname(filePath);
       while (
         currentDirPath !== this.workspaceRoot &&
         currentDirPath !== path.dirname(currentDirPath)
       ) {
         if (discoveredPaths.has(currentDirPath)) {
-          break; // Stop if we hit an already processed parent
-        }
-
-        // Check if directory actually exists and isn't excluded itself
-        // (A file might be included while its parent dir name matches an exclude pattern)
-        if (
-          !this.isPathExcluded(currentDirPath) &&
-          fs.existsSync(currentDirPath) &&
-          fs.statSync(currentDirPath).isDirectory()
-        ) {
-          if (!this.items.has(currentDirPath)) {
-            const dirItem = new FileItem(
-              path.basename(currentDirPath),
-              vscode.TreeItemCollapsibleState.Collapsed, // Default state
-              currentDirPath,
-              false // Default to unchecked
-            );
-            this.items.set(currentDirPath, dirItem);
-            discoveredPaths.add(currentDirPath);
-            //  console.log(`Added directory: ${currentDirPath}`);
-          }
-        } else {
-          // If the directory is excluded or doesn't exist, stop traversing up this path
           break;
         }
 
+        if (
+          !this.isPathExcluded(currentDirPath) && // Still check exclusion for dirs
+          fs.existsSync(currentDirPath) &&
+          fs.statSync(currentDirPath).isDirectory()
+        ) {
+          if (!newItems.has(currentDirPath)) {
+            // Check newItems map
+            // *** KEY CHANGE HERE: Check if this dir path should be checked ***
+            const isChecked =
+              preserveCheckedPaths?.has(currentDirPath) ?? false;
+            const dirItem = new FileItem(
+              path.basename(currentDirPath),
+              vscode.TreeItemCollapsibleState.Collapsed,
+              currentDirPath,
+              isChecked // Use preserved state or default false
+            );
+            newItems.set(currentDirPath, dirItem); // Add to newItems
+            discoveredPaths.add(currentDirPath);
+          }
+        } else {
+          break;
+        }
         currentDirPath = path.dirname(currentDirPath);
       }
-      // Add workspace root explicitly if needed? Usually handled by getChildren(undefined)
-      // if (!discoveredPaths.has(this.workspaceRoot) && fs.existsSync(this.workspaceRoot)) {
-      //      this.items.set(this.workspaceRoot, new FileItem(path.basename(this.workspaceRoot), vscode.TreeItemCollapsibleState.Expanded, this.workspaceRoot, false));
-      //      discoveredPaths.add(this.workspaceRoot);
-      // }
     }
+
+    // *** KEY CHANGE HERE: Replace the old map with the newly built one ***
+    this.items = newItems;
     console.log(
-      `Prompt Tower: Populated ${this.items.size} items (files and directories).`
+      `Prompt Tower: Populated ${this.items.size} items (preserving check state where possible).`
     );
   }
 
-  // Helper to format patterns for findFiles exclude
   private getExcludedGlobsForFindFiles(): string[] {
     // findFiles glob patterns often need slightly different formatting than basic matching
     // - Directories usually need `**` (e.g., `**/node_modules/**`)
     // - Simple file patterns are often okay (e.g., `**/*.log`)
-    // - Hidden files/folders: `**/.*`
-    const globs: string[] = ["**/.*"]; // Always exclude hidden files/folders
+
+    const globs: string[] = [];
 
     this.excludedPatterns.forEach((pattern) => {
       // Basic conversion attempt (needs refinement based on pattern types)
       if (pattern.endsWith("/")) {
-        // Directory pattern like "node_modules/"
+        // Directory pattern like "node_modules/"6
         globs.push(`**/${pattern}**`); // Exclude folder and its contents
       } else if (pattern.includes("*")) {
         // Assume it's already a glob
@@ -1182,157 +1282,187 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       new vscode.RelativePattern(this.workspaceRoot, ".towerignore")
     );
 
-    // Handle file changes for gitignore
-    gitignoreWatcher.onDidChange(() => {
-      console.log("Detected change in .gitignore, reloading patterns");
-      this.loadConfig();
-      this._onDidChangeTreeData.fire();
-    });
+    // Define a common async handler function for all ignore file events
+    const handleIgnoreFileChange = async (
+      fileName: string,
+      eventType: string
+    ) => {
+      // Log the detection clearly
+      console.log(
+        `Detected ${eventType} in ${fileName}, reloading patterns and rebuilding item list...`
+      );
 
-    // Handle file creation for gitignore (will fire when file is created)
-    gitignoreWatcher.onDidCreate(() => {
-      console.log(".gitignore was created, reloading patterns");
-      this.loadConfig();
-      this._onDidChangeTreeData.fire();
-    });
+      try {
+        const previouslyCheckedPaths = new Set<string>();
+        for (const item of this.items.values()) {
+          if (item.isChecked) {
+            previouslyCheckedPaths.add(item.filePath);
+          }
+        }
+        console.log(`Remembered ${previouslyCheckedPaths.size} checked paths.`);
 
-    // Handle file deletion for gitignore (might want to update patterns)
-    gitignoreWatcher.onDidDelete(() => {
-      console.log(".gitignore was deleted, reloading patterns");
-      this.loadConfig();
-      this._onDidChangeTreeData.fire();
-    });
+        // Step 1: Load the updated configuration (updates this.excludedPatterns)
+        this.loadConfig();
+        console.log(`${fileName} ${eventType}: loadConfig completed.`);
 
-    // Same handlers for towerignore
-    towerignoreWatcher.onDidChange(() => {
-      console.log("Detected change in .towerignore, reloading patterns");
-      this.loadConfig();
-      this._onDidChangeTreeData.fire();
-    });
+        // Step 2: Re-initialize the entire item map based on the new patterns
+        // This is the crucial step to add/remove items from the internal list
+        await this.initializeWorkspaceItems(previouslyCheckedPaths); // Pass the set
+        console.log(
+          `${fileName} ${eventType}: initializeWorkspaceItems completed.`
+        );
 
-    towerignoreWatcher.onDidCreate(() => {
-      console.log(".towerignore was created, reloading patterns");
-      this.loadConfig();
-      this._onDidChangeTreeData.fire();
-    });
+        // Step 3: Signal VS Code to refresh the Tree View UI
+        this._onDidChangeTreeData.fire(); // Full refresh based on new items map
+        console.log(`${fileName} ${eventType}: Fired TreeDataChanged.`);
 
-    towerignoreWatcher.onDidDelete(() => {
-      console.log(".towerignore was deleted, reloading patterns");
-      this.loadConfig();
-      this._onDidChangeTreeData.fire();
-    });
+        // Step 4: Recalculate token count as the available/visible items may have changed
+        this.debouncedUpdateTokenCount();
+        console.log(`${fileName} ${eventType}: Triggered token count update.`);
+      } catch (error) {
+        // Log any errors during the process and notify the user
+        console.error(`Error handling ${fileName} ${eventType}:`, error);
+        vscode.window.showErrorMessage(
+          `Failed to process changes in ${fileName}. Check Developer Tools Console.`
+        );
+      }
+    };
 
-    // Add to context subscriptions for proper disposal
+    // --- Register Watcher Callbacks ---
+
+    // Handle file changes for .gitignore
+    gitignoreWatcher.onDidChange(() =>
+      handleIgnoreFileChange(".gitignore", "change")
+    );
+    gitignoreWatcher.onDidCreate(() =>
+      handleIgnoreFileChange(".gitignore", "create")
+    );
+    gitignoreWatcher.onDidDelete(() =>
+      handleIgnoreFileChange(".gitignore", "delete")
+    ); // Also reload on delete
+
+    // Handle file changes for .towerignore
+    towerignoreWatcher.onDidChange(() =>
+      handleIgnoreFileChange(".towerignore", "change")
+    );
+    towerignoreWatcher.onDidCreate(() =>
+      handleIgnoreFileChange(".towerignore", "create")
+    );
+    towerignoreWatcher.onDidDelete(() =>
+      handleIgnoreFileChange(".towerignore", "delete")
+    ); // Also reload on delete
+
+    // Add watchers to context subscriptions for proper disposal when the extension deactivates
     this.context.subscriptions.push(gitignoreWatcher, towerignoreWatcher);
   }
 
-  private setupWorkspaceFileWatcher(): void {
-    // Watch the entire workspace for creates and deletes
-    // NOTE: This can be noisy in very active workspaces. Consider debouncing updates.
-    const watcher = vscode.workspace.createFileSystemWatcher(
-      "**/*",
-      false,
-      false,
-      false
-    ); // ignoreChangeEvents, ignoreDeleteEvents, ignoreCreateEvents
+  // private setupWorkspaceFileWatcher(): void {
+  //   // Watch the entire workspace for creates and deletes
+  //   // NOTE: This can be noisy in very active workspaces. Consider debouncing updates.
+  //   const watcher = vscode.workspace.createFileSystemWatcher(
+  //     "**/*",
+  //     false,
+  //     false,
+  //     false
+  //   ); // ignoreChangeEvents, ignoreDeleteEvents, ignoreCreateEvents
 
-    watcher.onDidCreate(async (uri) => {
-      const filePath = uri.fsPath;
-      console.log(`File created: ${filePath}`);
-      // Ignore if it matches exclude patterns
-      if (this.isPathExcluded(filePath) || !fs.existsSync(filePath)) {
-        console.log(
-          `Ignoring created file (excluded or non-existent): ${filePath}`
-        );
-        return;
-      }
+  //   watcher.onDidCreate(async (uri) => {
+  //     const filePath = uri.fsPath;
+  //     console.log(`File created: ${filePath}`);
+  //     // Ignore if it matches exclude patterns
+  //     if (this.isPathExcluded(filePath) || !fs.existsSync(filePath)) {
+  //       console.log(
+  //         `Ignoring created file (excluded or non-existent): ${filePath}`
+  //       );
+  //       return;
+  //     }
 
-      try {
-        const stats = await fs.promises.stat(filePath); // Use await here
-        const parentDir = path.dirname(filePath);
+  //     try {
+  //       const stats = await fs.promises.stat(filePath); // Use await here
+  //       const parentDir = path.dirname(filePath);
 
-        // Add the new item
-        if (!this.items.has(filePath)) {
-          const newItem = new FileItem(
-            path.basename(filePath),
-            stats.isDirectory()
-              ? vscode.TreeItemCollapsibleState.Collapsed
-              : vscode.TreeItemCollapsibleState.None,
-            filePath,
-            this.items.get(parentDir)?.isChecked ?? false // Inherit check state from parent IF parent exists in map
-          );
-          this.items.set(filePath, newItem);
-          console.log(
-            `Added new item to map: ${filePath}, Inherited check: ${newItem.isChecked}`
-          );
+  //       // Add the new item
+  //       if (!this.items.has(filePath)) {
+  //         const newItem = new FileItem(
+  //           path.basename(filePath),
+  //           stats.isDirectory()
+  //             ? vscode.TreeItemCollapsibleState.Collapsed
+  //             : vscode.TreeItemCollapsibleState.None,
+  //           filePath,
+  //           this.items.get(parentDir)?.isChecked ?? false // Inherit check state from parent IF parent exists in map
+  //         );
+  //         this.items.set(filePath, newItem);
+  //         console.log(
+  //           `Added new item to map: ${filePath}, Inherited check: ${newItem.isChecked}`
+  //         );
 
-          // If it inherited checked state, update tokens and preview
-          if (newItem.isChecked) {
-            this.debouncedUpdateTokenCount();
-            this.invalidateWebviewPreview();
-          }
+  //         // If it inherited checked state, update tokens and preview
+  //         if (newItem.isChecked) {
+  //           this.debouncedUpdateTokenCount();
+  //           this.invalidateWebviewPreview();
+  //         }
 
-          // Refresh the parent node in the tree view to show the new item
-          const parentItem = this.items.get(parentDir);
-          this._onDidChangeTreeData.fire(parentItem ?? undefined); // Refresh parent or root
-        }
-        // Ensure parent directories exist in the map (might be needed if an empty dir was created)
-        this.ensureParentDirectoriesExist(filePath);
-      } catch (e) {
-        console.warn(`Error processing created file ${filePath}:`, e);
-      }
-    });
+  //         // Refresh the parent node in the tree view to show the new item
+  //         const parentItem = this.items.get(parentDir);
+  //         this._onDidChangeTreeData.fire(parentItem ?? undefined); // Refresh parent or root
+  //       }
+  //       // Ensure parent directories exist in the map (might be needed if an empty dir was created)
+  //       this.ensureParentDirectoriesExist(filePath);
+  //     } catch (e) {
+  //       console.warn(`Error processing created file ${filePath}:`, e);
+  //     }
+  //   });
 
-    watcher.onDidDelete((uri) => {
-      const filePath = uri.fsPath;
-      console.log(`File deleted: ${filePath}`);
-      const deletedItem = this.items.get(filePath);
-      let stateChanged = false;
+  //   watcher.onDidDelete((uri) => {
+  //     const filePath = uri.fsPath;
+  //     console.log(`File deleted: ${filePath}`);
+  //     const deletedItem = this.items.get(filePath);
+  //     let stateChanged = false;
 
-      if (deletedItem) {
-        const wasChecked = deletedItem.isChecked;
-        this.items.delete(filePath);
-        stateChanged = true;
-        console.log(`Removed item from map: ${filePath}`);
+  //     if (deletedItem) {
+  //       const wasChecked = deletedItem.isChecked;
+  //       this.items.delete(filePath);
+  //       stateChanged = true;
+  //       console.log(`Removed item from map: ${filePath}`);
 
-        // If a checked item was deleted, update tokens/preview
-        if (wasChecked) {
-          this.debouncedUpdateTokenCount();
-          this.invalidateWebviewPreview();
-        }
+  //       // If a checked item was deleted, update tokens/preview
+  //       if (wasChecked) {
+  //         this.debouncedUpdateTokenCount();
+  //         this.invalidateWebviewPreview();
+  //       }
 
-        // Also remove any children if it was a directory
-        if (deletedItem.contextValue === "folder") {
-          const childrenToRemove = Array.from(this.items.keys()).filter((key) =>
-            key.startsWith(filePath + path.sep)
-          );
-          childrenToRemove.forEach((key) => {
-            if (this.items.get(key)?.isChecked) {
-              stateChanged = true; // Mark change if a checked child was removed implicitly
-            }
-            this.items.delete(key);
-            console.log(`Implicitly removed child: ${key}`);
-          });
-          if (stateChanged && !wasChecked) {
-            // If only children were checked
-            this.debouncedUpdateTokenCount();
-            this.invalidateWebviewPreview();
-          }
-        }
+  //       // Also remove any children if it was a directory
+  //       if (deletedItem.contextValue === "folder") {
+  //         const childrenToRemove = Array.from(this.items.keys()).filter((key) =>
+  //           key.startsWith(filePath + path.sep)
+  //         );
+  //         childrenToRemove.forEach((key) => {
+  //           if (this.items.get(key)?.isChecked) {
+  //             stateChanged = true; // Mark change if a checked child was removed implicitly
+  //           }
+  //           this.items.delete(key);
+  //           console.log(`Implicitly removed child: ${key}`);
+  //         });
+  //         if (stateChanged && !wasChecked) {
+  //           // If only children were checked
+  //           this.debouncedUpdateTokenCount();
+  //           this.invalidateWebviewPreview();
+  //         }
+  //       }
 
-        // Refresh parent view
-        const parentDir = path.dirname(filePath);
-        const parentItem = this.items.get(parentDir);
-        this._onDidChangeTreeData.fire(parentItem ?? undefined);
-      }
-    });
+  //       // Refresh parent view
+  //       const parentDir = path.dirname(filePath);
+  //       const parentItem = this.items.get(parentDir);
+  //       this._onDidChangeTreeData.fire(parentItem ?? undefined);
+  //     }
+  //   });
 
-    // Handle Renames? VS Code file watching for renames is complex.
-    // A rename often appears as a delete and a create.
-    // For simplicity, rely on create/delete handlers or manual refresh for now.
+  //   // Handle Renames? VS Code file watching for renames is complex.
+  //   // A rename often appears as a delete and a create.
+  //   // For simplicity, rely on create/delete handlers or manual refresh for now.
 
-    this.context.subscriptions.push(watcher);
-  }
+  //   this.context.subscriptions.push(watcher);
+  // }
 
   private ensureParentDirectoriesExist(filePath: string): void {
     let currentDirPath = path.dirname(filePath);

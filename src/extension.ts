@@ -550,6 +550,9 @@ function getWebviewContent(
 
                     // --- Function to invalidate the preview ---
                     function invalidatePreviewState(reason = "unknown") {
+                      if (!hasContextEverBeenGenerated) {
+                        return;
+                      }
                       if (previewContainer && previewStatusElement) {
                          currentValidContext = null; // Clear the known valid context
                          isPreviewContentValid = false; // Mark internal state as invalid
@@ -573,14 +576,18 @@ function getWebviewContent(
                     // --- Function to reset the preview ---
                     function resetWebviewPreviewState() {
                       hasContextEverBeenGenerated = false;
-                      if (previewContainer && previewStatusElement) {
-                        previewContainer.classList.remove("invalidated");
-                        previewStatusElement.textContent = "";
-                        previewTextArea.value = "";
-                      }
-                      // clear the prefix and suffix values
+                      
                       prefixTextArea.value = "";
                       suffixTextArea.value = "";
+                      if (previewContainer) {
+                        previewContainer.classList.remove("invalidated");
+                        if (previewStatusElement) {
+                          previewStatusElement.textContent = "";
+                        }
+                        if (previewTextArea) {
+                          previewTextArea.value = "";
+                        }
+                      }
                     }
 
                     // --- Function to validate the preview ---
