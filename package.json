@@ -12,7 +12,7 @@
     "url": "https://github.com/backnotprop"
   },
   "publisher": "backnotprop",
-  "icon": "extension-assets/prompt-tower-icon.png",
+  "icon": "assets/prompt-tower-icon.png",
   "description": "Context creation and management tool for LLM coding agents. Build prompts with lots of code blocks in them, save templates, and dynamically manage context on your terms.",
   "categories": [
     "AI",
@@ -134,14 +134,14 @@
         {
           "id": "prompt-tower",
           "title": "Prompt Tower",
-          "icon": "extension-assets/prompt-tower.svg"
+          "icon": "assets/prompt-tower.svg"
         }
       ]
     },
     "views": {
       "prompt-tower": [
         {
-          "icon": "extension-assets/prompt-tower.svg",
+          "icon": "assets/prompt-tower.svg",
           "id": "promptTowerView",
           "name": "Files",
           "type": "tree"
