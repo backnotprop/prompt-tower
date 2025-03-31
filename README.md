@@ -1,6 +1,6 @@
 # Prompt Tower
 
-<img src="https://github.com/backnotprop/prompt-tower/blob/main/extension-assets/image.png?raw=true" alt="Prompt Tower" width="180"/>
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/extension-assets/image-tny.png?raw=true" alt="Prompt Tower" width="180"/>
 
 **Comprehensive context and prompt management for your Coding Agents and CodeLLMs**
 
