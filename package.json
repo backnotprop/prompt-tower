@@ -104,7 +104,7 @@
                 "showFileSize": {
                   "type": "boolean",
                   "description": "Show each file's size in the project tree block.",
-                  "default": true
+                  "default": false
                 },
                 "template": {
                   "type": "string",

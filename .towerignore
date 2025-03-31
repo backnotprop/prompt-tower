@@ -3,7 +3,7 @@ extension-assets
 
 .gitignore
 .cursorrules
-.towerignore
+# .towerignore
 .vscodeignore
 
 CHANGELOG.md
@@ -13,4 +13,5 @@ tsconfig.json
 
 .vscode-test.mjs
 
+README_Future.md
 

@@ -45,7 +45,6 @@ function createTreeOutput(
   ) => {
     if (depth < maxDepth) {
       // Max depth is not reached, print only the folder name
-      // Removed chalk.bold
       return prefix + `${folderName}/`;
     }
 
@@ -287,9 +286,10 @@ export async function generateFileStructureTree(
     });
   });
 
+  const rootFolderName = rootFolder.split("/").pop() || "";
   // --- Assemble final output string ---
   let outputLines: string[] = [];
-  outputLines.push(rootFolder); // Use rootFolder name directly, removed chalk.bold
+  outputLines.push(rootFolderName); // Use rootFolder name directly
   outputLines.push(
     ...createTreeOutput(folderTree, maxDepth, options.showFileSize)
   ); // Get the tree lines

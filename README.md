@@ -4,8 +4,6 @@
 
 **Comprehensive context and prompt management for your Coding Agents and CodeLLMs**
 
-<hr />
-
 Prompt Tower is a VS Code extension that is also compatible with Cursor, Windsurf, and Google IDX.
 
 It provides a dedicated interface to select files/folders, customize formatting, and generate the exact context payload your CodeLLM needs, saving you time and reducing errors.
