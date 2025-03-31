@@ -881,7 +881,6 @@ export function activate(context: vscode.ExtensionContext) {
   }
   // --- End Tree View Setup ---
 
-  // --- ADD tokenUpdateEmitter listener registration here ---
   const tokenUpdateListener = tokenUpdateEmitter.event(
     (payload: TokenUpdatePayload) => {
       if (webviewPanel) {
