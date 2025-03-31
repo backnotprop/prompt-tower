@@ -1,6 +1,6 @@
 # Prompt Tower
 
-<img src="https://github.com/backnotprop/prompt-tower/blob/main/image.png?raw=true" alt="Prompt Tower" width="180"/>
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/extension-assets/image.png?raw=true" alt="Prompt Tower" width="180"/>
 
 **Comprehensive context and prompt management for your Coding Agents and CodeLLMs**
 
@@ -8,7 +8,7 @@ Prompt Tower is a VS Code extension that is also compatible with Cursor, Windsur
 
 A dedicated interface to select files/folders, include directory trees, customize formatting, and to generate the exact context your coding agents need to be more effective while saving you tokens.
 
-![Prompt Tower Demo](https://github.com/backnotprop/prompt-tower/blob/v1-prototype/extension-assets/prompt-tower-v1.0.0.gif?raw=true)
+![Prompt Tower Demo](https://github.com/backnotprop/prompt-tower/blob/main/extension-assets/prompt-tower-v1.0.0.gif?raw=true)
 
 ---
 
