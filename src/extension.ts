@@ -211,6 +211,44 @@ function getWebviewContent(
         #prompt-suffix {
           flex-grow: 1; /* Allow textareas to grow */
         }
+
+        .form-group {
+          margin-bottom: 10px;
+        }
+
+        .form-label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 200;
+        }
+
+        .select-container {
+          position: relative;
+          display: inline-block;
+          width: auto;
+        }
+
+        .dropdown-select {
+          width: 250px; /* Fixed width instead of full width */
+          height: var(--vscode-dropdown-height, 24px);
+          padding: 0 5px;
+          background-color: var(--vscode-dropdown-background, #3c3c3c);
+          color: var(--vscode-dropdown-foreground, #f0f0f0);
+          border: 1px solid var(--vscode-dropdown-border, #555555); /* Darker border for visibility */
+          border-radius: var(--vscode-dropdown-border-radius, 2px);
+          font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif);
+          font-size: var(--vscode-font-size, 13px);
+          outline: none;
+          cursor: pointer;
+          /* Enhanced visibility */
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-select:focus {
+          outline: 2px solid var(--vscode-focusBorder, #007fd4);
+          outline-offset: -1px;
+        }
+
         #action-button-container {
           margin-top: 1em; /* Adjusted spacing */
           margin-bottom: 1em; /* Added margin below button */
@@ -306,6 +344,17 @@ function getWebviewContent(
                 <textarea id="prompt-suffix">${initialSuffix}</textarea>
               </div>
 
+              <div id="project-tree-options-container" class="form-group">
+                <label for="project-tree-options" class="form-label">Project Tree Options</label>
+                <div class="select-container">
+                  <select id="project-tree-options" class="dropdown-select">
+                    <option selected value="fullFilesAndDirectories">Full Files and Directories</option>
+                    <option value="fullDirectoriesOnly">Full Directories Only</option>
+                    <option value="selectedFilesOnly">Selected Files Only</option>
+                    <option value="none">None</option>
+                  </select>
+                </div>
+              </div>
               
               <div id="action-button-container">
                 <button id="createContextButton">Create Context</button>
