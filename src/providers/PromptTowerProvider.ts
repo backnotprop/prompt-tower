@@ -35,7 +35,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private blockTemplate: string =
     '<file name="{fileNameWithExtension}" path="{rawFilePath}">\n{fileContent}\n</file>';
   private blockSeparator: string = "\n";
-
+  private blockTrimLines: boolean = true;
   private projectTreeEnabled: boolean = true;
   private projectTreeType: string = "fullFilesAndDirectories";
   private projectTreeShowFileSize: boolean = true;
@@ -747,6 +747,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     const outputFormat = config.get<any>("outputFormat");
     this.blockTemplate = outputFormat?.blockTemplate ?? this.blockTemplate;
     this.blockSeparator = outputFormat?.blockSeparator ?? this.blockSeparator;
+    this.blockTrimLines = outputFormat?.blockTrimLines ?? this.blockTrimLines;
 
     // Load project tree settings
     const projectTreeFormat = config.get<any>("outputFormat.projectTreeFormat");
@@ -1044,12 +1045,14 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         );
         formattedBlock = formattedBlock.replace(/{fullPath}/g, fullFilePath); // Keep if {fullPath} is ever used
 
-        // @TODO: probably needs to be a config option
-        // Remove all leading blank lines:
-        let trimmedFileContent = fileContent.replace(/^(\s*\r?\n)+/, "");
+        let trimmedFileContent = fileContent;
+        if (this.blockTrimLines) {
+          // Remove all leading blank lines:
+          trimmedFileContent = trimmedFileContent.replace(/^(\s*\r?\n)+/, "");
 
-        // Remove all trailing blank lines:
-        trimmedFileContent = fileContent.replace(/(\r?\n\s*)+$/, "");
+          // Remove all trailing blank lines:
+          trimmedFileContent = trimmedFileContent.replace(/(\r?\n\s*)+$/, "");
+        }
 
         // Replace fileContent last to avoid issues if content contains placeholders
         formattedBlock = formattedBlock.replace(

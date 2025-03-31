@@ -56,6 +56,7 @@
           "default": {
             "blockTemplate": "<file name=\"{fileNameWithExtension}\" path=\"{rawFilePath}\">\n{fileContent}\n</file>",
             "blockSeparator": "\n",
+            "blockTrimLines": true,
             "projectTreeFormat": {
               "enabled": true,
               "type": "fullFilesAndDirectories",
@@ -76,6 +77,11 @@
               "type": "string",
               "description": "Separator placed *between* formatted file blocks in the final output.",
               "default": "\n"
+            },
+            "blockTrimLines": {
+              "type": "boolean",
+              "description": "Trim leading and trailing blank lines from each file block.",
+              "default": true
             },
             "projectTreeFormat": {
               "type": "object",
