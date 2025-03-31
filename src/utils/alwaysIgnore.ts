@@ -26,6 +26,8 @@ export const ALWAYS_IGNORE = [
   "*.m4b",
   "*.m4p",
   "*.so",
+  "*.so.*",
+  "*.so.1.1",
   "*.dll",
   "*.dylib",
   "*.lib",

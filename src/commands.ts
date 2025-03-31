@@ -30,10 +30,10 @@ export function registerCommands(
       ),
       vscode.commands.registerCommand("promptTower.resetAll", () =>
         provider.resetAll()
-      ),
-      vscode.commands.registerCommand("promptTower.checkboxChanged", (item) => {
-        provider.toggleCheck(item);
-      })
+      )
+      // vscode.commands.registerCommand("promptTower.checkboxChanged", (item) => {
+      //   provider.toggleCheck(item);
+      // })
     );
   } else {
     console.log(

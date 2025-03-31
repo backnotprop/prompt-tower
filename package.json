@@ -45,11 +45,6 @@
           ],
           "description": "Manual list of files and folders to ignore. This is in addition to the .gitignore file."
         },
-        "promptTower.persistState": {
-          "type": "boolean",
-          "default": false,
-          "description": "Persist files and folders state (checked/unchecked)."
-        },
         "promptTower.maxFileSizeWarningKB": {
           "type": "number",
           "default": 500,
@@ -176,10 +171,6 @@
         "icon": "$(clear-all)"
       },
       {
-        "command": "promptTower.checkboxChanged",
-        "title": "Toggle Checkbox"
-      },
-      {
         "command": "promptTower.showTowerUI",
         "title": "Show Prompt Tower UI",
         "category": "Prompt Tower"
@@ -187,10 +178,6 @@
     ],
     "menus": {
       "commandPalette": [
-        {
-          "command": "promptTower.checkboxChanged",
-          "when": "false"
-        },
         {
           "command": "promptTower.copyContextToClipboard"
         },

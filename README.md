@@ -130,7 +130,6 @@ This is the core of customization. Control exactly how the selected files and pr
 
 ### Other Settings
 
-- **`promptTower.persistState`**: (Boolean, default: `false`) If `true`, remembers checked files/folders between VS Code sessions.
 - **`promptTower.maxFileSizeWarningKB`**: (Number, default: `500`) Show a warning prompt if a selected file exceeds this size in KB.
 
 ---
