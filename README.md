@@ -2,7 +2,7 @@
 
 <img src="https://github.com/backnotprop/prompt-tower/blob/main/assets/image-tny.png?raw=true" alt="Prompt Tower" width="180"/>
 
-**Comprehensive context and prompt management for your Coding Agents and CodeLLMs**
+**Context and prompt management for your Coding Agents and CodeLLMs**
 
 [Prompt Tower](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower) is a VS Code extension and is compatible with Cursor, Windsurf, and Google IDX. [Install it](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower).
 
