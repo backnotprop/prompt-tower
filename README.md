@@ -46,7 +46,7 @@ Prompt Tower uses 3 ways to exclude files from LLM context.
 <em>Exclusion is inclusive</em> - every rule found across the three sources is used for exclusion.
 
 - `.gitignore` - **Recommended: True (the Default)** - you likely never want to pass any of this to an LLM.
-- `.towerignore` - **Recommended: Per Project (You need to create this)** - for keeping reducing overall-project context.
+- `.towerignore` - **Recommended: Per Project (You need to create this)** - for reducing overall-project context (i.e. selecting all files).
 - `promptTower.ignore` - **IDE Setting (Workspace or User)** - use as you see fit. The defaults are common lock files that typically aren't in .gitignore.
 
 Control which files/folders are _excluded_ from the Prompt Tower tree view:
