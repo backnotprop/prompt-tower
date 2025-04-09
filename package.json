@@ -321,6 +321,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "gpt-tokenizer": "^2.9.0"
+    "gpt-tokenizer": "^2.9.0",
+    "ignore": "^7.0.3"
   }
 }
