@@ -8,6 +8,8 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
+import ignore from "ignore";
+
 import { FileItem } from "../models/FileItem";
 import { encode } from "gpt-tokenizer";
 import { TokenUpdateEmitter } from "../models/EventEmitter";
@@ -35,7 +37,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private blockTemplate: string =
     '<file name="{fileNameWithExtension}" path="{rawFilePath}">\n{fileContent}\n</file>';
   private blockSeparator: string = "\n";
-
+  private blockTrimLines: boolean = true;
   private projectTreeEnabled: boolean = true;
   private projectTreeType: string = "fullFilesAndDirectories";
   private projectTreeShowFileSize: boolean = true;
@@ -55,6 +57,8 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
   private resetWebviewPreview: () => void;
   private invalidateWebviewPreview: () => void;
+
+  private ig = ignore(); // Initialize an ignore instance
 
   constructor(
     private workspaceRoot: string,
@@ -244,28 +248,29 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   // Helper to check if a specific absolute path should be excluded
   // (Uses the original patterns, not the findFiles globs)
   private isPathExcluded(absolutePath: string): boolean {
+    // Convert absolute path to relative path suitable for .gitignore matching
+    // The 'ignore' library expects paths relative to the .gitignore file's location (usually workspace root)
     const relativePath = path.relative(this.workspaceRoot, absolutePath);
-    const baseName = path.basename(absolutePath);
 
-    // Check against ALWAYS_IGNORE first for efficiency
-    if (
-      ALWAYS_IGNORE.some((pattern) => this.matchesPattern(baseName, pattern))
-    ) {
-      return true;
-    }
+    // Important: Check both the path itself and (if it's a directory) the path with a trailing slash,
+    // as .gitignore rules can differ (e.g., `node_modules` vs `node_modules/`).
+    // The 'ignore' library usually handles this well, but explicit checks can be safer.
+    let isIgnored = this.ig.ignores(relativePath);
 
-    // Use micromatch or similar for better glob matching against relative path
-    // For now, using the basic matchesPattern:
-    return this.excludedPatterns.some((pattern) => {
-      // Check basename match (e.g., "node_modules")
-      if (this.matchesPattern(baseName, pattern)) {
-        return true;
-      }
-      // Check relative path match (more complex patterns - less reliable with basic matcher)
-      // TODO: Use a proper glob library here if needed (e.g., micromatch)
-      // Example: if (micromatch.isMatch(relativePath, pattern)) return true;
-      return false;
-    });
+    // Optional: If it might be a directory, check with trailing slash too,
+    // although `ignore` might handle this implicitly depending on patterns.
+    // try {
+    //   if (!isIgnored && fs.statSync(absolutePath).isDirectory()) {
+    //      isIgnored = this.ig.ignores(relativePath + '/');
+    //   }
+    // } catch (e) { /* ignore stat errors */ }
+
+    // Debugging
+    // if (isIgnored) {
+    //     console.log(`Path ignored by 'ignore' library: ${relativePath}`);
+    // }
+
+    return isIgnored;
   }
 
   // --- Token Counting Logic Helpers ---
@@ -740,6 +745,19 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         ...manualIgnores.map((p) => p.trim()).filter((p) => p), // Trim and remove empty manual ignores
       ]),
     ];
+    this.ig = ignore(); // Reset instance
+    // Add patterns from all sources (ALWAYS_IGNORE, gitignore, towerignore, manual)
+    const gitignoreContent = this.getIgnoreFileContent(".gitignore");
+    const towerignoreContent = this.getIgnoreFileContent(".towerignore");
+    this.ig.add(ALWAYS_IGNORE);
+    this.ig.add(standardIgnores); // Add standard ones if needed
+    if (gitignoreContent) {
+      this.ig.add(gitignoreContent);
+    }
+    if (towerignoreContent) {
+      this.ig.add(towerignoreContent);
+    }
+    this.ig.add(config.get<string[]>("ignore", []));
     console.log("Prompt Tower Excluded Patterns:", this.excludedPatterns);
 
     this.maxFileSizeWarningKB = config.get<number>("maxFileSizeWarningKB", 500);
@@ -747,6 +765,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     const outputFormat = config.get<any>("outputFormat");
     this.blockTemplate = outputFormat?.blockTemplate ?? this.blockTemplate;
     this.blockSeparator = outputFormat?.blockSeparator ?? this.blockSeparator;
+    this.blockTrimLines = outputFormat?.blockTrimLines ?? this.blockTrimLines;
 
     // Load project tree settings
     const projectTreeFormat = config.get<any>("outputFormat.projectTreeFormat");
@@ -768,6 +787,19 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     // NOTE: A listener for configuration changes should ideally be added
     // in extension.ts to call a method here that reloads config and refreshes.
     // For now, config is loaded on startup only.
+  }
+
+  private getIgnoreFileContent(fileName: string): string | null {
+    const ignorePath = path.join(this.workspaceRoot, fileName);
+    if (fs.existsSync(ignorePath)) {
+      try {
+        return fs.readFileSync(ignorePath, "utf-8");
+      } catch (e) {
+        console.error(`Error reading ${fileName}:`, e);
+        return null;
+      }
+    }
+    return null;
   }
 
   // Placeholder for gitignore parsing logic (basic implementation)
@@ -1044,8 +1076,20 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         );
         formattedBlock = formattedBlock.replace(/{fullPath}/g, fullFilePath); // Keep if {fullPath} is ever used
 
+        let trimmedFileContent = fileContent;
+        if (this.blockTrimLines) {
+          // Remove all leading blank lines:
+          trimmedFileContent = trimmedFileContent.replace(/^(\s*\r?\n)+/, "");
+
+          // Remove all trailing blank lines:
+          trimmedFileContent = trimmedFileContent.replace(/(\r?\n\s*)+$/, "");
+        }
+
         // Replace fileContent last to avoid issues if content contains placeholders
-        formattedBlock = formattedBlock.replace(/{fileContent}/g, fileContent);
+        formattedBlock = formattedBlock.replace(
+          /{fileContent}/g,
+          trimmedFileContent
+        );
 
         return formattedBlock;
       });

@@ -1,7 +1,7 @@
 {
   "name": "prompt-tower",
   "displayName": "Prompt Tower",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",
@@ -41,7 +41,15 @@
             "package-lock.json",
             "yarn.lock",
             "poetry.lock",
-            "Gemfile.lock"
+            "Gemfile.lock",
+            "pnpm-lock.yaml",
+            "bun.lockb",
+            "**/*/node_modules",
+            "**/*/dist",
+            "**/*/build",
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**"
           ],
           "description": "Manual list of files and folders to ignore. This is in addition to the .gitignore file."
         },
@@ -56,6 +64,7 @@
           "default": {
             "blockTemplate": "<file name=\"{fileNameWithExtension}\" path=\"{rawFilePath}\">\n{fileContent}\n</file>",
             "blockSeparator": "\n",
+            "blockTrimLines": true,
             "projectTreeFormat": {
               "enabled": true,
               "type": "fullFilesAndDirectories",
@@ -76,6 +85,11 @@
               "type": "string",
               "description": "Separator placed *between* formatted file blocks in the final output.",
               "default": "\n"
+            },
+            "blockTrimLines": {
+              "type": "boolean",
+              "description": "Trim leading and trailing blank lines from each file block.",
+              "default": true
             },
             "projectTreeFormat": {
               "type": "object",
@@ -307,6 +321,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "gpt-tokenizer": "^2.9.0"
+    "gpt-tokenizer": "^2.9.0",
+    "ignore": "^7.0.3"
   }
 }

@@ -99,4 +99,10 @@ export const ALWAYS_IGNORE = [
   "*.crt",
   "*.pem",
   "*.key",
+  "*.lock",
+  "*.lockb",
+  "*.lockfile",
+  "*.lockfile.json",
+  "*.lockfile.yaml",
+  "*.lockfile.yml",
 ];
