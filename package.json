@@ -1,7 +1,7 @@
 {
   "name": "prompt-tower",
   "displayName": "Prompt Tower",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",
@@ -41,7 +41,15 @@
             "package-lock.json",
             "yarn.lock",
             "poetry.lock",
-            "Gemfile.lock"
+            "Gemfile.lock",
+            "pnpm-lock.yaml",
+            "bun.lockb",
+            "**/*/node_modules",
+            "**/*/dist",
+            "**/*/build",
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**"
           ],
           "description": "Manual list of files and folders to ignore. This is in addition to the .gitignore file."
         },

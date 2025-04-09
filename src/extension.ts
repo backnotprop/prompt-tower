@@ -343,7 +343,7 @@ function getWebviewContent(
                 <label for="prompt-suffix">Prompt Suffix (Appended to export)</label>
                 <textarea id="prompt-suffix">${initialSuffix}</textarea>
               </div>
-
+<!--
               <div id="project-tree-options-container" class="form-group">
                 <label for="project-tree-options" class="form-label">Project Tree Options</label>
                 <div class="select-container">
@@ -355,7 +355,7 @@ function getWebviewContent(
                   </select>
                 </div>
               </div>
-              
+-->
               <div id="action-button-container">
                 <button id="createContextButton">Create Context</button>
                 <button id="createAndCopyButton">Create Context, Copy to Clipboard</button>
