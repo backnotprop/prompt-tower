@@ -924,12 +924,12 @@ export function activate(context: vscode.ExtensionContext) {
       
       // Handle checkbox state changes for GitHub issues
       context.subscriptions.push(
-        issuesTreeView.onDidChangeCheckboxState((evt) => {
-          evt.items.forEach(([item, state]) => {
+        issuesTreeView.onDidChangeCheckboxState(async (evt) => {
+          for (const [item, state] of evt.items) {
             if (item instanceof GitHubIssue && issuesProviderInstance) {
-              issuesProviderInstance.toggleIssueSelection(item);
+              await issuesProviderInstance.toggleIssueSelection(item);
             }
-          });
+          }
         })
       );
       

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
-import { GitHubApiClient, GitHubIssue as ApiIssue } from "../api/GitHubApiClient";
+import { GitHubApiClient, GitHubIssue as ApiIssue, GitHubComment } from "../api/GitHubApiClient";
 import { GitHubConfigManager } from "../utils/githubConfig";
+import { encode } from "gpt-tokenizer";
 
 export class GitHubIssue extends vscode.TreeItem {
   constructor(
@@ -42,9 +43,25 @@ export class GitHubIssue extends vscode.TreeItem {
   }
 }
 
+interface CachedIssueData {
+  issue: ApiIssue;
+  comments: GitHubComment[];
+  tokenCount: number;
+  fetchedAt: Date;
+}
+
+export interface IssueTokenUpdate {
+  totalTokens: number;
+  selectedCount: number;
+  isCounting: boolean;
+}
+
 export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue> {
   private _onDidChangeTreeData = new vscode.EventEmitter<GitHubIssue | undefined | void>();
   readonly onDidChangeTreeData: vscode.Event<GitHubIssue | undefined | void> = this._onDidChangeTreeData.event;
+  
+  private _onDidChangeTokens = new vscode.EventEmitter<IssueTokenUpdate>();
+  readonly onDidChangeTokens: vscode.Event<IssueTokenUpdate> = this._onDidChangeTokens.event;
 
   private issues: GitHubIssue[] = [];
   private loaded = false;
@@ -53,6 +70,11 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
   private selectedIssues = new Set<number>();
   private apiClient?: GitHubApiClient;
   private repoInfo?: { owner: string; repo: string };
+  
+  // Caching for issue details
+  private issueCache = new Map<number, CachedIssueData>();
+  private totalIssueTokens = 0;
+  private activeFetches = new Set<number>();
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -181,18 +203,28 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
   async reloadIssues(): Promise<void> {
     this.loaded = false;
     this.issues = [];
+    this.issueCache.clear(); // Clear cached data
+    this.selectedIssues.clear(); // Clear selections
+    this.updateTokenCount(); // Reset token count
     await this.loadIssues();
   }
 
-  toggleIssueSelection(issue: GitHubIssue): void {
+  async toggleIssueSelection(issue: GitHubIssue): Promise<void> {
     if (issue.isSpecialItem || issue.number < 0) {
       return;
     }
     
     if (this.selectedIssues.has(issue.number)) {
+      // Deselecting - just remove and update counts
       this.selectedIssues.delete(issue.number);
+      this.updateTokenCount();
     } else {
+      // Selecting - add and fetch details
       this.selectedIssues.add(issue.number);
+      this.updateTokenCount(); // Immediate update to show selection
+      
+      // Fetch issue details in background
+      await this.fetchAndCacheIssue(issue.number);
     }
   }
 
@@ -201,31 +233,131 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
   }
   
   /**
-   * Get the full issue details for selected issues
+   * Calculate token count for issue content
    */
-  async getSelectedIssueDetails(): Promise<Map<number, { issue: ApiIssue; comments: any[] }>> {
-    if (!this.apiClient) {
-      throw new Error("GitHub API client not initialized");
+  private calculateIssueTokens(issue: ApiIssue, comments: GitHubComment[]): number {
+    let content = `Issue #${issue.number}: ${issue.title}\n`;
+    
+    if (issue.body) {
+      content += `\n${issue.body}\n`;
     }
     
-    const details = new Map<number, { issue: ApiIssue; comments: any[] }>();
-    const selectedNumbers = this.getSelectedIssues();
+    if (comments.length > 0) {
+      content += '\nComments:\n';
+      for (const comment of comments) {
+        content += `${comment.user.login}: ${comment.body}\n`;
+      }
+    }
     
-    // Fetch details for each selected issue
-    for (const issueNumber of selectedNumbers) {
-      try {
-        const [issue, comments] = await Promise.all([
-          this.apiClient.getIssue(issueNumber),
-          this.apiClient.getIssueComments(issueNumber)
-        ]);
-        
-        details.set(issueNumber, { issue, comments });
-      } catch (error) {
-        console.error(`Failed to fetch details for issue #${issueNumber}:`, error);
-        // Continue with other issues even if one fails
+    const tokens = encode(content);
+    return tokens.length;
+  }
+  
+  /**
+   * Update total token count and emit event
+   */
+  private updateTokenCount(): void {
+    this.totalIssueTokens = 0;
+    
+    // Sum tokens for all selected issues that are cached
+    for (const issueNumber of this.selectedIssues) {
+      const cached = this.issueCache.get(issueNumber);
+      if (cached) {
+        this.totalIssueTokens += cached.tokenCount;
+      }
+    }
+    
+    // Emit update event
+    this._onDidChangeTokens.fire({
+      totalTokens: this.totalIssueTokens,
+      selectedCount: this.selectedIssues.size,
+      isCounting: this.activeFetches.size > 0
+    });
+  }
+  
+  /**
+   * Fetch issue details with caching
+   */
+  private async fetchAndCacheIssue(issueNumber: number): Promise<CachedIssueData | null> {
+    // Check cache first
+    const cached = this.issueCache.get(issueNumber);
+    if (cached) {
+      return cached;
+    }
+    
+    // Check if already fetching
+    if (this.activeFetches.has(issueNumber)) {
+      return null;
+    }
+    
+    if (!this.apiClient) {
+      console.error('GitHub API client not initialized');
+      return null;
+    }
+    
+    try {
+      this.activeFetches.add(issueNumber);
+      this.updateTokenCount(); // Update to show "counting" state
+      
+      // Fetch issue details and comments in parallel
+      const [issue, comments] = await Promise.all([
+        this.apiClient.getIssue(issueNumber),
+        this.apiClient.getIssueComments(issueNumber)
+      ]);
+      
+      // Calculate tokens
+      const tokenCount = this.calculateIssueTokens(issue, comments);
+      
+      // Cache the data
+      const data: CachedIssueData = {
+        issue,
+        comments,
+        tokenCount,
+        fetchedAt: new Date()
+      };
+      
+      this.issueCache.set(issueNumber, data);
+      
+      return data;
+      
+    } catch (error) {
+      console.error(`Failed to fetch issue #${issueNumber}:`, error);
+      // Still return null but don't break the flow
+      return null;
+    } finally {
+      this.activeFetches.delete(issueNumber);
+      this.updateTokenCount(); // Update with final count
+    }
+  }
+  
+  /**
+   * Get the full issue details for selected issues (from cache)
+   */
+  async getSelectedIssueDetails(): Promise<Map<number, { issue: ApiIssue; comments: any[] }>> {
+    const details = new Map<number, { issue: ApiIssue; comments: any[] }>();
+    
+    // Get from cache (already fetched during selection)
+    for (const issueNumber of this.selectedIssues) {
+      const cached = this.issueCache.get(issueNumber);
+      if (cached) {
+        details.set(issueNumber, {
+          issue: cached.issue,
+          comments: cached.comments
+        });
       }
     }
     
     return details;
+  }
+  
+  /**
+   * Get current token status for initial state
+   */
+  getCurrentTokenStatus(): IssueTokenUpdate {
+    return {
+      totalTokens: this.totalIssueTokens,
+      selectedCount: this.selectedIssues.size,
+      isCounting: this.activeFetches.size > 0
+    };
   }
 }

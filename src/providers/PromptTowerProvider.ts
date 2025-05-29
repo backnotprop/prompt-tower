@@ -60,6 +60,8 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
   private ig = ignore(); // Initialize an ignore instance
   private gitHubIssuesProvider?: any; // Will be set after construction
+  private gitHubIssueTokens = 0;
+  private gitHubIssuesCounting = false;
 
   constructor(
     private workspaceRoot: string,
@@ -279,9 +281,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private notifyTokenUpdate() {
     // Fire event only if emitter exists (it should, but defensive check)
     if (this.tokenUpdateEmitter) {
+      // Combine file tokens + GitHub issue tokens
+      const combinedCount = this.totalTokenCount + this.gitHubIssueTokens;
+      const isCounting = this.isCountingTokens || this.gitHubIssuesCounting;
+      
       this.tokenUpdateEmitter.fire({
-        count: this.totalTokenCount,
-        isCounting: this.isCountingTokens,
+        count: combinedCount,
+        isCounting: isCounting,
       });
     }
   }
@@ -1317,6 +1323,17 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
    */
   setGitHubIssuesProvider(provider: any): void {
     this.gitHubIssuesProvider = provider;
+    
+    // Listen to token changes from GitHub issues
+    if (provider && provider.onDidChangeTokens) {
+      provider.onDidChangeTokens((update: any) => {
+        this.gitHubIssueTokens = update.totalTokens;
+        this.gitHubIssuesCounting = update.isCounting;
+        
+        // Trigger combined token update
+        this.notifyTokenUpdate();
+      });
+    }
   }
   
   /**
