@@ -21,9 +21,13 @@ export class GitHubConfigManager {
   /**
    * Auto-detect repository information from git remote
    */
-  static async detectRepoInfo(): Promise<GitHubRepoInfo | null> {
+  static async detectRepoInfo(workspaceRoot?: string): Promise<GitHubRepoInfo | null> {
     try {
-      const remoteUrl = execSync('git config --get remote.origin.url', { encoding: 'utf8' }).trim();
+      const gitOptions = workspaceRoot 
+        ? { encoding: 'utf8' as const, cwd: workspaceRoot }
+        : { encoding: 'utf8' as const };
+        
+      const remoteUrl = execSync('git config --get remote.origin.url', gitOptions).trim();
       
       // Parse GitHub URL patterns
       // SSH: git@github.com:owner/repo.git
@@ -36,7 +40,7 @@ export class GitHubConfigManager {
           owner: match[1],
           repo: match[2],
           isGitHub: true,
-          defaultBranch: this.getDefaultBranch()
+          defaultBranch: this.getDefaultBranch(workspaceRoot)
         };
       }
       
@@ -102,10 +106,14 @@ export class GitHubConfigManager {
     await context.workspaceState.update(this.REPO_OVERRIDE_KEY, { owner, repo });
   }
 
-  private static getDefaultBranch(): string {
+  private static getDefaultBranch(workspaceRoot?: string): string {
     try {
+      const gitOptions = workspaceRoot 
+        ? { encoding: 'utf8' as const, cwd: workspaceRoot }
+        : { encoding: 'utf8' as const };
+        
       return execSync('git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@"', 
-        { encoding: 'utf8' }).trim();
+        gitOptions).trim();
     } catch {
       return 'main'; // fallback
     }

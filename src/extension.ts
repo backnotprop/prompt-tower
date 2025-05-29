@@ -914,7 +914,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       // --- GitHub Issues Tree View Setup ---
       console.log("Prompt Tower: Initializing GitHub Issues Tree View.");
-      issuesProviderInstance = new GitHubIssuesProvider(context);
+      issuesProviderInstance = new GitHubIssuesProvider(context, rootPath);
       const issuesTreeView = vscode.window.createTreeView("promptTowerIssuesView", {
         treeDataProvider: issuesProviderInstance,
         showCollapseAll: false,
@@ -926,7 +926,7 @@ export function activate(context: vscode.ExtensionContext) {
       context.subscriptions.push(
         issuesTreeView.onDidChangeCheckboxState((evt) => {
           evt.items.forEach(([item, state]) => {
-            if (item instanceof GitHubIssue) {
+            if (item instanceof GitHubIssue && issuesProviderInstance) {
               issuesProviderInstance.toggleIssueSelection(item);
             }
           });

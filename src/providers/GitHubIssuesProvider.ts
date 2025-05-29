@@ -55,7 +55,8 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
   private repoInfo?: { owner: string; repo: string };
 
   constructor(
-    private context: vscode.ExtensionContext
+    private context: vscode.ExtensionContext,
+    private workspaceRoot: string
   ) {}
 
   getTreeItem(element: GitHubIssue): vscode.TreeItem {
@@ -101,7 +102,7 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
     try {
       // Auto-detect repository info if not already done
       if (!this.repoInfo) {
-        const detected = await GitHubConfigManager.detectRepoInfo();
+        const detected = await GitHubConfigManager.detectRepoInfo(this.workspaceRoot);
         if (!detected || !detected.isGitHub) {
           this.errorMessage = "Not a GitHub repository";
           return;
@@ -157,7 +158,6 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
         );
       }
       
-      this.loaded = true;
     } catch (error: any) {
       if (error.status === 404) {
         this.errorMessage = "Repository not found or private";
@@ -172,6 +172,7 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
       }
       console.error("Error loading GitHub issues:", error);
     } finally {
+      this.loaded = true; // Always set to true to prevent infinite loops
       this.isLoading = false;
       this.refresh();
     }
@@ -184,7 +185,9 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
   }
 
   toggleIssueSelection(issue: GitHubIssue): void {
-    if (issue.isSpecialItem || issue.number < 0) return;
+    if (issue.isSpecialItem || issue.number < 0) {
+      return;
+    }
     
     if (this.selectedIssues.has(issue.number)) {
       this.selectedIssues.delete(issue.number);

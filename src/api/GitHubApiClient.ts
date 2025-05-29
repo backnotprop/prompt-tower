@@ -59,10 +59,10 @@ export class GitHubApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Accept': 'application/vnd.github.v3+json',
       'User-Agent': 'PromptTower-VSCode',
-      ...options.headers,
+      ...(options.headers as Record<string, string> || {}),
     };
     
     if (this.token) {

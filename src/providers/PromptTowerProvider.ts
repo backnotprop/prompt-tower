@@ -1098,7 +1098,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       const fileTreePromise = this.generateFileTree();
       
       // Prepare GitHub issues if provider is available
-      let githubIssuesPromise = Promise.resolve([]);
+      let githubIssuesPromise: Promise<string[]> = Promise.resolve([]);
       if (this.gitHubIssuesProvider) {
         githubIssuesPromise = this.generateGitHubIssuesBlocks();
       }
@@ -1131,7 +1131,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         combinedBlocksAndWrapper = this.wrapperTemplate; // Start with the wrapper template
 
         const treeBlock = this.projectTreeEnabled
-          ? this.projectTreeTemplate.replace("{projectTree}", fileTree)
+          ? this.projectTreeTemplate.replace("{projectTree}", fileTree as string)
           : "";
 
         combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
@@ -1349,7 +1349,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
         // Add labels if any
         if (issue.labels.length > 0) {
-          const labelNames = issue.labels.map(l => l.name).join(', ');
+          const labelNames = issue.labels.map((l: any) => l.name).join(', ');
           issueBlock += `\n<labels>${labelNames}</labels>`;
         }
         
