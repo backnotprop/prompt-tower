@@ -86,6 +86,32 @@ export function registerCommands(
             );
           }
         }
+      }),
+      vscode.commands.registerCommand("promptTower.removeGitHubToken", async () => {
+        const confirm = await vscode.window.showWarningMessage(
+          "Remove stored GitHub token? You'll need to re-add it to access private repositories.",
+          "Remove Token",
+          "Cancel"
+        );
+
+        if (confirm === "Remove Token") {
+          try {
+            // Remove the token
+            await GitHubConfigManager.removePAT(context);
+            
+            // Show success message
+            vscode.window.showInformationMessage(
+              "GitHub token removed successfully. Refreshing issues..."
+            );
+            
+            // Refresh the issues view (will now be unauthenticated)
+            await issuesProvider.reloadIssues();
+          } catch (error) {
+            vscode.window.showErrorMessage(
+              "Failed to remove GitHub token: " + (error as Error).message
+            );
+          }
+        }
       })
     );
   }

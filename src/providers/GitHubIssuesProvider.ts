@@ -130,6 +130,7 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
           return;
         }
         this.repoInfo = { owner: detected.owner, repo: detected.repo };
+        console.log("DEBUG: Detected repo info:", this.repoInfo);
       }
       
       // Initialize API client
@@ -182,11 +183,17 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
       
     } catch (error: any) {
       if (error.status === 404) {
-        this.errorMessage = "Repository not found or private";
+        // 404 for a private repo when unauthenticated vs truly not found
+        const hasToken = await this.hasValidToken();
+        if (!hasToken) {
+          this.errorMessage = "🔒 Private repository. Add GitHub token to access issues.";
+        } else {
+          this.errorMessage = "Repository not found";
+        }
       } else if (error.status === 401) {
-        this.errorMessage = "Authentication required for private repository";
+        this.errorMessage = "🔑 Invalid GitHub token. Please add a valid token.";
       } else if (error.status === 403) {
-        this.errorMessage = "GitHub API rate limit exceeded";
+        this.errorMessage = "⛔ GitHub API rate limit exceeded. Add token for higher limits.";
       } else if (error.message) {
         this.errorMessage = error.message;
       } else {
@@ -205,6 +212,7 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
     this.issues = [];
     this.issueCache.clear(); // Clear cached data
     this.selectedIssues.clear(); // Clear selections
+    this.apiClient = undefined; // Force recreation with new token
     this.updateTokenCount(); // Reset token count
     await this.loadIssues();
   }
@@ -359,5 +367,17 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
       selectedCount: this.selectedIssues.size,
       isCounting: this.activeFetches.size > 0
     };
+  }
+  
+  /**
+   * Check if we have a valid token
+   */
+  private async hasValidToken(): Promise<boolean> {
+    try {
+      const token = await GitHubConfigManager.getPAT(this.context);
+      return !!token;
+    } catch {
+      return false;
+    }
   }
 }

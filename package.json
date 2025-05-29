@@ -205,6 +205,12 @@
         "title": "Refresh GitHub Issues",
         "category": "Prompt Tower",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "promptTower.removeGitHubToken",
+        "title": "Remove GitHub Token",
+        "category": "Prompt Tower",
+        "icon": "$(trash)"
       }
     ],
     "menus": {

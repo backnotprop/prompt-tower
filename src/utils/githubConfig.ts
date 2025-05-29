@@ -100,6 +100,13 @@ export class GitHubConfigManager {
   }
 
   /**
+   * Remove stored PAT
+   */
+  static async removePAT(context: vscode.ExtensionContext): Promise<void> {
+    await context.secrets.delete(this.TOKEN_KEY);
+  }
+
+  /**
    * Override auto-detected repo (for edge cases)
    */
   static async setRepoOverride(context: vscode.ExtensionContext, owner: string, repo: string): Promise<void> {
