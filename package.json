@@ -1,6 +1,6 @@
 {
   "name": "prompt-tower",
-  "displayName": "Prompt Tower",
+  "displayName": "Prompt Tower (Dev)",
   "version": "1.0.2",
   "license": "AGPL-3.0",
   "repository": {
@@ -158,6 +158,11 @@
           "icon": "assets/prompt-tower.svg",
           "id": "promptTowerView",
           "name": "Files",
+          "type": "tree"
+        },
+        {
+          "id": "promptTowerIssuesView",
+          "name": "GitHub Issues",
           "type": "tree"
         }
       ]

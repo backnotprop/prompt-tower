@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { PromptTowerProvider } from "./providers/PromptTowerProvider";
+import { GitHubIssuesProvider, GitHubIssue } from "./providers/GitHubIssuesProvider";
 import { registerCommands } from "./commands";
 import { FileItem } from "./models/FileItem";
 import { TokenUpdateEmitter, TokenUpdatePayload } from "./models/EventEmitter";
@@ -910,6 +911,16 @@ export function activate(context: vscode.ExtensionContext) {
 
       context.subscriptions.push(treeView);
 
+      // --- GitHub Issues Tree View Setup ---
+      console.log("Prompt Tower: Initializing GitHub Issues Tree View.");
+      const issuesProvider = new GitHubIssuesProvider();
+      const issuesTreeView = vscode.window.createTreeView("promptTowerIssuesView", {
+        treeDataProvider: issuesProvider,
+        showCollapseAll: false,
+      });
+      
+      context.subscriptions.push(issuesTreeView);
+
       registerCommands(context, providerInstance, treeView);
     } else {
       // Handle case where tree view is not defined in package.json
@@ -950,6 +961,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Automatically show the panel upon activation (CRITICAL UX, DO NOT REMOVE)
+  console.log("🚀 DEVELOPMENT VERSION OF PROMPT TOWER ACTIVATED");
+  vscode.window.showInformationMessage("Prompt Tower Development Version Loaded!");
   vscode.commands.executeCommand("promptTower.showTowerUI");
 }
 
