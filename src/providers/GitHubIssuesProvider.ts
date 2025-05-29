@@ -18,6 +18,7 @@ export class GitHubIssue extends vscode.TreeItem {
       this.label = title;
       this.contextValue = "githubSpecialItem";
       this.iconPath = new vscode.ThemeIcon(this.getSpecialIcon());
+      
     } else {
       // Regular issue items
       this.label = `#${number}: ${title}`;
@@ -98,7 +99,11 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
       }
       
       if (this.errorMessage) {
-        return [new GitHubIssue(this.errorMessage, -1, "error", vscode.TreeItemCollapsibleState.None, true)];
+        // Use "auth" state for authentication-related errors to show command help
+        const isAuthError = this.errorMessage.includes("🔒") || this.errorMessage.includes("🔑");
+        const state = isAuthError ? "auth" : "error";
+        const collapsibleState = isAuthError ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None;
+        return [new GitHubIssue(this.errorMessage, -1, state, collapsibleState, true)];
       }
       
       if (this.issues.length === 0) {
@@ -108,7 +113,13 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
       return this.issues;
     }
     
-    // No children for individual issues
+    // Handle children for special items
+    if (element.isSpecialItem && element.state === "auth") {
+      // Show command instruction as child for auth errors
+      return [new GitHubIssue("💡 Cmd/Ctrl+Shift+P → Prompt Tower: Add GitHub Token", -2, "info", vscode.TreeItemCollapsibleState.None, true)];
+    }
+    
+    // No children for regular issues or other special items
     return [];
   }
 
@@ -186,14 +197,14 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
         // 404 for a private repo when unauthenticated vs truly not found
         const hasToken = await this.hasValidToken();
         if (!hasToken) {
-          this.errorMessage = "🔒 Private repository. Add GitHub token to access issues.";
+          this.errorMessage = "🔒 Private repository - authentication required";
         } else {
           this.errorMessage = "Repository not found";
         }
       } else if (error.status === 401) {
         this.errorMessage = "🔑 Invalid GitHub token. Please add a valid token.";
       } else if (error.status === 403) {
-        this.errorMessage = "⛔ GitHub API rate limit exceeded. Add token for higher limits.";
+        this.errorMessage = "🔒 Rate limit exceeded. Add token for higher limits.";
       } else if (error.message) {
         this.errorMessage = error.message;
       } else {
