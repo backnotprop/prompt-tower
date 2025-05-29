@@ -14,6 +14,7 @@ const tokenUpdateEmitter = new TokenUpdateEmitter();
 
 // --- Reference to the provider instance ---
 let providerInstance: PromptTowerProvider | undefined;
+let issuesProviderInstance: GitHubIssuesProvider | undefined;
 
 // --- Flag to track if preview needs invalidation ---
 let isPreviewValid = false;
@@ -913,15 +914,31 @@ export function activate(context: vscode.ExtensionContext) {
 
       // --- GitHub Issues Tree View Setup ---
       console.log("Prompt Tower: Initializing GitHub Issues Tree View.");
-      const issuesProvider = new GitHubIssuesProvider();
+      issuesProviderInstance = new GitHubIssuesProvider(context);
       const issuesTreeView = vscode.window.createTreeView("promptTowerIssuesView", {
-        treeDataProvider: issuesProvider,
+        treeDataProvider: issuesProviderInstance,
         showCollapseAll: false,
+        canSelectMany: true,
+        manageCheckboxStateManually: true,
       });
       
+      // Handle checkbox state changes for GitHub issues
+      context.subscriptions.push(
+        issuesTreeView.onDidChangeCheckboxState((evt) => {
+          evt.items.forEach(([item, state]) => {
+            if (item instanceof GitHubIssue) {
+              issuesProviderInstance.toggleIssueSelection(item);
+            }
+          });
+        })
+      );
+      
       context.subscriptions.push(issuesTreeView);
+      
+      // Connect the providers for context generation
+      providerInstance.setGitHubIssuesProvider(issuesProviderInstance);
 
-      registerCommands(context, providerInstance, treeView);
+      registerCommands(context, providerInstance, treeView, issuesProviderInstance);
     } else {
       // Handle case where tree view is not defined in package.json
       console.log(
@@ -961,8 +978,6 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Automatically show the panel upon activation (CRITICAL UX, DO NOT REMOVE)
-  console.log("🚀 DEVELOPMENT VERSION OF PROMPT TOWER ACTIVATED");
-  vscode.window.showInformationMessage("Prompt Tower Development Version Loaded!");
   vscode.commands.executeCommand("promptTower.showTowerUI");
 }
 

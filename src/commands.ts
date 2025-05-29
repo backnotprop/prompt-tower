@@ -1,11 +1,14 @@
 import * as vscode from "vscode";
 import { PromptTowerProvider } from "./providers/PromptTowerProvider";
+import { GitHubIssuesProvider } from "./providers/GitHubIssuesProvider";
 import { FileItem } from "./models/FileItem";
+import { GitHubConfigManager } from "./utils/githubConfig";
 
 export function registerCommands(
   context: vscode.ExtensionContext,
   provider?: PromptTowerProvider,
-  treeView?: vscode.TreeView<FileItem>
+  treeView?: vscode.TreeView<FileItem>,
+  issuesProvider?: GitHubIssuesProvider
 ) {
   if (provider && treeView) {
     console.log(
@@ -38,6 +41,52 @@ export function registerCommands(
   } else {
     console.log(
       "Prompt Tower Commands: Skipping TreeView specific commands (provider or treeView undefined)."
+    );
+  }
+
+  // GitHub-specific commands
+  if (issuesProvider) {
+    context.subscriptions.push(
+      vscode.commands.registerCommand("promptTower.refreshGitHubIssues", () =>
+        issuesProvider.reloadIssues()
+      ),
+      vscode.commands.registerCommand("promptTower.addGitHubToken", async () => {
+        // Show input box for token
+        const token = await vscode.window.showInputBox({
+          title: "Add GitHub Personal Access Token",
+          prompt: "Enter your GitHub PAT with 'repo' scope",
+          placeHolder: "ghp_...",
+          password: true,
+          validateInput: (value) => {
+            if (!value || value.trim().length === 0) {
+              return "Token cannot be empty";
+            }
+            if (!value.startsWith("ghp_") && !value.startsWith("github_pat_")) {
+              return "Invalid token format. GitHub tokens start with 'ghp_' or 'github_pat_'";
+            }
+            return null;
+          }
+        });
+
+        if (token) {
+          try {
+            // Store the token securely
+            await GitHubConfigManager.storePAT(context, token);
+            
+            // Show success message
+            vscode.window.showInformationMessage(
+              "GitHub token saved successfully. Refreshing issues..."
+            );
+            
+            // Refresh the issues view
+            await issuesProvider.reloadIssues();
+          } catch (error) {
+            vscode.window.showErrorMessage(
+              "Failed to save GitHub token: " + (error as Error).message
+            );
+          }
+        }
+      })
     );
   }
 

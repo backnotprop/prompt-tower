@@ -59,6 +59,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private invalidateWebviewPreview: () => void;
 
   private ig = ignore(); // Initialize an ignore instance
+  private gitHubIssuesProvider?: any; // Will be set after construction
 
   constructor(
     private workspaceRoot: string,
@@ -1095,20 +1096,34 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
       });
 
       const fileTreePromise = this.generateFileTree();
+      
+      // Prepare GitHub issues if provider is available
+      let githubIssuesPromise = Promise.resolve([]);
+      if (this.gitHubIssuesProvider) {
+        githubIssuesPromise = this.generateGitHubIssuesBlocks();
+      }
 
-      // Wait for all file processing to complete
-      // const contents = await Promise.all(fileBlockPromises);
-
-      // Wait for all file processing to complete, including the file tree
-      const allPromises = [fileTreePromise, ...fileBlockPromises];
+      // Wait for all processing to complete, including the file tree and GitHub issues
+      const allPromises = [fileTreePromise, githubIssuesPromise, ...fileBlockPromises];
       const results = await Promise.all(allPromises);
 
-      // Now the file tree is at index 0, and the file blocks start at index 1
+      // Now the file tree is at index 0, GitHub issues at 1, and file blocks start at index 2
       const fileTree = results[0];
-      const contents = results.slice(1);
+      const githubIssuesBlocks = results[1] as string[];
+      const contents = results.slice(2);
 
       // --- Join the processed blocks ---
-      const joinedBlocks = contents.join(this.blockSeparator);
+      let joinedBlocks = contents.join(this.blockSeparator);
+      
+      // Add GitHub issues if any were selected
+      if (githubIssuesBlocks.length > 0) {
+        const githubSection = githubIssuesBlocks.join(this.blockSeparator);
+        if (joinedBlocks) {
+          joinedBlocks += this.blockSeparator + githubSection;
+        } else {
+          joinedBlocks = githubSection;
+        }
+      }
 
       // --- Apply the Wrapper Template (if enabled) ---
       let combinedBlocksAndWrapper: string;
@@ -1295,5 +1310,74 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
     // Add watchers to context subscriptions for proper disposal when the extension deactivates
     this.context.subscriptions.push(gitignoreWatcher, towerignoreWatcher);
+  }
+  
+  /**
+   * Set the GitHub issues provider for integration
+   */
+  setGitHubIssuesProvider(provider: any): void {
+    this.gitHubIssuesProvider = provider;
+  }
+  
+  /**
+   * Generate formatted blocks for selected GitHub issues
+   */
+  private async generateGitHubIssuesBlocks(): Promise<string[]> {
+    if (!this.gitHubIssuesProvider) {
+      return [];
+    }
+    
+    try {
+      // Get selected issue details from the GitHub provider
+      const selectedIssues = await this.gitHubIssuesProvider.getSelectedIssueDetails();
+      
+      if (selectedIssues.size === 0) {
+        return [];
+      }
+      
+      const blocks: string[] = [];
+      
+      for (const [issueNumber, details] of selectedIssues) {
+        const { issue, comments } = details;
+        
+        // Format the issue as a block
+        let issueBlock = `<github_issue number="${issue.number}" state="${issue.state}">
+<title>${issue.title}</title>
+<url>${issue.html_url}</url>
+<created_at>${issue.created_at}</created_at>
+<author>${issue.user.login}</author>`;
+
+        // Add labels if any
+        if (issue.labels.length > 0) {
+          const labelNames = issue.labels.map(l => l.name).join(', ');
+          issueBlock += `\n<labels>${labelNames}</labels>`;
+        }
+        
+        // Add body if present
+        if (issue.body) {
+          issueBlock += `\n<body>\n${issue.body}\n</body>`;
+        }
+        
+        // Add comments if any
+        if (comments.length > 0) {
+          issueBlock += `\n<comments>`;
+          for (const comment of comments) {
+            issueBlock += `\n<comment author="${comment.user.login}" created_at="${comment.created_at}">
+${comment.body}
+</comment>`;
+          }
+          issueBlock += `\n</comments>`;
+        }
+        
+        issueBlock += `\n</github_issue>`;
+        blocks.push(issueBlock);
+      }
+      
+      return blocks;
+    } catch (error) {
+      console.error('Error generating GitHub issues blocks:', error);
+      // Return empty array on error to not break context generation
+      return [];
+    }
   }
 }

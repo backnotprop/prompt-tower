@@ -1,6 +1,6 @@
 {
   "name": "prompt-tower",
-  "displayName": "Prompt Tower (Dev)",
+  "displayName": "Prompt Tower",
   "version": "1.0.2",
   "license": "AGPL-3.0",
   "repository": {
@@ -193,6 +193,18 @@
         "command": "promptTower.showTowerUI",
         "title": "Show Prompt Tower UI",
         "category": "Prompt Tower"
+      },
+      {
+        "command": "promptTower.addGitHubToken",
+        "title": "Add GitHub Token",
+        "category": "Prompt Tower",
+        "icon": "$(key)"
+      },
+      {
+        "command": "promptTower.refreshGitHubIssues",
+        "title": "Refresh GitHub Issues",
+        "category": "Prompt Tower",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
