@@ -72,7 +72,7 @@
               "template": "<project_tree>\n{projectTree}\n</project_tree>\n"
             },
             "wrapperFormat": {
-              "template": "<context>\n{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
+              "template": "<context>\n{githubIssues}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
             }
           },
           "properties": {
@@ -129,13 +129,13 @@
               ],
               "description": "Settings for wrapping the entire generated output. Set to null to disable wrapping.",
               "default": {
-                "template": "<context>\n{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
+                "template": "<context>\n{githubIssues}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
               },
               "properties": {
                 "template": {
                   "type": "string",
                   "description": "The template string for the entire output. Use '{blocks}' as the placeholder for where the combined file blocks will be inserted. Other available placeholders: {timestamp}, {fileCount}, {workspaceRoot}, {outputFileName}.",
-                  "default": "<context>\n{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
+                  "default": "<context>\n{githubIssues{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
                 }
               }
             }
