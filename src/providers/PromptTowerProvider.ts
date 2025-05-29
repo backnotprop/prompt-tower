@@ -45,7 +45,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     "<project_tree>\n{projectTree}\n</project_tree>\n";
 
   private wrapperTemplate: string | null =
-    "<context>\n{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>";
+    "<context>\n{githubIssues}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>";
 
   // --- Token Counting State ---
   private totalTokenCount: number = 0;
@@ -59,6 +59,9 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private invalidateWebviewPreview: () => void;
 
   private ig = ignore(); // Initialize an ignore instance
+  private gitHubIssuesProvider?: any; // Will be set after construction
+  private gitHubIssueTokens = 0;
+  private gitHubIssuesCounting = false;
 
   constructor(
     private workspaceRoot: string,
@@ -278,9 +281,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
   private notifyTokenUpdate() {
     // Fire event only if emitter exists (it should, but defensive check)
     if (this.tokenUpdateEmitter) {
+      // Combine file tokens + GitHub issue tokens
+      const combinedCount = this.totalTokenCount + this.gitHubIssueTokens;
+      const isCounting = this.isCountingTokens || this.gitHubIssuesCounting;
+
       this.tokenUpdateEmitter.fire({
-        count: this.totalTokenCount,
-        isCounting: this.isCountingTokens,
+        count: combinedCount,
+        isCounting: isCounting,
       });
     }
   }
@@ -1015,8 +1022,13 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
     const checkedFiles = this.getCheckedFiles();
     const fileCount = checkedFiles.length;
 
+    // Check if we have GitHub issues selected even if no files
+    const hasSelectedIssues =
+      this.gitHubIssuesProvider &&
+      this.gitHubIssuesProvider.getSelectedIssues().length > 0;
+
     // Keep the initial check for no files/prefix/suffix, but change return
-    if (fileCount === 0) {
+    if (fileCount === 0 && !hasSelectedIssues) {
       console.log("Project Tree Type:", this.projectTreeType);
       // vscode.window.showWarningMessage( ... ); // Remove this warning for now, handle in caller
       if (
@@ -1027,7 +1039,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         const fileTree = await this.generateFileTree();
         let treeBlockOnlyContext = this.projectTreeTemplate.replace(
           "{projectTree}",
-          fileTree
+          fileTree as string
         );
         if (this.promptPrefix) {
           treeBlockOnlyContext =
@@ -1044,71 +1056,106 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
     try {
       // Process each checked file concurrently using the blockTemplate
-      const fileBlockPromises = checkedFiles.map(async (fullFilePath) => {
-        // Calculate necessary paths and names
-        const relativePath = path.relative(this.workspaceRoot, fullFilePath); // e.g., src/database.js
-        const fileNameWithExtension = path.basename(fullFilePath);
-        const fileExtension = path.extname(fullFilePath);
-        const fileName = path.basename(fullFilePath, fileExtension);
+      const fileBlockPromises =
+        fileCount > 0
+          ? checkedFiles.map(async (fullFilePath) => {
+              // Calculate necessary paths and names
+              const relativePath = path.relative(
+                this.workspaceRoot,
+                fullFilePath
+              ); // e.g., src/database.js
+              const fileNameWithExtension = path.basename(fullFilePath);
+              const fileExtension = path.extname(fullFilePath);
+              const fileName = path.basename(fullFilePath, fileExtension);
 
-        // Read file content
-        const fileContent = await fs.promises.readFile(fullFilePath, "utf8");
+              // Read file content
+              const fileContent = await fs.promises.readFile(
+                fullFilePath,
+                "utf8"
+              );
 
-        // --- Apply Block Template Placeholders ---
-        let formattedBlock = this.blockTemplate;
+              // --- Apply Block Template Placeholders ---
+              let formattedBlock = this.blockTemplate;
 
-        // Ensure relativePath starts with '/' if needed for the <source> tag
-        const sourcePath = "/" + relativePath.replace(/\\/g, "/"); // Ensure forward slashes and leading slash
+              // Ensure relativePath starts with '/' if needed for the <source> tag
+              const sourcePath = "/" + relativePath.replace(/\\/g, "/"); // Ensure forward slashes and leading slash
 
-        formattedBlock = formattedBlock.replace(
-          /{fileNameWithExtension}/g,
-          fileNameWithExtension
-        );
-        // Replace {rawFilePath} with the calculated relative path (with leading slash)
-        formattedBlock = formattedBlock.replace(/{rawFilePath}/g, sourcePath);
+              formattedBlock = formattedBlock.replace(
+                /{fileNameWithExtension}/g,
+                fileNameWithExtension
+              );
+              // Replace {rawFilePath} with the calculated relative path (with leading slash)
+              formattedBlock = formattedBlock.replace(
+                /{rawFilePath}/g,
+                sourcePath
+              );
 
-        // Other placeholders (if they exist in your actual template - some are not in the default)
-        // formattedBlock = formattedBlock.replace(/{filePath}/g, commentedFilePath); // REMOVE or keep ONLY if you ALSO use {filePath}
-        formattedBlock = formattedBlock.replace(/{fileName}/g, fileName);
-        formattedBlock = formattedBlock.replace(
-          /{fileExtension}/g,
-          fileExtension
-        );
-        formattedBlock = formattedBlock.replace(/{fullPath}/g, fullFilePath); // Keep if {fullPath} is ever used
+              // Other placeholders (if they exist in your actual template - some are not in the default)
+              // formattedBlock = formattedBlock.replace(/{filePath}/g, commentedFilePath); // REMOVE or keep ONLY if you ALSO use {filePath}
+              formattedBlock = formattedBlock.replace(/{fileName}/g, fileName);
+              formattedBlock = formattedBlock.replace(
+                /{fileExtension}/g,
+                fileExtension
+              );
+              formattedBlock = formattedBlock.replace(
+                /{fullPath}/g,
+                fullFilePath
+              ); // Keep if {fullPath} is ever used
 
-        let trimmedFileContent = fileContent;
-        if (this.blockTrimLines) {
-          // Remove all leading blank lines:
-          trimmedFileContent = trimmedFileContent.replace(/^(\s*\r?\n)+/, "");
+              let trimmedFileContent = fileContent;
+              if (this.blockTrimLines) {
+                // Remove all leading blank lines:
+                trimmedFileContent = trimmedFileContent.replace(
+                  /^(\s*\r?\n)+/,
+                  ""
+                );
 
-          // Remove all trailing blank lines:
-          trimmedFileContent = trimmedFileContent.replace(/(\r?\n\s*)+$/, "");
-        }
+                // Remove all trailing blank lines:
+                trimmedFileContent = trimmedFileContent.replace(
+                  /(\r?\n\s*)+$/,
+                  ""
+                );
+              }
 
-        // Replace fileContent last to avoid issues if content contains placeholders
-        formattedBlock = formattedBlock.replace(
-          /{fileContent}/g,
-          trimmedFileContent
-        );
+              // Replace fileContent last to avoid issues if content contains placeholders
+              formattedBlock = formattedBlock.replace(
+                /{fileContent}/g,
+                trimmedFileContent
+              );
 
-        return formattedBlock;
-      });
+              return formattedBlock;
+            })
+          : [];
 
       const fileTreePromise = this.generateFileTree();
 
-      // Wait for all file processing to complete
-      // const contents = await Promise.all(fileBlockPromises);
+      // Prepare GitHub issues if provider is available
+      let githubIssuesPromise: Promise<string[]> = Promise.resolve([]);
+      if (this.gitHubIssuesProvider) {
+        githubIssuesPromise = this.generateGitHubIssuesBlocks();
+      }
 
-      // Wait for all file processing to complete, including the file tree
-      const allPromises = [fileTreePromise, ...fileBlockPromises];
+      // Wait for all processing to complete, including the file tree and GitHub issues
+      const allPromises = [
+        fileTreePromise,
+        githubIssuesPromise,
+        ...fileBlockPromises,
+      ];
       const results = await Promise.all(allPromises);
 
-      // Now the file tree is at index 0, and the file blocks start at index 1
+      // Now the file tree is at index 0, GitHub issues at 1, and file blocks start at index 2
       const fileTree = results[0];
-      const contents = results.slice(1);
+      const githubIssuesBlocks = results[1] as string[];
+      const contents = results.slice(2);
 
-      // --- Join the processed blocks ---
-      const joinedBlocks = contents.join(this.blockSeparator);
+      // --- Join the processed blocks (files only) ---
+      const joinedFileBlocks = contents.join(this.blockSeparator);
+
+      // --- Join GitHub issues separately ---
+      const joinedGithubIssues =
+        githubIssuesBlocks.length > 0
+          ? githubIssuesBlocks.join(this.blockSeparator)
+          : "";
 
       // --- Apply the Wrapper Template (if enabled) ---
       let combinedBlocksAndWrapper: string;
@@ -1116,12 +1163,25 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         combinedBlocksAndWrapper = this.wrapperTemplate; // Start with the wrapper template
 
         const treeBlock = this.projectTreeEnabled
-          ? this.projectTreeTemplate.replace("{projectTree}", fileTree)
+          ? this.projectTreeTemplate.replace(
+              "{projectTree}",
+              fileTree as string
+            )
           : "";
 
         combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
           "{treeBlock}",
           treeBlock
+        );
+
+        // Add GitHub issues section
+        const githubIssuesSection = joinedGithubIssues
+          ? `${joinedGithubIssues}\n`
+          : "";
+
+        combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
+          /{githubIssues}/g,
+          githubIssuesSection
         );
 
         // Calculate values needed for wrapper placeholders
@@ -1130,7 +1190,7 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
         // Replace placeholders in the wrapper template
         combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
           /{blocks}/g,
-          joinedBlocks
+          joinedFileBlocks
         );
         combinedBlocksAndWrapper = combinedBlocksAndWrapper.replace(
           /{timestamp}/g,
@@ -1149,8 +1209,15 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
           "clipboard-content" // Use a generic filename since we're not creating a file
         );
       } else {
-        // No wrapper template defined, use joined blocks directly
-        combinedBlocksAndWrapper = joinedBlocks;
+        // No wrapper template defined, combine GitHub issues + files directly
+        if (joinedGithubIssues && joinedFileBlocks) {
+          combinedBlocksAndWrapper =
+            joinedGithubIssues + this.blockSeparator + joinedFileBlocks;
+        } else if (joinedGithubIssues) {
+          combinedBlocksAndWrapper = joinedGithubIssues;
+        } else {
+          combinedBlocksAndWrapper = joinedFileBlocks;
+        }
       }
 
       let finalOutput = "";
@@ -1295,5 +1362,86 @@ export class PromptTowerProvider implements vscode.TreeDataProvider<FileItem> {
 
     // Add watchers to context subscriptions for proper disposal when the extension deactivates
     this.context.subscriptions.push(gitignoreWatcher, towerignoreWatcher);
+  }
+
+  /**
+   * Set the GitHub issues provider for integration
+   */
+  setGitHubIssuesProvider(provider: any): void {
+    this.gitHubIssuesProvider = provider;
+
+    // Listen to token changes from GitHub issues
+    if (provider && provider.onDidChangeTokens) {
+      provider.onDidChangeTokens((update: any) => {
+        this.gitHubIssueTokens = update.totalTokens;
+        this.gitHubIssuesCounting = update.isCounting;
+
+        // Trigger combined token update
+        this.notifyTokenUpdate();
+      });
+    }
+  }
+
+  /**
+   * Generate formatted blocks for selected GitHub issues
+   */
+  private async generateGitHubIssuesBlocks(): Promise<string[]> {
+    if (!this.gitHubIssuesProvider) {
+      return [];
+    }
+
+    try {
+      // Get selected issue details from the GitHub provider
+      const selectedIssues =
+        await this.gitHubIssuesProvider.getSelectedIssueDetails();
+
+      if (selectedIssues.size === 0) {
+        return [];
+      }
+
+      const blocks: string[] = [];
+
+      for (const [issueNumber, details] of selectedIssues) {
+        const { issue, comments } = details;
+
+        // Format the issue as a block
+        let issueBlock = `<github_issue number="${issue.number}" state="${issue.state}">
+<title>${issue.title}</title>
+<url>${issue.html_url}</url>
+<created_at>${issue.created_at}</created_at>
+<author>${issue.user.login}</author>`;
+
+        // Add labels if any
+        if (issue.labels.length > 0) {
+          const labelNames = issue.labels.map((l: any) => l.name).join(", ");
+          issueBlock += `\n<labels>${labelNames}</labels>`;
+        }
+
+        // Add body if present
+        if (issue.body) {
+          issueBlock += `\n<body>\n${issue.body}\n</body>`;
+        }
+
+        // Add comments if any
+        if (comments.length > 0) {
+          issueBlock += `\n<comments>`;
+          for (const comment of comments) {
+            issueBlock += `\n<comment author="${comment.user.login}" created_at="${comment.created_at}">
+${comment.body}
+</comment>`;
+          }
+          issueBlock += `\n</comments>`;
+        }
+
+        issueBlock += `\n</github_issue>`;
+        blocks.push(issueBlock);
+      }
+
+      return blocks;
+    } catch (error) {
+      console.error("Error generating GitHub issues blocks:", error);
+      // Return empty array on error to not break context generation
+      return [];
+    }
   }
 }

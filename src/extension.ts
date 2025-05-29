@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { PromptTowerProvider } from "./providers/PromptTowerProvider";
+import { GitHubIssuesProvider, GitHubIssue } from "./providers/GitHubIssuesProvider";
 import { registerCommands } from "./commands";
 import { FileItem } from "./models/FileItem";
 import { TokenUpdateEmitter, TokenUpdatePayload } from "./models/EventEmitter";
@@ -13,6 +14,7 @@ const tokenUpdateEmitter = new TokenUpdateEmitter();
 
 // --- Reference to the provider instance ---
 let providerInstance: PromptTowerProvider | undefined;
+let issuesProviderInstance: GitHubIssuesProvider | undefined;
 
 // --- Flag to track if preview needs invalidation ---
 let isPreviewValid = false;
@@ -910,7 +912,33 @@ export function activate(context: vscode.ExtensionContext) {
 
       context.subscriptions.push(treeView);
 
-      registerCommands(context, providerInstance, treeView);
+      // --- GitHub Issues Tree View Setup ---
+      console.log("Prompt Tower: Initializing GitHub Issues Tree View.");
+      issuesProviderInstance = new GitHubIssuesProvider(context, rootPath);
+      const issuesTreeView = vscode.window.createTreeView("promptTowerIssuesView", {
+        treeDataProvider: issuesProviderInstance,
+        showCollapseAll: false,
+        canSelectMany: true,
+        manageCheckboxStateManually: true,
+      });
+      
+      // Handle checkbox state changes for GitHub issues
+      context.subscriptions.push(
+        issuesTreeView.onDidChangeCheckboxState(async (evt) => {
+          for (const [item, state] of evt.items) {
+            if (item instanceof GitHubIssue && issuesProviderInstance) {
+              await issuesProviderInstance.toggleIssueSelection(item);
+            }
+          }
+        })
+      );
+      
+      context.subscriptions.push(issuesTreeView);
+      
+      // Connect the providers for context generation
+      providerInstance.setGitHubIssuesProvider(issuesProviderInstance);
+
+      registerCommands(context, providerInstance, treeView, issuesProviderInstance);
     } else {
       // Handle case where tree view is not defined in package.json
       console.log(
