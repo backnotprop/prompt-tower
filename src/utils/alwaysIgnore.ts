@@ -1,4 +1,99 @@
 export const ALWAYS_IGNORE = [
+  // Version control (HUGE and irrelevant for LLM context)
+  ".git/",
+  ".svn/",
+  ".hg/",
+  ".bzr/",
+  ".darcs/",
+  ".husky/",
+  
+  // IDE/Editor directories (contain settings, might have sensitive paths)
+  ".vscode/",
+  ".idea/",
+  ".vs/",
+  ".vscode-test/",
+  ".sublime-project",
+  ".sublime-workspace",
+  "*.swp",
+  "*.swo",
+  "*.tmp",
+  
+  // Lock files (consolidates package-lock.json, yarn.lock, etc.)
+  "*.lock",
+  "*.lockb", 
+  "*.lockfile*",
+  "package-lock.json",
+  "yarn.lock",
+  "poetry.lock",
+  "Gemfile.lock",
+  "pnpm-lock.yaml",
+  "bun.lockb",
+  "Cargo.lock",
+  "Pipfile.lock",
+  
+  // Dependencies & build outputs
+  "node_modules/",
+  "**/node_modules/**",
+  "vendor/",
+  "Pods/",
+  "Carthage/",
+  "dist/",
+  "**/dist/**",
+  "build/",
+  "**/build/**",
+  "out/",
+  "target/",
+  ".next/",
+  ".nuxt/",
+  "coverage/",
+  ".nyc_output/",
+  ".gradle/",
+  "gradle/",
+  ".m2/",
+  ".cargo/",
+  
+  // Cache & temporary directories
+  ".cache/",
+  "cache/",
+  "tmp/",
+  "temp/",
+  ".tmp/",
+  ".temp/",
+  "*.cache",
+  
+  // Build caches & incremental build files
+  "*.tsbuildinfo",
+  ".eslintcache",
+  ".parcel-cache/",
+  ".webpack/",
+  ".rollup.cache/",
+  
+  // Environment files & secrets (often contain API keys, tokens)
+  ".env",
+  ".env.*",
+  ".env.local",
+  ".env.*.local",
+  "secrets/",
+  "private/",
+  
+  // Test outputs & coverage
+  "test-results/",
+  "spec-results/", 
+  ".coverage",
+  "htmlcov/",
+  ".nyc_output/",
+  "coverage/",
+  
+  // Python environments
+  "venv/",
+  ".venv/",
+  "env/",
+  "__pycache__/",
+  ".mypy_cache/",
+  ".pytest_cache/",
+  ".tox/",
+  
+  // Document files
   "*.pdf",
   "*.docx",
   "*.doc",
@@ -6,6 +101,8 @@ export const ALWAYS_IGNORE = [
   "*.xlsx",
   "*.ppt",
   "*.pptx",
+  
+  // Image files
   "*.png",
   "*.jpg",
   "*.jpeg",
@@ -15,6 +112,8 @@ export const ALWAYS_IGNORE = [
   "*.ico",
   "*.webp",
   "*.svg",
+  
+  // Media files
   "*.mp3",
   "*.mp4",
   "*.avi",
@@ -25,50 +124,48 @@ export const ALWAYS_IGNORE = [
   "*.m4v",
   "*.m4b",
   "*.m4p",
+  
+  // Binary & system files
   "*.so",
   "*.so.*",
-  "*.so.1.1",
   "*.dll",
   "*.dylib",
   "*.lib",
   "*.exp",
   "*.def",
-  "*.bat",
-  "*.cmd",
   "*.exe",
   "*.com",
   "*.sys",
   "*.bin",
-  "*.deb",
-  "*.rpm",
-  "*.iso",
-  "*.img",
+  
+  // Archives
   "*.tar",
   "*.gz",
   "*.bz2",
-  "venv",
-  ".mypy_cache",
   "*.tgz",
-  "*.whl",
-  "*.egg-info",
-  "*.egg",
-  "*.dist-info",
-  "*.dist",
   "*.zip",
   "*.rar",
   "*.7z",
-  "*.class",
-  "*.jar",
-  "*.war",
-  "*.ear",
   "*.zipx",
   "*.dmg",
   "*.pkg",
   "*.msi",
+  "*.deb",
+  "*.rpm",
+  "*.iso",
+  "*.img",
+  
+  // Compiled files
   "*.pyc",
   "*.pyo",
   "*.o",
   "*.obj",
+  "*.class",
+  "*.jar",
+  "*.war",
+  "*.ear",
+  
+  // Data files
   "*.h5",
   "*.hdf5",
   "*.hdf",
@@ -84,25 +181,75 @@ export const ALWAYS_IGNORE = [
   "*.npz",
   "*.npy",
   "*.nii",
-  ".DS_Store",
-  "Thumbs.db",
+  
+  // Font files
   "*.woff",
   "*.woff2",
   "*.ttf",
   "*.eot",
   "*.otf",
+  
+  // Virtual machine files
   "*.vdi",
   "*.vhd",
   "*.vmdk",
   "*.qcow2",
   "*.vhdx",
+  
+  // Security files
   "*.crt",
   "*.pem",
   "*.key",
-  "*.lock",
-  "*.lockb",
-  "*.lockfile",
-  "*.lockfile.json",
-  "*.lockfile.yaml",
-  "*.lockfile.yml",
+  
+  // System files
+  ".DS_Store",
+  "Thumbs.db",
+  "Desktop.ini",
+  "ehthumbs.db",
+  
+  // Script files that are usually not source
+  "*.bat",
+  "*.cmd",
+  
+  // Log files (can be huge and not relevant for code context)
+  "*.log",
+  "logs/",
+  "log/",
+  
+  // Database files (large, binary, not source code)
+  "*.db",
+  "*.sqlite",
+  "*.sqlite3",
+  
+  // Backup and temporary patterns
+  "*.tmp",
+  "*.temp",
+  "*.bak",
+  "*.backup",
+  "*~",
+  "*.orig",
+  "*.rej",
+  
+  // Documentation directories (often auto-generated or large)
+  "docs/_build/",
+  "site/",
+  "_site/",
+  "public/",
+  
+  // Package artifacts
+  "*.whl",
+  "*.egg-info/",
+  "*.egg",
+  "*.dist-info/",
+  "*.dist",
+  
+  // More IDE artifacts
+  "*.user",
+  "*.userprefs",
+  "*.sln.docstates",
+  
+  // Memory dumps & profiles
+  "*.stackdump",
+  "*.dmp",
+  "heapdump*",
 ];

@@ -35,24 +35,6 @@
           "default": true,
           "description": "Use your .gitignore file to filter out files and folders available for context"
         },
-        "promptTower.ignore": {
-          "type": "array",
-          "default": [
-            "package-lock.json",
-            "yarn.lock",
-            "poetry.lock",
-            "Gemfile.lock",
-            "pnpm-lock.yaml",
-            "bun.lockb",
-            "**/*/node_modules",
-            "**/*/dist",
-            "**/*/build",
-            "**/node_modules/**",
-            "**/dist/**",
-            "**/build/**"
-          ],
-          "description": "Manual list of files and folders to ignore. This is in addition to the .gitignore file."
-        },
         "promptTower.maxFileSizeWarningKB": {
           "type": "number",
           "default": 500,

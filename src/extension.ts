@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 import { MultiRootTreeProvider } from "./providers/MultiRootTreeProvider";
-import { GitHubIssuesProvider, GitHubIssue } from "./providers/GitHubIssuesProvider";
+import {
+  GitHubIssuesProvider,
+  GitHubIssue,
+} from "./providers/GitHubIssuesProvider";
 import { WorkspaceManager } from "./services/WorkspaceManager";
 import { FileDiscoveryService } from "./services/FileDiscoveryService";
 import { TokenCountingService } from "./services/TokenCountingService";
@@ -43,7 +46,8 @@ function resetWebviewPreview() {
 
 function getNonce() {
   let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   for (let i = 0; i < 32; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -163,6 +167,17 @@ function getWebviewContent(
             border-top: 1px solid var(--vscode-separator-foreground);
             padding-top: 1em;
         }
+        a {
+          cursor: pointer !important;
+          margin-left: 5px !important;
+          font-size: 0.9em !important;
+          font-weight: 300 !important;
+        }
+        #preview-status {
+          font-size: 0.9em;
+          color: var(--vscode-descriptionForeground);
+          min-height: 1.2em;
+        }
         #context-preview {
             flex-grow: 1;
             height: 256px;
@@ -174,7 +189,66 @@ function getWebviewContent(
             white-space: pre-wrap;
             word-wrap: break-word;
             font-family: var(--vscode-editor-font-family, monospace);
+            transition: height 0.3s ease-in-out;
         }
+        #preview-container.expanded #context-preview {
+          height: 748px;
+        }
+        #preview-container.invalidated #context-preview,
+        #preview-container.invalidated #context-preview:focus,
+        #preview-container.invalidated #context-preview:hover,
+        #preview-container.invalidated #context-preview:active {
+          border: 1px solid var(--vscode-inputValidation-warningForeground, orange) !important;
+          border-color: var(--vscode-inputValidation-warningForeground, orange) !important;
+        }
+        #preview-container.invalidated #preview-status {
+            color: var(--vscode-inputValidation-warningForeground, orange);
+        }
+        
+        /* Shimmer effect for context generation */
+        #preview-container.cyber-generating #context-preview {
+            background: linear-gradient(
+                90deg,
+                var(--vscode-input-background) 0%,     /* Start with background */
+                var(--vscode-input-background) 20%,    /* Hold background for a smoother start */
+                var(--vscode-charts-blue) 40%,         /* Blue fades in */
+                var(--vscode-charts-green) 50%,        /* Green is the central color */
+                var(--vscode-charts-blue) 60%,         /* Blue fades back in */
+                var(--vscode-input-background) 80%,    /* Fade out to background */
+                var(--vscode-input-background) 100%    /* Hold background for a smoother end */
+            );
+            background-size: 200% 100%; /* Keep background size, keyframes will control speed */
+            animation: shimmer-bg 4s; /* Changed to 2 seconds */
+            
+            box-shadow: 0 0 20px rgba(var(--vscode-charts-blue), 0.2);
+            opacity: 0.45;
+        }
+        #preview-container.cyber-generating #context-preview::selection {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes shimmer-bg {
+           0% {
+               background-position: 200% 0;
+               box-shadow: 0 0 5px rgba(var(--vscode-charts-blue), 0.05);
+           }
+           25% {
+               background-position: 100% 0;
+               box-shadow: 0 0 10px rgba(var(--vscode-charts-blue), 0.1);
+           }
+           50% {
+               background-position: 0% 0;
+               box-shadow: 0 0 15px rgba(var(--vscode-charts-blue), 0.15);
+           }
+           75% {
+               background-position: -100% 0;
+               box-shadow: 0 0 10px rgba(var(--vscode-charts-blue), 0.1);
+           }
+           100% {
+               background-position: -200% 0;
+               box-shadow: 0 0 5px rgba(var(--vscode-charts-blue), 0.05);
+           }
+       }
     `;
 
   return `<!DOCTYPE html>
@@ -222,8 +296,12 @@ function getWebviewContent(
               </div>
 
               <div id="preview-container">
-                  <label for="context-preview">Context Preview</label>
-                  <textarea id="context-preview" readonly></textarea>
+                  <label for="context-preview">Context Preview
+                  <a id="copy-preview-content" class="copy-preview-content">Copy</a>
+                  <a id="expand-preview" class="expand-preview">Expand</a>
+                  </label>
+                  <span id="preview-status"></span>
+                  <textarea id="context-preview"></textarea>
               </div>
             </div>
             <script nonce="${nonce}">
@@ -236,6 +314,8 @@ function getWebviewContent(
                     const prefixTextArea = document.getElementById("prompt-prefix");
                     const suffixTextArea = document.getElementById("prompt-suffix");
                     const previewTextArea = document.getElementById("context-preview");
+                    const previewContainer = document.getElementById("preview-container");
+                    const previewStatusElement = document.getElementById("preview-status");
                     
                     // Event listeners
                     window.addEventListener('message', event => {
@@ -267,6 +347,18 @@ function getWebviewContent(
                             case 'updatePreview':
                                 if (message.payload && previewTextArea) {
                                     previewTextArea.value = message.payload.context;
+                                    // Clear invalidation state when preview is updated
+                                    if (previewContainer && previewStatusElement) {
+                                        previewContainer.classList.remove('invalidated');
+                                        previewStatusElement.textContent = '';
+                                    }
+                                }
+                                break;
+                            case 'invalidatePreview':
+                                // Show visual warning that context is out of sync
+                                if (previewContainer && previewStatusElement) {
+                                    previewContainer.classList.add('invalidated');
+                                    previewStatusElement.textContent = '⚠️ Context may be out of sync. Click "Create Context" to update.';
                                 }
                                 break;
                         }
@@ -286,6 +378,18 @@ function getWebviewContent(
                     
                     // Button event listeners
                     document.getElementById('createContextButton')?.addEventListener("click", () => {
+                        // Show toast notification
+                        vscode.postMessage({ command: "showToast", payload: { message: "Generating context..." } });
+                        
+                        // Add shimmer effect
+                        if (previewContainer) {
+                            previewContainer.classList.add('cyber-generating');
+                            // Remove effect after animation completes
+                            setTimeout(() => {
+                                previewContainer.classList.remove('cyber-generating');
+                            }, 750);
+                        }
+                        
                         vscode.postMessage({ command: "createContext" });
                     });
                     
@@ -299,6 +403,40 @@ function getWebviewContent(
                     
                     document.getElementById('resetAllButton')?.addEventListener("click", () => {
                         vscode.postMessage({ command: "resetAll" });
+                    });
+                    
+                    // Preview action event listeners  
+                    document.getElementById('copy-preview-content')?.addEventListener("click", () => {
+                        if (previewTextArea) {
+                            previewTextArea.select();
+                            document.execCommand("copy");
+                            // Show toast notification
+                            vscode.postMessage({ command: "showToast", payload: { message: "Context copied to clipboard." } });
+                        }
+                    });
+                    
+                    document.getElementById('expand-preview')?.addEventListener("click", () => {
+                        if (previewContainer) {
+                            const expandButton = document.getElementById('expand-preview');
+                            previewContainer.classList.toggle("expanded");
+                            
+                            // Update button text and handle scrolling
+                            if (previewContainer.classList.contains("expanded")) {
+                              if (expandButton) expandButton.textContent = "Collapse";
+                              setTimeout(() => {
+                                window.scrollBy({
+                                  top: 492, // 748-256 = height difference
+                                  behavior: 'smooth'
+                                });
+                              }, 300); // Wait for 0.3s CSS transition to finish
+                            } else {
+                              if (expandButton) expandButton.textContent = "Expand";
+                              window.scrollTo({
+                                top: 0,
+                                behavior: 'smooth'
+                              });
+                            }
+                        }
                     });
                     
                     vscode.postMessage({ command: "webviewReady" });
@@ -347,14 +485,14 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             invalidateWebviewPreview();
           }
           break;
-          
+
         case "updateSuffix":
           if (multiRootProvider && typeof message.text === "string") {
             multiRootProvider.setPromptSuffix(message.text);
             invalidateWebviewPreview();
           }
           break;
-          
+
         case "webviewReady":
           if (multiRootProvider && webviewPanel) {
             // Send initial state
@@ -375,7 +513,7 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             });
           }
           break;
-          
+
         case "createContext":
           if (multiRootProvider && contextGenerationService && webviewPanel) {
             try {
@@ -387,18 +525,20 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
                   suffix: multiRootProvider.getPromptSuffix(),
                 }
               );
-              
+
               webviewPanel.webview.postMessage({
                 command: "updatePreview",
                 payload: { context: result.contextString },
               });
               isPreviewValid = true;
             } catch (error) {
-              vscode.window.showErrorMessage(`Error generating context: ${error}`);
+              vscode.window.showErrorMessage(
+                `Error generating context: ${error}`
+              );
             }
           }
           break;
-          
+
         case "createAndCopyToClipboard":
           if (multiRootProvider && contextGenerationService) {
             try {
@@ -410,7 +550,7 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
                   suffix: multiRootProvider.getPromptSuffix(),
                 }
               );
-              
+
               if (webviewPanel) {
                 webviewPanel.webview.postMessage({
                   command: "updatePreview",
@@ -423,16 +563,22 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             }
           }
           break;
-          
+
         case "clearSelections":
           if (multiRootProvider) {
             multiRootProvider.clearAllSelections();
           }
           break;
-          
+
         case "resetAll":
           if (multiRootProvider) {
             multiRootProvider.resetAll();
+          }
+          break;
+
+        case "showToast":
+          if (message.payload && typeof message.payload.message === "string") {
+            vscode.window.showInformationMessage(message.payload.message);
           }
           break;
       }
@@ -453,14 +599,14 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
 // --- Extension Activation ---
 export function activate(context: vscode.ExtensionContext) {
   console.log("Prompt Tower: Activating with new clean architecture...");
-  
+
   // Initialize services
   workspaceManager = new WorkspaceManager();
   ignorePatternService = new IgnorePatternService(context);
   fileDiscoveryService = new FileDiscoveryService(ignorePatternService);
   tokenCountingService = new TokenCountingService();
   contextGenerationService = new ContextGenerationService();
-  
+
   // Check if we have workspaces
   if (!workspaceManager.hasWorkspaces()) {
     vscode.window.showInformationMessage(
@@ -468,7 +614,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
     return;
   }
-  
+
   // Initialize main tree provider
   multiRootProvider = new MultiRootTreeProvider(
     workspaceManager,
@@ -477,7 +623,7 @@ export function activate(context: vscode.ExtensionContext) {
     ignorePatternService,
     context
   );
-  
+
   // Create tree view
   const treeView = vscode.window.createTreeView("promptTowerView", {
     treeDataProvider: multiRootProvider,
@@ -485,29 +631,42 @@ export function activate(context: vscode.ExtensionContext) {
     showCollapseAll: true,
     manageCheckboxStateManually: true,
   });
-  
+
   // Handle checkbox state changes
   context.subscriptions.push(
     treeView.onDidChangeCheckboxState(async (evt) => {
       for (const [item, state] of evt.items) {
-        if (item && typeof item === 'object' && 'type' in item && 'absolutePath' in item) {
+        if (
+          item &&
+          typeof item === "object" &&
+          "type" in item &&
+          "absolutePath" in item
+        ) {
           await multiRootProvider.toggleNodeSelection(item as FileNode);
         }
       }
+      // Invalidate preview when file selections change
+      invalidateWebviewPreview();
     })
   );
-  
+
   // Initialize GitHub Issues provider
   const primaryWorkspace = workspaceManager.getPrimaryWorkspace();
   if (primaryWorkspace) {
-    issuesProviderInstance = new GitHubIssuesProvider(context, primaryWorkspace.rootPath);
-    const issuesTreeView = vscode.window.createTreeView("promptTowerIssuesView", {
-      treeDataProvider: issuesProviderInstance,
-      showCollapseAll: false,
-      canSelectMany: true,
-      manageCheckboxStateManually: true,
-    });
-    
+    issuesProviderInstance = new GitHubIssuesProvider(
+      context,
+      primaryWorkspace.rootPath
+    );
+    const issuesTreeView = vscode.window.createTreeView(
+      "promptTowerIssuesView",
+      {
+        treeDataProvider: issuesProviderInstance,
+        showCollapseAll: false,
+        canSelectMany: true,
+        manageCheckboxStateManually: true,
+      }
+    );
+
     context.subscriptions.push(
       issuesTreeView.onDidChangeCheckboxState(async (evt) => {
         for (const [item, state] of evt.items) {
@@ -515,16 +674,18 @@ export function activate(context: vscode.ExtensionContext) {
             await issuesProviderInstance.toggleIssueSelection(item);
           }
         }
+        // Invalidate preview when issue selections change
+        invalidateWebviewPreview();
       })
     );
-    
+
     context.subscriptions.push(issuesTreeView);
-    
+
     // Connect the providers for context generation
     multiRootProvider.setGitHubIssuesProvider(issuesProviderInstance);
     contextGenerationService.setGitHubIssuesProvider(issuesProviderInstance);
   }
-  
+
   // Setup token counting events
   context.subscriptions.push(
     tokenCountingService.onDidChangeTokens((payload: TokenUpdatePayload) => {
@@ -534,25 +695,25 @@ export function activate(context: vscode.ExtensionContext) {
       }
     })
   );
-  
+
   // Register commands
   context.subscriptions.push(
     vscode.commands.registerCommand("promptTower.showTowerUI", () => {
       createOrShowWebviewPanel(context);
     }),
-    
+
     vscode.commands.registerCommand("promptTower.refresh", async () => {
       await multiRootProvider.refresh();
     }),
-    
+
     vscode.commands.registerCommand("promptTower.clearSelections", () => {
       multiRootProvider.clearAllSelections();
     }),
-    
+
     vscode.commands.registerCommand("promptTower.toggleAll", async () => {
       await multiRootProvider.toggleAllFiles();
     }),
-    
+
     vscode.commands.registerCommand("promptTower.copyToClipboard", async () => {
       if (contextGenerationService) {
         const allRootNodes = multiRootProvider.getRootNodes();
@@ -562,25 +723,31 @@ export function activate(context: vscode.ExtensionContext) {
         });
       }
     }),
-    
+
     // Also register with old name for compatibility
-    vscode.commands.registerCommand("promptTower.copyContextToClipboard", async () => {
-      if (contextGenerationService) {
-        const allRootNodes = multiRootProvider.getRootNodes();
-        await contextGenerationService.copyToClipboard(allRootNodes, {
-          prefix: multiRootProvider.getPromptPrefix(),
-          suffix: multiRootProvider.getPromptSuffix(),
-        });
+    vscode.commands.registerCommand(
+      "promptTower.copyContextToClipboard",
+      async () => {
+        if (contextGenerationService) {
+          const allRootNodes = multiRootProvider.getRootNodes();
+          await contextGenerationService.copyToClipboard(allRootNodes, {
+            prefix: multiRootProvider.getPromptPrefix(),
+            suffix: multiRootProvider.getPromptSuffix(),
+          });
+        }
       }
-    }),
-    
+    ),
+
     // GitHub Issues commands
-    vscode.commands.registerCommand("promptTower.refreshGitHubIssues", async () => {
-      if (issuesProviderInstance) {
-        await issuesProviderInstance.reloadIssues();
+    vscode.commands.registerCommand(
+      "promptTower.refreshGitHubIssues",
+      async () => {
+        if (issuesProviderInstance) {
+          await issuesProviderInstance.reloadIssues();
+        }
       }
-    }),
-    
+    ),
+
     vscode.commands.registerCommand("promptTower.addGitHubToken", async () => {
       const token = await vscode.window.showInputBox({
         title: "Add GitHub Personal Access Token",
@@ -595,7 +762,7 @@ export function activate(context: vscode.ExtensionContext) {
             return "Invalid token format. GitHub tokens start with 'ghp_' or 'github_pat_'";
           }
           return null;
-        }
+        },
       });
 
       if (token) {
@@ -604,7 +771,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showInformationMessage(
             "GitHub token saved successfully. Refreshing issues..."
           );
-          
+
           if (issuesProviderInstance) {
             await issuesProviderInstance.reloadIssues();
           }
@@ -615,48 +782,51 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     }),
-    
-    vscode.commands.registerCommand("promptTower.removeGitHubToken", async () => {
-      const confirm = await vscode.window.showWarningMessage(
-        "Remove stored GitHub token? You'll need to re-add it to access private repositories.",
-        "Remove Token",
-        "Cancel"
-      );
 
-      if (confirm === "Remove Token") {
-        try {
-          await GitHubConfigManager.removePAT(context);
-          
-          vscode.window.showInformationMessage(
-            "GitHub token removed successfully. Refreshing issues..."
-          );
-          
-          if (issuesProviderInstance) {
-            await issuesProviderInstance.reloadIssues();
+    vscode.commands.registerCommand(
+      "promptTower.removeGitHubToken",
+      async () => {
+        const confirm = await vscode.window.showWarningMessage(
+          "Remove stored GitHub token? You'll need to re-add it to access private repositories.",
+          "Remove Token",
+          "Cancel"
+        );
+
+        if (confirm === "Remove Token") {
+          try {
+            await GitHubConfigManager.removePAT(context);
+
+            vscode.window.showInformationMessage(
+              "GitHub token removed successfully. Refreshing issues..."
+            );
+
+            if (issuesProviderInstance) {
+              await issuesProviderInstance.reloadIssues();
+            }
+          } catch (error) {
+            vscode.window.showErrorMessage(
+              "Failed to remove GitHub token: " + (error as Error).message
+            );
           }
-        } catch (error) {
-          vscode.window.showErrorMessage(
-            "Failed to remove GitHub token: " + (error as Error).message
-          );
         }
       }
-    })
+    )
   );
-  
+
   context.subscriptions.push(treeView, multiRootProvider);
-  
+
   // Automatically show the panel
   vscode.commands.executeCommand("promptTower.showTowerUI");
-  
+
   console.log("Prompt Tower: Activation complete with clean architecture!");
 }
 
 export function deactivate() {
   console.log('Deactivating "prompt-tower" with clean architecture');
-  
+
   if (webviewPanel) {
     webviewPanel.dispose();
   }
-  
+
   // Services will be disposed via context.subscriptions
 }

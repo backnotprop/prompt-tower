@@ -104,12 +104,10 @@ export class IgnorePatternService {
    * Load ignore patterns from all sources for a workspace
    */
   private loadIgnorePatterns(workspace: Workspace): IgnorePatterns {
-    const config = vscode.workspace.getConfiguration("promptTower");
-    
     return {
       gitignore: this.loadGitIgnorePatterns(workspace),
       towerignore: this.loadTowerIgnorePatterns(workspace),
-      manual: config.get<string[]>("ignore", []),
+      manual: [], // No longer using JSON config
       builtin: ALWAYS_IGNORE
     };
   }
@@ -182,12 +180,11 @@ export class IgnorePatternService {
   }
   
   /**
-   * Setup configuration watcher for manual ignore patterns
+   * Setup configuration watcher for gitignore setting
    */
   private setupConfigurationWatcher(): void {
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("promptTower.ignore") ||
-          event.affectsConfiguration("promptTower.useGitignore")) {
+      if (event.affectsConfiguration("promptTower.useGitignore")) {
         // Clear all caches when configuration changes
         this.patternCache.clear();
         this.ignoreInstanceCache.clear();
