@@ -8,6 +8,7 @@ import { IgnorePatternService } from "./services/IgnorePatternService";
 import { ContextGenerationService } from "./services/ContextGenerationService";
 import { FileNode } from "./models/FileNode";
 import { TokenUpdatePayload } from "./models/Events";
+import { GitHubConfigManager } from "./utils/githubConfig";
 
 // --- Webview Panel Handling ---
 let webviewPanel: vscode.WebviewPanel | undefined;
@@ -518,6 +519,10 @@ export function activate(context: vscode.ExtensionContext) {
     );
     
     context.subscriptions.push(issuesTreeView);
+    
+    // Connect the providers for context generation
+    multiRootProvider.setGitHubIssuesProvider(issuesProviderInstance);
+    contextGenerationService.setGitHubIssuesProvider(issuesProviderInstance);
   }
   
   // Setup token counting events
@@ -555,6 +560,85 @@ export function activate(context: vscode.ExtensionContext) {
           prefix: multiRootProvider.getPromptPrefix(),
           suffix: multiRootProvider.getPromptSuffix(),
         });
+      }
+    }),
+    
+    // Also register with old name for compatibility
+    vscode.commands.registerCommand("promptTower.copyContextToClipboard", async () => {
+      if (contextGenerationService) {
+        const allRootNodes = multiRootProvider.getRootNodes();
+        await contextGenerationService.copyToClipboard(allRootNodes, {
+          prefix: multiRootProvider.getPromptPrefix(),
+          suffix: multiRootProvider.getPromptSuffix(),
+        });
+      }
+    }),
+    
+    // GitHub Issues commands
+    vscode.commands.registerCommand("promptTower.refreshGitHubIssues", async () => {
+      if (issuesProviderInstance) {
+        await issuesProviderInstance.reloadIssues();
+      }
+    }),
+    
+    vscode.commands.registerCommand("promptTower.addGitHubToken", async () => {
+      const token = await vscode.window.showInputBox({
+        title: "Add GitHub Personal Access Token",
+        prompt: "Enter your GitHub PAT with 'repo' scope",
+        placeHolder: "ghp_...",
+        password: true,
+        validateInput: (value) => {
+          if (!value || value.trim().length === 0) {
+            return "Token cannot be empty";
+          }
+          if (!value.startsWith("ghp_") && !value.startsWith("github_pat_")) {
+            return "Invalid token format. GitHub tokens start with 'ghp_' or 'github_pat_'";
+          }
+          return null;
+        }
+      });
+
+      if (token) {
+        try {
+          await GitHubConfigManager.storePAT(context, token);
+          vscode.window.showInformationMessage(
+            "GitHub token saved successfully. Refreshing issues..."
+          );
+          
+          if (issuesProviderInstance) {
+            await issuesProviderInstance.reloadIssues();
+          }
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            "Failed to save GitHub token: " + (error as Error).message
+          );
+        }
+      }
+    }),
+    
+    vscode.commands.registerCommand("promptTower.removeGitHubToken", async () => {
+      const confirm = await vscode.window.showWarningMessage(
+        "Remove stored GitHub token? You'll need to re-add it to access private repositories.",
+        "Remove Token",
+        "Cancel"
+      );
+
+      if (confirm === "Remove Token") {
+        try {
+          await GitHubConfigManager.removePAT(context);
+          
+          vscode.window.showInformationMessage(
+            "GitHub token removed successfully. Refreshing issues..."
+          );
+          
+          if (issuesProviderInstance) {
+            await issuesProviderInstance.reloadIssues();
+          }
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            "Failed to remove GitHub token: " + (error as Error).message
+          );
+        }
       }
     })
   );

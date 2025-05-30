@@ -27,6 +27,9 @@ export class MultiRootTreeProvider implements vscode.TreeDataProvider<FileNode> 
   private promptSuffix: string = "";
   private maxFileSizeWarningKB: number = 500;
   
+  // GitHub integration
+  private gitHubIssuesProvider?: any;
+  
   constructor(
     private workspaceManager: WorkspaceManager,
     private fileDiscoveryService: FileDiscoveryService,
@@ -386,6 +389,28 @@ export class MultiRootTreeProvider implements vscode.TreeDataProvider<FileNode> 
     this.clearAllSelections();
     this.setPromptPrefix("");
     this.setPromptSuffix("");
+  }
+  
+  /**
+   * Set the GitHub issues provider for integration
+   */
+  setGitHubIssuesProvider(provider: any): void {
+    this.gitHubIssuesProvider = provider;
+    
+    // Listen to token changes from GitHub issues
+    if (provider && provider.onDidChangeTokens) {
+      provider.onDidChangeTokens((update: any) => {
+        // Update token counting service with GitHub tokens
+        this.tokenCountingService.setGitHubIssueTokens(update.totalTokens, update.isCounting);
+      });
+    }
+  }
+  
+  /**
+   * Get GitHub issues provider
+   */
+  getGitHubIssuesProvider(): any {
+    return this.gitHubIssuesProvider;
   }
   
   /**

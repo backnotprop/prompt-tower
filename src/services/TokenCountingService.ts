@@ -14,6 +14,7 @@ export class TokenCountingService {
   private totalFileTokens: number = 0;
   private githubIssueTokens: number = 0;
   private isCountingTokens: boolean = false;
+  private isCountingGitHubIssues: boolean = false;
   private currentCalculationVersion = 0;
   private debounceTimeout: NodeJS.Timeout | null = null;
   
@@ -44,7 +45,7 @@ export class TokenCountingService {
    * Check if currently counting tokens
    */
   getIsCounting(): boolean {
-    return this.isCountingTokens;
+    return this.isCountingTokens || this.isCountingGitHubIssues;
   }
   
   /**
@@ -52,6 +53,7 @@ export class TokenCountingService {
    */
   setGitHubIssueTokens(count: number, isCounting: boolean = false): void {
     this.githubIssueTokens = count;
+    this.isCountingGitHubIssues = isCounting;
     this.notifyTokenUpdate();
   }
   
@@ -209,6 +211,7 @@ export class TokenCountingService {
     this.totalFileTokens = 0;
     this.githubIssueTokens = 0;
     this.isCountingTokens = false;
+    this.isCountingGitHubIssues = false;
     this.notifyTokenUpdate();
     console.log("Token count reset to 0.");
   }
@@ -232,7 +235,7 @@ export class TokenCountingService {
   private notifyTokenUpdate(): void {
     const payload: TokenUpdatePayload = {
       count: this.totalFileTokens + this.githubIssueTokens,
-      isCounting: this.isCountingTokens,
+      isCounting: this.isCountingTokens || this.isCountingGitHubIssues,
       fileTokens: this.totalFileTokens,
       issueTokens: this.githubIssueTokens
     };

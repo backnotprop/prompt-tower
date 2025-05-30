@@ -27,6 +27,7 @@ interface StructuredFilePath {
  */
 export class ContextGenerationService {
   private config!: ContextConfig; // Use definite assignment assertion
+  private gitHubIssuesProvider?: any;
   
   constructor() {
     this.loadConfiguration();
@@ -82,15 +83,22 @@ export class ContextGenerationService {
     options?: {
       prefix?: string;
       suffix?: string;
-      githubIssues?: string[];
       primaryWorkspaceRoot?: string;
     }
   ): Promise<ContextGenerationResult> {
     const checkedFiles = FileNodeUtils.getCheckedFiles(fileNodes);
     const fileCount = checkedFiles.length;
     
-    // Handle cases with GitHub issues but no files
-    const hasSelectedIssues = options?.githubIssues && options.githubIssues.length > 0;
+    // Check if we have GitHub issues selected
+    let hasSelectedIssues = false;
+    if (this.gitHubIssuesProvider) {
+      try {
+        const selectedIssues = await this.gitHubIssuesProvider.getSelectedIssueDetails();
+        hasSelectedIssues = selectedIssues && selectedIssues.size > 0;
+      } catch (error) {
+        console.error("Error checking GitHub issues:", error);
+      }
+    }
     
     if (fileCount === 0 && !hasSelectedIssues) {
       // If project tree is enabled and configured to show all files, generate tree-only context
@@ -122,9 +130,13 @@ export class ContextGenerationService {
       // Generate project tree
       const projectTreePromise = this.generateProjectTree(fileNodes, options?.primaryWorkspaceRoot);
       
+      // Generate GitHub issues if provider is available
+      const githubIssuesPromise = this.generateGitHubIssuesBlocks();
+      
       // Wait for all processing to complete
-      const [fileTree, ...fileBlocks] = await Promise.all([
+      const [fileTree, githubIssuesBlocks, ...fileBlocks] = await Promise.all([
         projectTreePromise,
+        githubIssuesPromise,
         ...fileBlockPromises
       ]);
       
@@ -132,8 +144,8 @@ export class ContextGenerationService {
       const joinedFileBlocks = fileBlocks.join(this.config.blockSeparator);
       
       // Join GitHub issues
-      const joinedGithubIssues = hasSelectedIssues ? 
-        options.githubIssues!.join(this.config.blockSeparator) : "";
+      const joinedGithubIssues = githubIssuesBlocks.length > 0 ?
+        githubIssuesBlocks.join(this.config.blockSeparator) : "";
       
       // Apply wrapper template
       let finalContext = this.applyWrapperTemplate(
@@ -343,7 +355,6 @@ export class ContextGenerationService {
     options?: {
       prefix?: string;
       suffix?: string;
-      githubIssues?: string[];
       primaryWorkspaceRoot?: string;
     }
   ): Promise<ContextGenerationResult> {
@@ -384,5 +395,68 @@ export class ContextGenerationService {
    */
   getConfig(): ContextConfig {
     return { ...this.config };
+  }
+  
+  /**
+   * Set the GitHub issues provider for integration
+   */
+  setGitHubIssuesProvider(provider: any): void {
+    this.gitHubIssuesProvider = provider;
+  }
+  
+  /**
+   * Generate formatted blocks for selected GitHub issues
+   */
+  private async generateGitHubIssuesBlocks(): Promise<string[]> {
+    if (!this.gitHubIssuesProvider) {
+      return [];
+    }
+    
+    try {
+      const selectedIssues = await this.gitHubIssuesProvider.getSelectedIssueDetails();
+      
+      if (selectedIssues.size === 0) {
+        return [];
+      }
+      
+      const blocks: string[] = [];
+      
+      for (const [issueNumber, details] of selectedIssues) {
+        const { issue, comments } = details;
+        
+        let issueBlock = `<github_issue number="${issue.number}" state="${issue.state}">
+<title>${issue.title}</title>
+<url>${issue.html_url}</url>
+<created_at>${issue.created_at}</created_at>
+<author>${issue.user.login}</author>`;
+        
+        if (issue.labels.length > 0) {
+          const labelNames = issue.labels.map((l: any) => l.name).join(", ");
+          issueBlock += `\n<labels>${labelNames}</labels>`;
+        }
+        
+        if (issue.body) {
+          issueBlock += `\n<body>\n${issue.body}\n</body>`;
+        }
+        
+        if (comments.length > 0) {
+          issueBlock += `\n<comments>`;
+          for (const comment of comments) {
+            issueBlock += `\n<comment author="${comment.user.login}" created_at="${comment.created_at}">
+${comment.body}
+</comment>`;
+          }
+          issueBlock += `\n</comments>`;
+        }
+        
+        issueBlock += `\n</github_issue>`;
+        blocks.push(issueBlock);
+      }
+      
+      return blocks;
+    } catch (error) {
+      console.error("Error generating GitHub issues blocks:", error);
+      return [];
+    }
   }
 }
