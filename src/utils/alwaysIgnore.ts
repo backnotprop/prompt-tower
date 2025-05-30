@@ -6,7 +6,7 @@ export const ALWAYS_IGNORE = [
   ".bzr/",
   ".darcs/",
   ".husky/",
-  
+
   // IDE/Editor directories (contain settings, might have sensitive paths)
   ".vscode/",
   ".idea/",
@@ -17,10 +17,10 @@ export const ALWAYS_IGNORE = [
   "*.swp",
   "*.swo",
   "*.tmp",
-  
+
   // Lock files (consolidates package-lock.json, yarn.lock, etc.)
   "*.lock",
-  "*.lockb", 
+  "*.lockb",
   "*.lockfile*",
   "package-lock.json",
   "yarn.lock",
@@ -30,7 +30,7 @@ export const ALWAYS_IGNORE = [
   "bun.lockb",
   "Cargo.lock",
   "Pipfile.lock",
-  
+
   // Dependencies & build outputs
   "node_modules/",
   "**/node_modules/**",
@@ -51,7 +51,7 @@ export const ALWAYS_IGNORE = [
   "gradle/",
   ".m2/",
   ".cargo/",
-  
+
   // Cache & temporary directories
   ".cache/",
   "cache/",
@@ -60,14 +60,14 @@ export const ALWAYS_IGNORE = [
   ".tmp/",
   ".temp/",
   "*.cache",
-  
+
   // Build caches & incremental build files
   "*.tsbuildinfo",
   ".eslintcache",
   ".parcel-cache/",
   ".webpack/",
   ".rollup.cache/",
-  
+
   // Environment files & secrets (often contain API keys, tokens)
   ".env",
   ".env.*",
@@ -75,15 +75,15 @@ export const ALWAYS_IGNORE = [
   ".env.*.local",
   "secrets/",
   "private/",
-  
+
   // Test outputs & coverage
   "test-results/",
-  "spec-results/", 
+  "spec-results/",
   ".coverage",
   "htmlcov/",
   ".nyc_output/",
   "coverage/",
-  
+
   // Python environments
   "venv/",
   ".venv/",
@@ -92,7 +92,7 @@ export const ALWAYS_IGNORE = [
   ".mypy_cache/",
   ".pytest_cache/",
   ".tox/",
-  
+
   // Document files
   "*.pdf",
   "*.docx",
@@ -101,7 +101,7 @@ export const ALWAYS_IGNORE = [
   "*.xlsx",
   "*.ppt",
   "*.pptx",
-  
+
   // Image files
   "*.png",
   "*.jpg",
@@ -112,7 +112,7 @@ export const ALWAYS_IGNORE = [
   "*.ico",
   "*.webp",
   "*.svg",
-  
+
   // Media files
   "*.mp3",
   "*.mp4",
@@ -124,7 +124,7 @@ export const ALWAYS_IGNORE = [
   "*.m4v",
   "*.m4b",
   "*.m4p",
-  
+
   // Binary & system files
   "*.so",
   "*.so.*",
@@ -137,7 +137,7 @@ export const ALWAYS_IGNORE = [
   "*.com",
   "*.sys",
   "*.bin",
-  
+
   // Archives
   "*.tar",
   "*.gz",
@@ -154,7 +154,7 @@ export const ALWAYS_IGNORE = [
   "*.rpm",
   "*.iso",
   "*.img",
-  
+
   // Compiled files
   "*.pyc",
   "*.pyo",
@@ -164,7 +164,7 @@ export const ALWAYS_IGNORE = [
   "*.jar",
   "*.war",
   "*.ear",
-  
+
   // Data files
   "*.h5",
   "*.hdf5",
@@ -181,46 +181,37 @@ export const ALWAYS_IGNORE = [
   "*.npz",
   "*.npy",
   "*.nii",
-  
+
   // Font files
   "*.woff",
   "*.woff2",
   "*.ttf",
   "*.eot",
   "*.otf",
-  
+
   // Virtual machine files
   "*.vdi",
   "*.vhd",
   "*.vmdk",
   "*.qcow2",
   "*.vhdx",
-  
+
   // Security files
   "*.crt",
   "*.pem",
   "*.key",
-  
+
   // System files
   ".DS_Store",
   "Thumbs.db",
   "Desktop.ini",
   "ehthumbs.db",
-  
-  // Script files that are usually not source
-  "*.bat",
-  "*.cmd",
-  
-  // Log files (can be huge and not relevant for code context)
-  "*.log",
-  "logs/",
-  "log/",
-  
+
   // Database files (large, binary, not source code)
   "*.db",
   "*.sqlite",
   "*.sqlite3",
-  
+
   // Backup and temporary patterns
   "*.tmp",
   "*.temp",
@@ -229,25 +220,24 @@ export const ALWAYS_IGNORE = [
   "*~",
   "*.orig",
   "*.rej",
-  
+
   // Documentation directories (often auto-generated or large)
   "docs/_build/",
   "site/",
   "_site/",
-  "public/",
-  
+
   // Package artifacts
   "*.whl",
   "*.egg-info/",
   "*.egg",
   "*.dist-info/",
   "*.dist",
-  
+
   // More IDE artifacts
   "*.user",
   "*.userprefs",
   "*.sln.docstates",
-  
+
   // Memory dumps & profiles
   "*.stackdump",
   "*.dmp",
