@@ -249,19 +249,27 @@ export class MultiRootTreeProvider implements vscode.TreeDataProvider<FileNode> 
   clearAllSelections(): void {
     console.log("MultiRootTreeProvider: Clearing all selections");
     
-    let hasChanges = false;
+    let hasFileChanges = false;
     for (const rootNode of this.rootNodes) {
       const checkedFiles = FileNodeUtils.getCheckedFiles([rootNode]);
       if (checkedFiles.length > 0) {
         FileNodeUtils.toggleCheckedState(rootNode, false);
-        hasChanges = true;
+        hasFileChanges = true;
       }
     }
     
-    if (hasChanges) {
+    // Also clear GitHub issues if provider is available
+    let hasIssueChanges = false;
+    if (this.gitHubIssuesProvider && this.gitHubIssuesProvider.clearAllSelections) {
+      const hadIssues = this.gitHubIssuesProvider.getSelectedIssues().length > 0;
+      this.gitHubIssuesProvider.clearAllSelections();
+      hasIssueChanges = hadIssues;
+    }
+    
+    if (hasFileChanges || hasIssueChanges) {
       this.tokenCountingService.resetTokenCount();
       this._onDidChangeTreeData.fire();
-      vscode.window.showInformationMessage("Cleared all file selections.");
+      vscode.window.showInformationMessage("Cleared all selections.");
     }
   }
   
@@ -386,7 +394,7 @@ export class MultiRootTreeProvider implements vscode.TreeDataProvider<FileNode> 
    * Reset all state (for commands)
    */
   resetAll(): void {
-    this.clearAllSelections();
+    this.clearAllSelections(); // This now clears both files and GitHub issues
     this.setPromptPrefix("");
     this.setPromptSuffix("");
   }
