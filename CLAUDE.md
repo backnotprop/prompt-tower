@@ -2,86 +2,93 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## Development Commands
 
-### Development Commands
-- `npm run compile` - Compile TypeScript and lint code
-- `npm run watch` - Start development watch mode (builds + type checking)
-- `npm run package` - Create production build for VS Code extension
-- `npm run lint` - Run ESLint on source files
-- `npm run check-types` - Type check without emitting files
-- `npm run test` - Run VS Code extension tests
-- `npm run pretest` - Compile, build, and lint before running tests
+```bash
+npm run watch      # Development mode with auto-rebuild
+npm run compile    # Build extension (type check + lint + build)
+npm run lint       # Run ESLint
+npm run test       # Run tests
+npm run package    # Production build
+```
 
-### VS Code Extension Development
-- Use `F5` in VS Code to launch Extension Development Host for testing
-- Extension entry point: `./dist/extension.js` (compiled from `src/extension.ts`)
-- Use `npm run watch` during development for automatic rebuilds
+To develop: Run `npm run watch` and press F5 to launch Extension Development Host.
 
 ## Architecture Overview
 
-This is a **VS Code Extension** that provides context management for LLM coding agents. The extension allows users to select files/folders and generate formatted context for copying to LLM chats.
+This is a **VS Code Extension** that provides context management for LLM coding agents. Users can select files/folders, import GitHub issues, and generate formatted context (XML/Markdown) for AI assistants. Compatible with VS Code, Cursor, Windsurf, and Google IDX.
 
-### Core Components
+### Service-Oriented Architecture
 
-**Extension Entry (`src/extension.ts`)**
-- Main activation point and webview panel management
-- Handles communication between tree view and webview UI
-- Manages webview content generation and state synchronization
+The codebase follows clean service architecture with dependency injection:
 
-**Tree Data Provider (`src/providers/PromptTowerProvider.ts`)**
-- Implements VS Code TreeDataProvider interface for file tree display
-- Handles file selection state, token counting, and ignore pattern processing
-- Core business logic for context generation and clipboard operations
-- Uses `ignore` library for .gitignore/.towerignore pattern matching
-- Integrates with `gpt-tokenizer` for real-time token counting
+**Core Services (`src/services/`)**
+- `WorkspaceManager.ts` - Manages VS Code workspace folders, handles relative paths
+- `FileDiscoveryService.ts` - File discovery per workspace using RelativePattern
+- `IgnorePatternService.ts` - Per-workspace .gitignore/.towerignore handling
+- `TokenCountingService.ts` - Async token counting with cancellation support
+- `ContextGenerationService.ts` - Template-based context generation, includes GitHub issues
 
-**Command Registration (`src/commands.ts`)**
-- Registers all VS Code commands and event handlers
-- Links tree view checkbox changes to provider state updates
+**Data Providers (`src/providers/`)**
+- `MultiRootTreeProvider.ts` - Main tree provider supporting multi-folder workspaces
+- `GitHubIssuesProvider.ts` - GitHub issues tree with token counting and caching
 
 **Models (`src/models/`)**
-- `FileItem.ts` - Tree view item representation with checkbox state
-- `EventEmitter.ts` - Custom event emitters for token count updates
+- `FileNode.ts` - Multi-workspace tree node with parent/child relationships
+- `Workspace.ts` - VS Code workspace representation and config interfaces
+- `Events.ts` - Event payload types for token updates and file selection
+- `EventEmitter.ts` - Token update event emitter
 
-**Utilities (`src/utils/`)**
-- `fileTree.ts` - File tree structure generation for context output
-- `alwaysIgnore.ts` - Default ignore patterns for common files
+**Extension Entry (`src/extension.ts`)**
+- Service initialization with dependency injection
+- Command registration and webview panel management
+- Handles communication between tree view and webview UI
 
-### Key Features Architecture
+### Key Implementation Details
 
-**File Selection & Filtering**
-- Respects `.gitignore`, `.towerignore`, and manual ignore patterns
-- Real-time file system watching for ignore file changes
-- Checkbox-based selection with parent/child state management
+**Multi-Workspace Support**
+- Each workspace folder is a tree root
+- Services handle per-workspace configurations
+- Relative path resolution per workspace
 
-**Context Generation**
-- Template-based output formatting (XML, Markdown, etc.)
-- Configurable file block templates and wrapper formats
-- Support for project tree inclusion in multiple formats
-- Prefix/suffix text support for prompt customization
+**Context Generation Flow**
+1. User selects files via checkbox tree UI
+2. `MultiRootTreeProvider` tracks selection state
+3. `TokenCountingService` counts tokens asynchronously
+4. `ContextGenerationService` applies templates to generate output
+5. Output copied to clipboard or shown in webview
 
-**Token Counting**
-- Debounced, asynchronous token counting using gpt-tokenizer
-- Cancellation support for outdated calculations
-- Real-time UI updates during counting operations
+**Template System**
+- Configurable via `promptTower.outputFormat` setting
+- Supports placeholders: `{fileContent}`, `{filePath}`, `{projectTree}`, etc.
+- Three-level structure: wrapper → blocks → individual files
 
-**Webview Integration**
-- HTML/CSS/JS webview for advanced UI controls
-- Bidirectional communication between extension and webview
-- State persistence and preview invalidation logic
+**File Filtering**
+- Three-tier system: `.gitignore` → `.towerignore` → manual patterns
+- Uses `ignore` library for pattern matching
+- Real-time file watching for ignore file changes
 
-### Configuration
+### Testing & Validation
 
-The extension is highly configurable through VS Code settings (`promptTower.*`):
-- Output format templates and separators
-- File size warning thresholds  
-- Ignore patterns and .gitignore integration
-- Project tree display options
+When making changes:
+1. Run `npm run validate` to check types and lint
+2. Test multi-workspace scenarios (open folder with multiple roots)
+3. Verify token counting updates in real-time
+4. Check webview communication for UI features
 
-### Development Notes
+### Common Tasks
 
-- Uses esbuild for compilation (see `esbuild.js`)
-- TypeScript with strict mode enabled
-- ESLint configuration in `eslint.config.mjs`
-- Extension manifest in `package.json` with comprehensive VS Code contribution points
+**Adding a new command:**
+1. Define in `package.json` contributes.commands
+2. Register in `extension.ts` activate function
+3. Implement handler using appropriate services
+
+**Modifying context output:**
+1. Update templates in `ContextGenerationService.ts`
+2. Add new placeholders if needed
+3. Update default config in `package.json`
+
+**Adding file filtering:**
+1. Modify `IgnorePatternService.ts` for pattern logic
+2. Update `FileDiscoveryService.ts` for discovery rules
+3. Add UI controls in tree provider if needed
