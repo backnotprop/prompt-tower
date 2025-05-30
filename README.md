@@ -5,9 +5,9 @@
   
   **Turn your entire codebase into AI-ready context in seconds**
   
-  [![Version](https://img.shields.io/visual-studio-marketplace/v/backnotprop.prompt-tower)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
-  [![Downloads](https://img.shields.io/visual-studio-marketplace/d/backnotprop.prompt-tower)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
-  [![Rating](https://img.shields.io/visual-studio-marketplace/r/backnotprop.prompt-tower)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
+  [![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-0078d4?style=flat-square&logo=visual-studio-code&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
+  [![Rating](https://img.shields.io/badge/⭐⭐⭐⭐⭐-5.0-gold?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
+  [![Users](https://img.shields.io/badge/👥-1000+-brightgreen?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
 </div>
 
 ## The Problem
@@ -29,18 +29,22 @@ Prompt Tower packages your codebase—files, directory structure, GitHub issues�
 ## What You Get
 
 ### Visual File Selection
+
 Click checkboxes. See live token counts. No terminal commands or manual file paths.
 
-### Smart Context Packaging  
+### Smart Context Packaging
+
 Every prompt includes your project structure:
+
 ```
 src/
 ├── api/GitHubApiClient.ts (5.2KB)
-├── models/FileNode.ts (3.1KB) 
+├── models/FileNode.ts (3.1KB)
 └── services/TokenCountingService.ts (2.8KB)
 ```
 
 Plus clean, structured file content:
+
 ```xml
 <file path="/src/api/GitHubApiClient.ts">
 export class GitHubApiClient {
@@ -50,7 +54,9 @@ export class GitHubApiClient {
 ```
 
 ### Context Control with `.towerignore`
+
 Keep prompts focused. Exclude test fixtures, generated files, or documentation:
+
 ```gitignore
 tests/fixtures/
 dist/
@@ -59,9 +65,11 @@ data/
 ```
 
 ### GitHub Issues Integration
+
 Import issues and comments directly. AI understands your problems, not just your code.
 
 ### Token Intelligence
+
 Real-time counting prevents surprises. Optimize for any model's limits.
 
 ---
@@ -82,7 +90,7 @@ Use the full 1M context window. Select entire modules, include architectural dec
 ## Quick Start
 
 1. Install "Prompt Tower" from VS Code Extensions
-2. Click the tower icon in your Activity Bar  
+2. Click the tower icon in your Activity Bar
 3. Check files you need
 4. Hit "Copy Context to Clipboard"
 5. Paste into any AI chat
@@ -92,6 +100,7 @@ Use the full 1M context window. Select entire modules, include architectural dec
 ## Configuration
 
 **Create `.towerignore`** in your project root (works like `.gitignore`):
+
 ```gitignore
 # Most important config - keep context relevant
 tests/mocks/
@@ -100,6 +109,7 @@ docs/generated/
 ```
 
 **Optional settings:**
+
 - Customize output templates (XML, Markdown, custom)
 - Set global ignore patterns
 - Configure token warnings
@@ -122,6 +132,7 @@ Perfect for teams that have embraced AI-assisted development but need better con
 Found a bug? Want a feature? [Open an issue](https://github.com/backnotprop/prompt-tower/issues).
 
 **Development:**
+
 ```bash
 git clone https://github.com/backnotprop/prompt-tower.git
 npm install && npm run watch
