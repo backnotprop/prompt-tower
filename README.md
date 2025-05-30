@@ -1,14 +1,12 @@
 # Prompt Tower
 
-<div align="center">
-  <img src="https://github.com/backnotprop/prompt-tower/blob/main/assets/image-tny.png?raw=true" alt="Prompt Tower" width="160"/>
-  
-  **Turn your entire codebase into AI-ready context in seconds**
-  
-  [![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-0078d4?style=flat-square&logo=visual-studio-code&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
-  [![Rating](https://img.shields.io/badge/⭐⭐⭐⭐⭐-5.0-gold?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
-  [![Users](https://img.shields.io/badge/👥-1000+-brightgreen?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
-</div>
+<img src="https://github.com/backnotprop/prompt-tower/blob/main/assets/image-tny.png?raw=true" alt="Prompt Tower" width="160"/>
+
+**Turn your entire codebase into AI-ready context in seconds**
+
+[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-0078d4?style=flat-square&logo=visual-studio-code&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
+[![Rating](https://img.shields.io/badge/⭐⭐⭐⭐⭐-5.0-gold?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
+[![Users](https://img.shields.io/badge/👥-1000+-brightgreen?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=backnotprop.prompt-tower)
 
 ## The Problem
 
