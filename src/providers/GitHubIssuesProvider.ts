@@ -168,6 +168,11 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
             vscode.TreeItemCollapsibleState.None
           );
           
+          // Set checkbox state based on selection
+          treeItem.checkboxState = this.selectedIssues.has(issue.number) ?
+            vscode.TreeItemCheckboxState.Checked :
+            vscode.TreeItemCheckboxState.Unchecked;
+          
           // Add additional info as description
           const labels = issue.labels.map(l => l.name).join(', ');
           const commentInfo = issue.comments > 0 ? `${issue.comments} comments` : '';
@@ -236,19 +241,49 @@ export class GitHubIssuesProvider implements vscode.TreeDataProvider<GitHubIssue
     if (this.selectedIssues.has(issue.number)) {
       // Deselecting - just remove and update counts
       this.selectedIssues.delete(issue.number);
+      issue.checkboxState = vscode.TreeItemCheckboxState.Unchecked;
       this.updateTokenCount();
     } else {
       // Selecting - add and fetch details
       this.selectedIssues.add(issue.number);
+      issue.checkboxState = vscode.TreeItemCheckboxState.Checked;
       this.updateTokenCount(); // Immediate update to show selection
       
       // Fetch issue details in background
       await this.fetchAndCacheIssue(issue.number);
     }
+    
+    // Refresh the tree to show checkbox state change
+    this._onDidChangeTreeData.fire(issue);
   }
 
   getSelectedIssues(): number[] {
     return Array.from(this.selectedIssues);
+  }
+  
+  /**
+   * Clear all selected issues
+   */
+  clearAllSelections(): void {
+    if (this.selectedIssues.size === 0) {
+      return; // Nothing to clear
+    }
+    
+    // Clear all selections
+    this.selectedIssues.clear();
+    
+    // Update checkbox state of existing issues
+    for (const issue of this.issues) {
+      if (!issue.isSpecialItem && issue.checkboxState !== undefined) {
+        issue.checkboxState = vscode.TreeItemCheckboxState.Unchecked;
+      }
+    }
+    
+    // Update token count
+    this.updateTokenCount();
+    
+    // Refresh the tree to update checkboxes
+    this._onDidChangeTreeData.fire();
   }
   
   /**
