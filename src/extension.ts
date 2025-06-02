@@ -710,7 +710,7 @@ export function activate(context: vscode.ExtensionContext) {
       multiRootProvider.clearAllSelections();
     }),
 
-    vscode.commands.registerCommand("promptTower.toggleAll", async () => {
+    vscode.commands.registerCommand("promptTower.toggleAllFiles", async () => {
       await multiRootProvider.toggleAllFiles();
     }),
 
