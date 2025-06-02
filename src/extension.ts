@@ -62,6 +62,21 @@ function getWebviewContent(
   initialSuffix: string = ""
 ): string {
   const nonce = getNonce();
+
+  // Get provider logo URIs
+  const chatgptLogo = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "chatgpt.png")
+  );
+  const claudeLogo = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "claude.png")
+  );
+  const geminiLogo = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "gemini.png")
+  );
+  const aistudioLogo = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "aistudio.png")
+  );
+
   const styles = `
         body {
             padding: 1em;
@@ -135,6 +150,167 @@ function getWebviewContent(
         button:hover {
              background-color: var(--vscode-button-hoverBackground);
         }
+        
+        /* Modern button container styling */
+        .button-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 12px;
+        }
+        
+        .button-group-left {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .button-group-right {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        
+        /* Push Prompt button styling */
+        .push-prompt-btn {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: 1px solid var(--vscode-button-border);
+            padding: 8px 16px;
+            border-radius: 6px 0 0 6px;
+            font-weight: 500;
+            font-size: 0.9em;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            transition: all 0.4s ease;
+            font-weight: 500;
+            
+        }
+        
+        .push-prompt-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        
+        .push-prompt-btn:active {
+        }
+        
+        /* Provider dropdown styling */
+        .provider-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .provider-dropdown-btn {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: 1px solid var(--vscode-button-border);
+            border-left: 1px solid var(--vscode-button-separator, var(--vscode-button-border));
+            padding: 8px 10px;
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 32px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+        
+        .provider-dropdown-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        
+        .provider-dropdown-btn .selected-provider-logo {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            object-fit: contain;
+filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+            
+          
+        }
+        
+        .provider-dropdown-btn svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+        }
+        
+        .provider-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--vscode-dropdown-background);
+            min-width: 180px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            z-index: 1000;
+            border: 1px solid var(--vscode-dropdown-border);
+            overflow: hidden;
+            top: 100%;
+            margin-top: 4px;
+        }
+        
+        .provider-dropdown-content.show {
+            display: block;
+            animation: slideDown 0.2s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .provider-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            color: var(--vscode-dropdown-foreground);
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+        
+        .provider-option:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+        
+        .provider-option:active {
+            background-color: var(--vscode-list-activeSelectionBackground);
+        }
+        
+        .provider-logo {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            border-radius: 4px;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+        }
+        
+        .provider-name {
+            font-weight: 500;
+        }
+        
         textarea {
           width: 100%;
           box-sizing: border-box;
@@ -290,9 +466,41 @@ function getWebviewContent(
                 <textarea id="prompt-suffix">${initialSuffix}</textarea>
               </div>
 
-              <div style="margin-bottom: 1em;">
-                <button id="createContextButton">Create Context</button>
-                <button id="createAndCopyButton">Create & Copy to Clipboard</button>
+              <div class="button-container">
+                <div class="button-group-left">
+                  <button id="createContextButton">Create Context</button>
+                  <button id="createAndCopyButton">Create & Copy to Clipboard</button>
+                </div>
+                
+                <div class="button-group-right">
+                  <button id="pushPromptButton" class="push-prompt-btn">Push Prompt</button>
+                  <div class="provider-dropdown">
+                    <button class="provider-dropdown-btn" id="providerDropdownBtn">
+                      <img id="selectedProviderLogo" src="${geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
+                      <svg viewBox="0 0 16 16">
+                        <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
+                      </svg>
+                    </button>
+                    <div class="provider-dropdown-content" id="providerDropdownContent">
+                      <button class="provider-option" data-provider="chatgpt">
+                        <img src="${chatgptLogo}" alt="ChatGPT" class="provider-logo">
+                        <span class="provider-name">ChatGPT</span>
+                      </button>
+                      <button class="provider-option" data-provider="claude">
+                        <img src="${claudeLogo}" alt="Claude" class="provider-logo">
+                        <span class="provider-name">Claude</span>
+                      </button>
+                      <button class="provider-option" data-provider="gemini">
+                        <img src="${geminiLogo}" alt="Gemini" class="provider-logo">
+                        <span class="provider-name">Gemini</span>
+                      </button>
+                      <button class="provider-option" data-provider="aistudio">
+                        <img src="${aistudioLogo}" alt="AI Studio" class="provider-logo">
+                        <span class="provider-name">AI Studio</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div id="preview-container">
@@ -316,6 +524,65 @@ function getWebviewContent(
                     const previewTextArea = document.getElementById("context-preview");
                     const previewContainer = document.getElementById("preview-container");
                     const previewStatusElement = document.getElementById("preview-status");
+                    
+                    // Provider dropdown functionality
+                    const providerDropdownBtn = document.getElementById('providerDropdownBtn');
+                    const providerDropdownContent = document.getElementById('providerDropdownContent');
+                    const pushPromptButton = document.getElementById('pushPromptButton');
+                    const selectedProviderLogo = document.getElementById('selectedProviderLogo');
+                    let selectedProvider = 'gemini'; // Default provider
+                    
+                    // Provider logo mapping
+                    const providerLogos = {
+                        'chatgpt': '${chatgptLogo}',
+                        'claude': '${claudeLogo}',
+                        'gemini': '${geminiLogo}',
+                        'aistudio': '${aistudioLogo}'
+                    };
+                    
+                    // Toggle dropdown
+                    providerDropdownBtn?.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        providerDropdownContent?.classList.toggle('show');
+                    });
+                    
+                    // Close dropdown when clicking outside
+                    document.addEventListener('click', () => {
+                        providerDropdownContent?.classList.remove('show');
+                    });
+                    
+                    // Handle provider selection
+                    document.querySelectorAll('.provider-option').forEach(option => {
+                        option.addEventListener('click', (e) => {
+                            const provider = e.currentTarget.getAttribute('data-provider');
+                            if (provider && providerLogos[provider]) {
+                                selectedProvider = provider;
+                                // Update the displayed logo
+                                if (selectedProviderLogo) {
+                                    selectedProviderLogo.src = providerLogos[provider];
+                                    selectedProviderLogo.alt = provider.charAt(0).toUpperCase() + provider.slice(1);
+                                }
+                                providerDropdownContent?.classList.remove('show');
+                            }
+                        });
+                    });
+                    
+                    // Push Prompt button functionality
+                    pushPromptButton?.addEventListener('click', () => {
+                        // Add shimmer effect like create context
+                        if (previewContainer) {
+                            previewContainer.classList.add('cyber-generating');
+                            // Remove effect after animation completes
+                            setTimeout(() => {
+                                previewContainer.classList.remove('cyber-generating');
+                            }, 750);
+                        }
+                        
+                        vscode.postMessage({ 
+                            command: "pushPrompt", 
+                            provider: selectedProvider 
+                        });
+                    });
                     
                     // Event listeners
                     window.addEventListener('message', event => {
@@ -579,6 +846,46 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
         case "showToast":
           if (message.payload && typeof message.payload.message === "string") {
             vscode.window.showInformationMessage(message.payload.message);
+          }
+          break;
+
+        case "pushPrompt":
+          if (
+            message.provider &&
+            multiRootProvider &&
+            contextGenerationService
+          ) {
+            try {
+              const allRootNodes = multiRootProvider.getRootNodes();
+              const result = await contextGenerationService.generateContext(
+                allRootNodes,
+                {
+                  prefix: multiRootProvider.getPromptPrefix(),
+                  suffix: multiRootProvider.getPromptSuffix(),
+                }
+              );
+
+              // Copy to clipboard
+              await vscode.env.clipboard.writeText(result.contextString);
+
+              // Show success message with provider info
+              vscode.window.showInformationMessage(
+                `✨ Prompt pushed to ${message.provider.toUpperCase()} and copied to clipboard!`
+              );
+
+              // Update preview if webview is still active
+              if (webviewPanel) {
+                webviewPanel.webview.postMessage({
+                  command: "updatePreview",
+                  payload: { context: result.contextString },
+                });
+                isPreviewValid = true;
+              }
+            } catch (error) {
+              vscode.window.showErrorMessage(
+                `Error pushing prompt to ${message.provider}: ${error}`
+              );
+            }
           }
           break;
       }
