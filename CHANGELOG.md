@@ -1,5 +1,22 @@
 # Change Log
 
+## [Version 1.4.0] - Unreleased
+
+### Fixed
+
+- **Reset All Button:** Fixed regression where "Reset All" only cleared file selections instead of resetting everything (selections, prompt prefix/suffix, context preview, error states)
+
+### Added
+
+- **Prompt Push UI:** Added provider dropdown (ChatGPT, Claude, Gemini, AI Studio) and "Push Prompt" button
+  - _TODO: Implement actual provider integrations and prompt pushing logic_
+
+### Changed
+
+- **Code Organization:** Extracted webview HTML/CSS into separate modular files for better maintainability
+  - `src/extension.webview.html.ts`
+  - `src/extension.webview.css.ts`
+
 ## [Version 1.3.2] - Unreleased
 
 ### Fixed
