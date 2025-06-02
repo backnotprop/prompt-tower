@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { Workspace } from "./Workspace";
 
 /**
@@ -80,10 +81,28 @@ export class FileNodeFactory {
     workspace: Workspace,
     parent?: FileNode
   ): FileNode {
-    const label =
+    // Debug logging to see what we're getting on Windows
+    console.log(
+      `FileNodeFactory.createFileNode - absolutePath: "${absolutePath}"`
+    );
+
+    const labelSplit =
       absolutePath.split("/").pop() ||
       absolutePath.split("\\").pop() ||
       absolutePath;
+
+    const labelBasename = path.basename(absolutePath);
+
+    console.log(
+      `FileNodeFactory.createFileNode - split method label: "${labelSplit}"`
+    );
+    console.log(
+      `FileNodeFactory.createFileNode - path.basename label: "${labelBasename}"`
+    );
+
+    // Use path.basename for now to test
+    const label = labelBasename;
+
     const extension = label.includes(".") ? label.split(".").pop() : undefined;
 
     return {
@@ -111,10 +130,27 @@ export class FileNodeFactory {
     workspace: Workspace,
     parent?: FileNode
   ): FileNode {
-    const label =
+    // Debug logging to see what we're getting on Windows
+    console.log(
+      `FileNodeFactory.createDirectoryNode - absolutePath: "${absolutePath}"`
+    );
+
+    const labelSplit =
       absolutePath.split("/").pop() ||
       absolutePath.split("\\").pop() ||
       absolutePath;
+
+    const labelBasename = path.basename(absolutePath);
+
+    console.log(
+      `FileNodeFactory.createDirectoryNode - split method label: "${labelSplit}"`
+    );
+    console.log(
+      `FileNodeFactory.createDirectoryNode - path.basename label: "${labelBasename}"`
+    );
+
+    // Use path.basename for now to test
+    const label = labelBasename;
 
     return {
       id: `dir:${workspace.id}:${relativePath}`,
