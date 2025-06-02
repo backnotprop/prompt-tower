@@ -710,7 +710,7 @@ export function activate(context: vscode.ExtensionContext) {
       multiRootProvider.clearAllSelections();
     }),
 
-    vscode.commands.registerCommand("promptTower.toggleAll", async () => {
+    vscode.commands.registerCommand("promptTower.toggleAllFiles", async () => {
       await multiRootProvider.toggleAllFiles();
     }),
 
@@ -810,13 +810,80 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
       }
-    )
+    ),
+
+    vscode.commands.registerCommand("promptTower.addCurrentFile", async () => {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showWarningMessage(
+          "No active file open to add to Prompt Tower."
+        );
+        return;
+      }
+
+      const filePath = activeEditor.document.uri.fsPath;
+
+      // Wait for initialization if needed
+      if (!multiRootProvider) {
+        vscode.window.showWarningMessage(
+          "Prompt Tower is initializing. Please try again in a moment."
+        );
+        return;
+      }
+
+      // Make sure the provider is fully initialized
+      if (
+        !multiRootProvider.getRootNodes() ||
+        multiRootProvider.getRootNodes().length === 0
+      ) {
+        vscode.window.showWarningMessage(
+          "Prompt Tower is still loading files. Please try again in a moment."
+        );
+        return;
+      }
+
+      // Find the file node in the tree
+      const fileNode = multiRootProvider.findNodeByPath(filePath);
+
+      if (!fileNode) {
+        vscode.window.showWarningMessage(
+          `File "${activeEditor.document.fileName}" not found in Prompt Tower workspace. Make sure it's not ignored by .gitignore or .towerignore.`
+        );
+        return;
+      }
+
+      if (fileNode.isChecked) {
+        vscode.window.showInformationMessage(
+          `File "${fileNode.label}" is already selected in Prompt Tower.`
+        );
+        return;
+      }
+
+      // Select the file using the existing selection system
+      await multiRootProvider.toggleNodeSelection(fileNode);
+
+      vscode.window.showInformationMessage(
+        `✅ Added "${fileNode.label}" to Prompt Tower selection.`
+      );
+    }),
+
+    vscode.commands.registerCommand("promptTower.openPromptTower", async () => {
+      // Focus the Prompt Tower activity bar view (shows the tree views)
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.prompt-tower"
+      );
+
+      // Open the Prompt Tower UI panel
+      createOrShowWebviewPanel(context);
+
+      vscode.window.showInformationMessage("Opened Prompt Tower interface.");
+    })
   );
 
   context.subscriptions.push(treeView, multiRootProvider);
 
-  // Automatically show the panel
-  vscode.commands.executeCommand("promptTower.showTowerUI");
+  // Don't automatically show the panel - let users open it when they want
+  // vscode.commands.executeCommand("promptTower.showTowerUI");
 
   console.log("Prompt Tower: Activation complete with clean architecture!");
 }
