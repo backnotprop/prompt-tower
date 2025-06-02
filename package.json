@@ -50,7 +50,7 @@
             "projectTreeFormat": {
               "enabled": true,
               "type": "fullFilesAndDirectories",
-              "showFileSize": true,
+              "showFileSize": false,
               "template": "<project_tree>\n{projectTree}\n</project_tree>\n"
             },
             "wrapperFormat": {

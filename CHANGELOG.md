@@ -1,10 +1,16 @@
 # Change Log
 
+## [Version 1.3.2] - Unreleased
+
+### Fixed
+
+- **Windows path display:** Fixed issue where Windows users were seeing full paths in the tree view instead of just file names. The issue was caused by path normalization logic introduced during file selection preservation work. Removed problematic `path.resolve()` calls while maintaining selection preservation functionality
+- **File size display:** Fixed multiple locations where file sizes were showing by default despite package.json setting `showFileSize: false`. Updated defaults in package.json configuration object, fileTree utility function parameters, and generateFileStructureTree options to consistently default to false for cleaner tree output
+
 ## [Version 1.3.1] - Unreleased
 
 ### Fixed
 
-- **File size display:** Fixed configuration inconsistency where file sizes were shown by default despite package.json setting `showFileSize: false`. File sizes are now correctly hidden by default for cleaner tree output
 - **Activity bar click:** Fixed regression where clicking the Prompt Tower activity bar icon only opened the tree view but not the webview UI
 
 ## [Version 1.3.0] - Unreleased

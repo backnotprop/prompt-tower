@@ -101,16 +101,17 @@ export class MultiRootTreeProvider
   async refreshWorkspaces(): Promise<void> {
     console.log("MultiRootTreeProvider: Refreshing workspaces...");
 
-    // Preserve currently checked paths with normalization (both files and directories)
+    // Preserve currently checked paths (both files and directories)
     const preserveCheckedPaths = new Set<string>();
     const checkedNodes = this.getAllCheckedNodes(this.rootNodes);
 
     console.log(`Found ${checkedNodes.length} checked nodes to preserve:`);
     for (const checkedNode of checkedNodes) {
-      // Normalize the path to handle cross-platform differences
-      const normalizedPath = path.resolve(checkedNode.absolutePath);
-      preserveCheckedPaths.add(normalizedPath);
-      console.log(`  Preserving: ${checkedNode.type} ${normalizedPath}`);
+      // Use the original absolute path without normalization to avoid path format issues
+      preserveCheckedPaths.add(checkedNode.absolutePath);
+      console.log(
+        `  Preserving: ${checkedNode.type} ${checkedNode.absolutePath}`
+      );
     }
 
     // Get current workspaces

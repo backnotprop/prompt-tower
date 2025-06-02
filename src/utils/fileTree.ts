@@ -20,7 +20,7 @@ function bytesToString(bytes: number): string {
 function createTreeOutput(
   fileSystem: any,
   maxDepth: number,
-  showFileSize: boolean = true
+  showFileSize: boolean = false
 ): string[] {
   const createFileOutput = (
     prefix: string,
@@ -129,7 +129,7 @@ export async function generateFileStructureTree(
   options: {
     showFileSize?: boolean;
   } = {
-    showFileSize: true,
+    showFileSize: false,
   }
 ): Promise<string> {
   const folderTree: any = {};

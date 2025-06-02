@@ -129,9 +129,8 @@ export class FileDiscoveryService {
 
     // Create file node
     const relativePath = path.relative(workspace.rootPath, filePath);
-    // Normalize the path for consistent matching
-    const normalizedPath = path.resolve(filePath);
-    const isChecked = preserveCheckedPaths?.has(normalizedPath) ?? false;
+    // Use original path for consistent matching across platforms
+    const isChecked = preserveCheckedPaths?.has(filePath) ?? false;
 
     const fileNode = FileNodeFactory.createFileNode(
       filePath,
@@ -141,7 +140,7 @@ export class FileDiscoveryService {
     fileNode.isChecked = isChecked;
 
     if (isChecked) {
-      console.log(`  Restored selection: ${normalizedPath}`);
+      console.log(`  Restored selection: ${filePath}`);
     }
 
     fileNodeMap.set(filePath, fileNode);
@@ -192,9 +191,8 @@ export class FileDiscoveryService {
         }
 
         const relativePath = path.relative(workspace.rootPath, dirPath);
-        // Normalize the path for consistent matching
-        const normalizedDirPath = path.resolve(dirPath);
-        const isChecked = preserveCheckedPaths?.has(normalizedDirPath) ?? false;
+        // Use original path for consistent matching across platforms
+        const isChecked = preserveCheckedPaths?.has(dirPath) ?? false;
 
         const dirNode = FileNodeFactory.createDirectoryNode(
           dirPath,
@@ -204,7 +202,7 @@ export class FileDiscoveryService {
         dirNode.isChecked = isChecked;
 
         if (isChecked) {
-          console.log(`  Restored directory selection: ${normalizedDirPath}`);
+          console.log(`  Restored directory selection: ${dirPath}`);
         }
 
         fileNodeMap.set(dirPath, dirNode);
