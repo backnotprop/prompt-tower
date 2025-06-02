@@ -1,5 +1,12 @@
 # Change Log
 
+## [Version 1.3.1] - Unreleased
+
+### Fixed
+
+- **File size display:** Fixed configuration inconsistency where file sizes were shown by default despite package.json setting `showFileSize: false`. File sizes are now correctly hidden by default for cleaner tree output
+- **Activity bar click:** Fixed regression where clicking the Prompt Tower activity bar icon only opened the tree view but not the webview UI
+
 ## [Version 1.3.0] - Unreleased
 
 ### Added
@@ -76,3 +83,5 @@ This release focuses on significantly enhancing the context-building workflow by
 ---
 
 _Documentation for these new features is currently being prepared and will be released soon._
+
+**Issues resolved:** [#24](https://github.com/backnotprop/prompt-tower/issues/24) [#27](https://github.com/backnotprop/prompt-tower/issues/27) [#28](https://github.com/backnotprop/prompt-tower/issues/28) [#30](https://github.com/backnotprop/prompt-tower/issues/30)

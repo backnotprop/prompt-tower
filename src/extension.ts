@@ -632,6 +632,16 @@ export function activate(context: vscode.ExtensionContext) {
     manageCheckboxStateManually: true,
   });
 
+  // Auto-open webview when activity bar is clicked (tree view becomes visible)
+  context.subscriptions.push(
+    treeView.onDidChangeVisibility((e) => {
+      if (e.visible) {
+        // Activity bar was clicked - open the webview
+        createOrShowWebviewPanel(context);
+      }
+    })
+  );
+
   // Handle checkbox state changes
   context.subscriptions.push(
     treeView.onDidChangeCheckboxState(async (evt) => {
