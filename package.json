@@ -193,6 +193,18 @@
         "title": "Remove GitHub Token",
         "category": "Prompt Tower",
         "icon": "$(trash)"
+      },
+      {
+        "command": "promptTower.addCurrentFile",
+        "title": "Add to Prompt Tower",
+        "category": "Prompt Tower",
+        "icon": "$(add)"
+      },
+      {
+        "command": "promptTower.openPromptTower",
+        "title": "Open Prompt Tower",
+        "category": "Prompt Tower",
+        "icon": "$(window)"
       }
     ],
     "menus": {
@@ -213,6 +225,12 @@
         },
         {
           "command": "promptTower.clearSelections"
+        },
+        {
+          "command": "promptTower.addCurrentFile"
+        },
+        {
+          "command": "promptTower.openPromptTower"
         }
       ],
       "view/title": [
@@ -240,6 +258,18 @@
           "command": "promptTower.refreshGitHubIssues",
           "when": "view == promptTowerIssuesView",
           "group": "navigation@1"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "promptTower.addCurrentFile",
+          "when": "editorTextFocus",
+          "group": "9_cutcopypaste"
+        },
+        {
+          "command": "promptTower.openPromptTower",
+          "when": "editorTextFocus",
+          "group": "9_cutcopypaste"
         }
       ]
     }

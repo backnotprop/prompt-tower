@@ -2,6 +2,10 @@
 
 ## [Version 1.3.0] - Unreleased
 
+### Added
+
+- **Right-click context menu:** "Add to Prompt Tower" and "Open Prompt Tower" options when right-clicking in any file editor - quickly select files and open the interface without navigating to the tree view. Thanks to @arthurwolf for the suggestion
+
 ### Fixed
 
 - **File selection preservation:** Refresh no longer deselects files - selections now persist unless files are actually removed. Thanks to @K2adir for reporting (#27)
