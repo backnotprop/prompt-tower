@@ -235,6 +235,11 @@
           "command": "promptTower.clearSelections",
           "when": "view == promptTowerView",
           "group": "navigation@4"
+        },
+        {
+          "command": "promptTower.refreshGitHubIssues",
+          "when": "view == promptTowerIssuesView",
+          "group": "navigation@1"
         }
       ]
     }
