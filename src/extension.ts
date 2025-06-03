@@ -31,11 +31,17 @@ let editorAutomationService: EditorAutomationService;
 let multiRootProvider: MultiRootTreeProvider;
 let issuesProviderInstance: GitHubIssuesProvider | undefined;
 let mainTreeView: vscode.TreeView<FileNode>;
+let statusWebview: vscode.WebviewView | undefined;
 
 // --- Preview State ---
 let isPreviewValid = false;
 
 // --- Helper Functions ---
+function updateWebviewVisibilityContext() {
+  const isVisible = webviewPanel !== undefined && webviewPanel.visible;
+  vscode.commands.executeCommand('setContext', 'promptTower.webviewVisible', isVisible);
+}
+
 function invalidateWebviewPreview() {
   if (webviewPanel && isPreviewValid) {
     console.log("Extension: Sending invalidatePreview to webview.");
@@ -149,6 +155,9 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
     multiRootProvider ? multiRootProvider.getPromptPrefix() : "",
     multiRootProvider ? multiRootProvider.getPromptSuffix() : ""
   );
+
+  // Update context for status tree visibility
+  updateWebviewVisibilityContext();
 
   // Handle messages from webview
   webviewPanel.webview.onDidReceiveMessage(
@@ -589,13 +598,124 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
     context.subscriptions
   );
 
-  webviewPanel.onDidDispose(
+  // Listen for visibility changes (tab switching)
+  webviewPanel.onDidChangeViewState(
     () => {
-      webviewPanel = undefined;
+      updateWebviewVisibilityContext();
     },
     null,
     context.subscriptions
   );
+
+  webviewPanel.onDidDispose(
+    () => {
+      webviewPanel = undefined;
+      updateWebviewVisibilityContext();
+    },
+    null,
+    context.subscriptions
+  );
+}
+
+// --- Status Tree Webview Provider ---
+class StatusTreeProvider implements vscode.WebviewViewProvider {
+  resolveWebviewView(webviewView: vscode.WebviewView): void {
+    statusWebview = webviewView;
+    
+    webviewView.webview.options = {
+      enableScripts: true,
+    };
+
+    webviewView.webview.html = this.getStatusHtml(webviewView.webview);
+
+    // Handle button clicks
+    webviewView.webview.onDidReceiveMessage(message => {
+      if (message.command === "openUI") {
+        vscode.commands.executeCommand("promptTower.showTowerUI");
+      }
+    });
+  }
+
+  private getStatusHtml(webview: vscode.Webview): string {
+    const nonce = getNonce();
+    
+    return `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="Content-Security-Policy" content="
+            default-src 'none';
+            style-src 'unsafe-inline';
+            script-src 'nonce-${nonce}';
+        ">
+        <style>
+            body {
+                padding: 12px;
+                font-family: var(--vscode-font-family);
+                background: transparent;
+                margin: 0;
+            }
+            .status-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+            .status-message {
+                font-size: 11px;
+                color: var(--vscode-descriptionForeground);
+                text-align: center;
+                margin-bottom: 4px;
+            }
+            .open-ui-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 12px;
+                background: var(--vscode-editorWarning-background, rgba(255, 140, 0, 0.15));
+                color: var(--vscode-editorWarning-foreground, #ff8c00);
+                border: 1px solid var(--vscode-editorWarning-border, rgba(255, 140, 0, 0.3));
+                border-radius: 4px;
+                font-size: 11px;
+                font-family: var(--vscode-font-family);
+                cursor: pointer;
+                font-weight: 500;
+                text-decoration: none;
+            }
+            .open-ui-btn:hover {
+                background: var(--vscode-editorWarning-background, rgba(255, 140, 0, 0.25));
+            }
+            .open-ui-btn svg {
+                width: 12px;
+                height: 12px;
+                opacity: 0.9;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="status-container">
+            <div class="status-message">UI panel not visible</div>
+            <button id="openUIButton" class="open-ui-btn">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M1.5 1a.5.5 0 0 0-.5.5v3a.5.5 0 0 1-1 0v-3A1.5 1.5 0 0 1 1.5 0h3a.5.5 0 0 1 0 1h-3zM11 .5a.5.5 0 0 1 .5-.5h3A1.5 1.5 0 0 1 16 1.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 1-.5-.5zM.5 11a.5.5 0 0 1 .5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 1 0 1h-3A1.5 1.5 0 0 1 0 14.5v-3a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                Open UI Panel
+            </button>
+        </div>
+        
+        <script nonce="${nonce}">
+            (function() {
+                const vscode = acquireVsCodeApi();
+                
+                document.getElementById('openUIButton')?.addEventListener("click", () => {
+                    vscode.postMessage({ command: "openUI" });
+                });
+            }());
+        </script>
+    </body>
+    </html>`;
+  }
 }
 
 // --- Extension Activation ---
@@ -711,6 +831,12 @@ export function activate(context: vscode.ExtensionContext) {
     multiRootProvider.setGitHubIssuesProvider(issuesProviderInstance);
     contextGenerationService.setGitHubIssuesProvider(issuesProviderInstance);
   }
+
+  // Register status tree webview provider
+  const statusTreeProvider = new StatusTreeProvider();
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("promptTowerStatus", statusTreeProvider)
+  );
 
   // Setup token counting events
   context.subscriptions.push(

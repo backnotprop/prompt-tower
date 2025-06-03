@@ -375,3 +375,21 @@ All UI components implemented with production-ready quality. Ready for future en
 
 **🎉 Complete v1.4.1 QOL Release: Four major tree interaction improvements**
 All enhancements focused on making the file tree more efficient and user-friendly. Production-ready with comprehensive testing.
+
+## 2025-06-03T16:00:00Z
+
+✅ **ENHANCEMENT: Status Tree with Tab Detection**
+
+Final improvement completed for v1.4.1 - enhanced bidirectional navigation:
+- ✅ Status tree now appears when main UI is hidden behind other tabs (not just closed)
+- ✅ Added webviewPanel.onDidChangeViewState listener for tab switching detection  
+- ✅ Updated context logic: `webviewPanel !== undefined && webviewPanel.visible`
+- ✅ "Open UI Panel" button works for both cases: revealing hidden tabs or creating new panel
+
+**Technical Implementation:**
+- Context detection enhanced with visibility checking
+- onDidChangeViewState event handling for tab switches
+- createOrShowWebviewPanel already handled reveal() vs create() properly
+
+**Phase 001 Tree Interaction Improvements: COMPLETE**
+All four bidirectional navigation features implemented and tested successfully.

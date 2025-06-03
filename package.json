@@ -160,6 +160,12 @@
     "views": {
       "prompt-tower": [
         {
+          "id": "promptTowerStatus",
+          "name": "Status",
+          "type": "webview",
+          "when": "!promptTower.webviewVisible"
+        },
+        {
           "icon": "assets/prompt-tower.svg",
           "id": "promptTowerView",
           "name": "Files",

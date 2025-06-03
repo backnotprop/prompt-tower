@@ -7,7 +7,7 @@
 - **Tree Interaction:** Whole file tree rows are now clickable for selection (not just checkboxes)
 - **Workspace Selection:** Fixed workspace root folders being unresponsive to row clicks
 - **File Preview:** Right-click any file in the tree to quickly preview its contents
-- **Navigation:** Added "Open File Selector" button in UI when tree view is hidden for better user orientation
+- **Navigation:** Added bidirectional navigation with status tree - "Open UI Panel" button appears when main UI is closed or hidden behind other tabs
 
 ## [Version 1.4.0] -
 
