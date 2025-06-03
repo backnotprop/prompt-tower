@@ -228,6 +228,11 @@
         "title": "Open Prompt Tower",
         "category": "Prompt Tower",
         "icon": "$(window)"
+      },
+      {
+        "command": "promptTower.previewFile",
+        "title": "Preview File",
+        "category": "Prompt Tower"
       }
     ],
     "menus": {
@@ -293,6 +298,12 @@
           "command": "promptTower.openPromptTower",
           "when": "editorTextFocus",
           "group": "9_cutcopypaste"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "promptTower.previewFile",
+          "when": "view == promptTowerView && viewItem == file"
         }
       ]
     }

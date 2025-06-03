@@ -1,5 +1,13 @@
 # Change Log
 
+## [Version 1.4.1] -
+
+### Improved
+
+- **Tree Interaction:** Whole file tree rows are now clickable for selection (not just checkboxes)
+- **Workspace Selection:** Fixed workspace root folders being unresponsive to row clicks
+- **File Preview:** Right-click any file in the tree to quickly preview its contents
+
 ## [Version 1.4.0] -
 
 ### Fixed

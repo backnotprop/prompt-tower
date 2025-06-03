@@ -202,12 +202,19 @@ export class MultiRootTreeProvider
     // Set context value for commands
     treeItem.contextValue = element.type;
 
-    // Set checkbox state
+    // Set checkbox state (visual indicator only)
     treeItem.checkboxState = element.checkable
       ? element.isChecked
         ? vscode.TreeItemCheckboxState.Checked
         : vscode.TreeItemCheckboxState.Unchecked
       : undefined;
+
+    // Make whole row clickable via command (for all node types)
+    treeItem.command = {
+      command: "promptTower.toggleFileSelection",
+      title: "Toggle Selection",
+      arguments: [element]
+    };
 
     // Set tooltip
     if (element.type === "workspace-root") {
@@ -245,7 +252,7 @@ export class MultiRootTreeProvider
    * Toggle the checked state of a file node
    */
   async toggleNodeSelection(node: FileNode): Promise<void> {
-    console.log(`Toggling selection for: ${node.label} (${node.type})`);
+    console.log(`Toggling selection for: ${node.label} (${node.type}) ${node.isChecked ? 'checked' : 'unchecked'} -> ${!node.isChecked ? 'checked' : 'unchecked'}`);
 
     const originalState = node.isChecked;
     let newState = !originalState;

@@ -59,6 +59,24 @@ function getNonce() {
   return text;
 }
 
+// --- File Preview Helper ---
+async function showFilePreview(fileNode: FileNode): Promise<void> {
+  try {
+    const document = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(fileNode.absolutePath)
+    );
+    
+    await vscode.window.showTextDocument(document, {
+      viewColumn: vscode.ViewColumn.One,
+      preview: true,
+      preserveFocus: true
+    });
+  } catch (error) {
+    console.error(`Failed to preview file ${fileNode.absolutePath}:`, error);
+    vscode.window.showErrorMessage(`Could not preview file: ${fileNode.label}`);
+  }
+}
+
 // --- Webview Content Generation ---
 function getWebviewContent(
   webview: vscode.Webview,
@@ -617,9 +635,10 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Handle checkbox state changes
+  // Handle checkbox clicks (checkboxes are separate from row content)
   context.subscriptions.push(
     treeView.onDidChangeCheckboxState(async (evt) => {
+      console.log(`[Prompt Tower] Checkbox event triggered for ${evt.items.length} items`);
       for (const [item, state] of evt.items) {
         if (
           item &&
@@ -627,13 +646,16 @@ export function activate(context: vscode.ExtensionContext) {
           "type" in item &&
           "absolutePath" in item
         ) {
+          console.log(`[Prompt Tower] Checkbox toggle: ${(item as any).label} -> ${state === 1 ? 'checked' : 'unchecked'}`);
           await multiRootProvider.toggleNodeSelection(item as FileNode);
         }
       }
-      // Invalidate preview when file selections change
       invalidateWebviewPreview();
     })
   );
+
+  // Row content clicks are handled via commands set on each TreeItem
+  // See promptTower.toggleFileSelection command registration below
 
   // Initialize GitHub Issues provider
   const primaryWorkspace = workspaceManager.getPrimaryWorkspace();
@@ -685,6 +707,13 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("promptTower.showTowerUI", () => {
       createOrShowWebviewPanel(context);
+    }),
+
+    // Handle tree item clicks (whole row clickable)
+    vscode.commands.registerCommand("promptTower.toggleFileSelection", async (fileNode: FileNode) => {
+      console.log(`[Prompt Tower] Row content click: ${fileNode.label} (${fileNode.type})`);
+      await multiRootProvider.toggleNodeSelection(fileNode);
+      invalidateWebviewPreview();
     }),
 
     vscode.commands.registerCommand("promptTower.refresh", async () => {
@@ -862,6 +891,12 @@ export function activate(context: vscode.ExtensionContext) {
       createOrShowWebviewPanel(context);
 
       vscode.window.showInformationMessage("Opened Prompt Tower interface.");
+    }),
+
+    // Right-click file preview
+    vscode.commands.registerCommand("promptTower.previewFile", async (fileNode: FileNode) => {
+      console.log(`[Prompt Tower] Right-click preview: ${fileNode.label}`);
+      await showFilePreview(fileNode);
     })
   );
 
