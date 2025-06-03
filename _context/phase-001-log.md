@@ -343,3 +343,35 @@ All UI components implemented with production-ready quality. Ready for future en
 - Professional disabled state styling
 
 **✅ Phase 001 Complete: Production-ready cross-platform UX**
+
+## 2025-06-03T15:00:00Z
+
+🎯 **TREE INTERACTION IMPROVEMENTS (v1.4.1 QOL Release)**
+
+**Enhanced Tree Selection UX:**
+- ✅ Whole row clickable selection (not just checkboxes)
+- ✅ Command-based interaction for reliable re-clicking behavior  
+- ✅ Fixed workspace root folders being unresponsive to row clicks
+- ✅ Dual interaction model: checkbox clicks AND row content clicks both work
+
+**Right-Click File Preview:**
+- ✅ Context menu "Preview File" command for any file in tree
+- ✅ Opens in main editor area with ephemeral tab behavior
+- ✅ Focus remains on tree view for quick browsing workflow
+- ✅ Non-disruptive preview that doesn't steal user focus
+
+**Navigation Enhancement:**
+- ✅ "Open File Selector" button appears in UI when tree view is hidden
+- ✅ Warning-colored button (var(--vscode-editorWarning-*)) for visibility
+- ✅ Compact styling next to header with proper spacing (gap: 12px)
+- ✅ Real-time visibility detection via onDidChangeVisibility events
+- ✅ Solves user navigation confusion between tree-only and UI-only states
+
+**Technical Implementation:**
+- ✅ Module-level treeView variable for proper scoping
+- ✅ webviewReady message sends initial tree visibility state  
+- ✅ Clean webview message handling for showTree command
+- ✅ Tree toggle button with modern VS Code theme integration
+
+**🎉 Complete v1.4.1 QOL Release: Four major tree interaction improvements**
+All enhancements focused on making the file tree more efficient and user-friendly. Production-ready with comprehensive testing.

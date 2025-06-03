@@ -30,6 +30,7 @@ let promptPushService: PromptPushService;
 let editorAutomationService: EditorAutomationService;
 let multiRootProvider: MultiRootTreeProvider;
 let issuesProviderInstance: GitHubIssuesProvider | undefined;
+let mainTreeView: vscode.TreeView<FileNode>;
 
 // --- Preview State ---
 let isPreviewValid = false;
@@ -185,6 +186,11 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
                 isCounting: tokenCountingService.getIsCounting(),
               },
             });
+            // Send initial tree visibility state
+            webviewPanel.webview.postMessage({
+              command: "treeVisibilityChanged",
+              visible: mainTreeView.visible,
+            });
           }
           break;
 
@@ -300,6 +306,11 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
           if (message.payload && typeof message.payload.message === "string") {
             vscode.window.showInformationMessage(message.payload.message);
           }
+          break;
+
+        case "showTree":
+          // Focus the Prompt Tower tree view to make it visible
+          await vscode.commands.executeCommand("workbench.view.extension.prompt-tower");
           break;
 
         case "pushPrompt":
@@ -618,7 +629,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Create tree view
-  const treeView = vscode.window.createTreeView("promptTowerView", {
+  mainTreeView = vscode.window.createTreeView("promptTowerView", {
     treeDataProvider: multiRootProvider,
     canSelectMany: true,
     showCollapseAll: true,
@@ -627,17 +638,25 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Auto-open webview when activity bar is clicked (tree view becomes visible)
   context.subscriptions.push(
-    treeView.onDidChangeVisibility((e) => {
+    mainTreeView.onDidChangeVisibility((e) => {
       if (e.visible) {
         // Activity bar was clicked - open the webview
         createOrShowWebviewPanel(context);
+      }
+      
+      // Notify webview about tree visibility changes
+      if (webviewPanel) {
+        webviewPanel.webview.postMessage({
+          command: "treeVisibilityChanged",
+          visible: e.visible
+        });
       }
     })
   );
 
   // Handle checkbox clicks (checkboxes are separate from row content)
   context.subscriptions.push(
-    treeView.onDidChangeCheckboxState(async (evt) => {
+    mainTreeView.onDidChangeCheckboxState(async (evt) => {
       console.log(`[Prompt Tower] Checkbox event triggered for ${evt.items.length} items`);
       for (const [item, state] of evt.items) {
         if (
@@ -900,7 +919,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  context.subscriptions.push(treeView, multiRootProvider);
+  context.subscriptions.push(mainTreeView, multiRootProvider);
 
   // Don't automatically show the panel - let users open it when they want
   // vscode.commands.executeCommand("promptTower.showTowerUI");

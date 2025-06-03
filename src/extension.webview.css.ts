@@ -14,12 +14,39 @@ export function getWebviewStyles(): string {
           flex-direction: column;
           min-height: 100vh;
         }
-        h1 {
-            margin-top: 0;
-            font-size: 1.5em;
+        #header-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0.8em;
             border-bottom: 1px solid var(--vscode-separator-foreground);
             padding-bottom: 0.3em;
-            margin-bottom: 0.8em;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        .tree-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 14px;
+            background: var(--vscode-editorWarning-background, rgba(255, 140, 0, 0.15));
+            color: var(--vscode-editorWarning-foreground, #ff8c00);
+            border: 1px solid var(--vscode-editorWarning-border, rgba(255, 140, 0, 0.3));
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: var(--vscode-font-family);
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .tree-toggle-btn:hover {
+            background: var(--vscode-editorWarning-background, rgba(255, 140, 0, 0.25));
+        }
+        .tree-toggle-btn svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.9;
         }
         #token-info {
             margin-bottom: 1em;
