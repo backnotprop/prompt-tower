@@ -166,14 +166,29 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
         case "createContext":
           if (multiRootProvider && contextGenerationService && webviewPanel) {
             try {
+              // Process options from webview
+              const options = message.options || {};
+              const treeType = options.treeType || 'fullFilesAndDirectories';
+              const copyToClipboard = options.copyToClipboard ?? true;
+              const removeComments = options.removeComments ?? false;
+
               const allRootNodes = multiRootProvider.getRootNodes();
+              
+              // Generate context with tree type option
               const result = await contextGenerationService.generateContext(
                 allRootNodes,
                 {
                   prefix: multiRootProvider.getPromptPrefix(),
                   suffix: multiRootProvider.getPromptSuffix(),
+                  treeType: treeType
                 }
               );
+
+              // Copy to clipboard if option is checked
+              if (copyToClipboard) {
+                await vscode.env.clipboard.writeText(result.contextString);
+                vscode.window.showInformationMessage("✨ Context copied to clipboard!");
+              }
 
               webviewPanel.webview.postMessage({
                 command: "updatePreview",

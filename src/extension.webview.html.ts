@@ -58,7 +58,6 @@ export function getWebviewHtml(params: WebviewParams): string {
                 <div class="action-group">
                   <div class="action-buttons">
                     <button id="createContextButton">Create Context</button>
-                    <button id="createAndCopyButton">Create & Copy to Clipboard</button>
                   </div>
                   <div class="action-options">
                     <label class="checkbox-container">
@@ -441,16 +440,6 @@ export function getWebviewHtml(params: WebviewParams): string {
                         });
                     });
                     
-                    document.getElementById('createAndCopyButton')?.addEventListener("click", () => {
-                        vscode.postMessage({ 
-                            command: "createAndCopyToClipboard",
-                            options: {
-                                treeType: treeTypeSelect?.value || 'fullFilesAndDirectories',
-                                copyToClipboard: true, // Always true for this button
-                                removeComments: removeCommentsCheckbox?.checked ?? false
-                            }
-                        });
-                    });
                     
                     document.getElementById('clearButton')?.addEventListener("click", () => {
                         vscode.postMessage({ command: "clearSelections" });
