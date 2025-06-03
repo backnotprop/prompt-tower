@@ -14,6 +14,8 @@ import { FileNode } from "./models/FileNode";
 import { TokenUpdatePayload } from "./models/Events";
 import { GitHubConfigManager } from "./utils/githubConfig";
 import { getWebviewHtml, WebviewParams } from "./extension.webview.html";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 // --- Webview Panel Handling ---
 let webviewPanel: vscode.WebviewPanel | undefined;
@@ -168,26 +170,28 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             try {
               // Process options from webview
               const options = message.options || {};
-              const treeType = options.treeType || 'fullFilesAndDirectories';
+              const treeType = options.treeType || "fullFilesAndDirectories";
               const copyToClipboard = options.copyToClipboard ?? true;
               const removeComments = options.removeComments ?? false;
 
               const allRootNodes = multiRootProvider.getRootNodes();
-              
+
               // Generate context with tree type option
               const result = await contextGenerationService.generateContext(
                 allRootNodes,
                 {
                   prefix: multiRootProvider.getPromptPrefix(),
                   suffix: multiRootProvider.getPromptSuffix(),
-                  treeType: treeType
+                  treeType: treeType,
                 }
               );
 
               // Copy to clipboard if option is checked
               if (copyToClipboard) {
                 await vscode.env.clipboard.writeText(result.contextString);
-                vscode.window.showInformationMessage("✨ Context copied to clipboard!");
+                vscode.window.showInformationMessage(
+                  "✨ Context copied to clipboard!"
+                );
               }
 
               webviewPanel.webview.postMessage({
@@ -284,13 +288,16 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
           ) {
             try {
               // Check if this is the first time using automation
-              const isFirstTime = !context.globalState.get('promptTower.automationUsed', false);
-              
+              const isFirstTime = !context.globalState.get(
+                "promptTower.automationUsed",
+                false
+              );
+
               if (isFirstTime) {
                 // Show onboarding modal and return early
                 if (webviewPanel) {
                   webviewPanel.webview.postMessage({
-                    command: "showOnboardingModal"
+                    command: "showOnboardingModal",
                   });
                 }
                 return;
@@ -307,30 +314,43 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
               // Validate provider type
               const provider = message.provider as AIProvider;
               const autoSubmit = message.autoSubmit ?? true;
-              
-              if (!promptPushService.getSupportedProviders().includes(provider)) {
+
+              if (
+                !promptPushService.getSupportedProviders().includes(provider)
+              ) {
                 throw new Error(`Unsupported provider: ${provider}`);
               }
 
               // Attempt to push the prompt to the AI provider
-              const pushResult = await promptPushService.pushPrompt(provider, result.contextString, autoSubmit);
+              const pushResult = await promptPushService.pushPrompt(
+                provider,
+                result.contextString,
+                autoSubmit
+              );
 
               if (pushResult.success) {
                 // Show success message
                 vscode.window.showInformationMessage(
-                  `✨ Prompt successfully pushed to ${promptPushService.getProviderDisplayName(provider)}!`
+                  `✨ Prompt successfully pushed to ${promptPushService.getProviderDisplayName(
+                    provider
+                  )}!`
                 );
               } else {
                 // Handle different failure scenarios
                 if (pushResult.requiresPermissions) {
-                  const enablePermissions = await vscode.window.showWarningMessage(
-                    `❌ ${pushResult.error}\n\nTo enable automated prompt pushing on macOS, VS Code needs Accessibility permissions.`,
-                    "Open System Preferences",
-                    "Copy to Clipboard Only"
-                  );
-                  
+                  const enablePermissions =
+                    await vscode.window.showWarningMessage(
+                      `❌ ${pushResult.error}\n\nTo enable automated prompt pushing on macOS, VS Code needs Accessibility permissions.`,
+                      "Open System Preferences",
+                      "Copy to Clipboard Only"
+                    );
+
                   if (enablePermissions === "Open System Preferences") {
-                    vscode.env.openExternal(vscode.Uri.parse("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"));
+                    vscode.env.openExternal(
+                      vscode.Uri.parse(
+                        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                      )
+                    );
                   }
                 } else if (pushResult.fallbackToClipboard) {
                   vscode.window.showWarningMessage(
@@ -361,8 +381,8 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
 
         case "completeOnboarding":
           // Mark automation as used and proceed with the original push prompt request
-          await context.globalState.update('promptTower.automationUsed', true);
-          
+          await context.globalState.update("promptTower.automationUsed", true);
+
           if (
             message.originalRequest &&
             multiRootProvider &&
@@ -384,29 +404,42 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
               // Validate provider type
               const provider = originalMessage.provider as AIProvider;
               const autoSubmit = originalMessage.autoSubmit ?? true;
-              
-              if (!promptPushService.getSupportedProviders().includes(provider)) {
+
+              if (
+                !promptPushService.getSupportedProviders().includes(provider)
+              ) {
                 throw new Error(`Unsupported provider: ${provider}`);
               }
 
               // Attempt to push the prompt to the AI provider
-              const pushResult = await promptPushService.pushPrompt(provider, result.contextString, autoSubmit);
+              const pushResult = await promptPushService.pushPrompt(
+                provider,
+                result.contextString,
+                autoSubmit
+              );
 
               if (pushResult.success) {
                 vscode.window.showInformationMessage(
-                  `✨ Prompt successfully pushed to ${promptPushService.getProviderDisplayName(provider)}!`
+                  `✨ Prompt successfully pushed to ${promptPushService.getProviderDisplayName(
+                    provider
+                  )}!`
                 );
               } else {
                 // Handle failure scenarios (same as original handler)
                 if (pushResult.requiresPermissions) {
-                  const enablePermissions = await vscode.window.showWarningMessage(
-                    `❌ ${pushResult.error}\n\nTo enable automated prompt pushing on macOS, VS Code needs Accessibility permissions.`,
-                    "Open System Preferences",
-                    "Copy to Clipboard Only"
-                  );
-                  
+                  const enablePermissions =
+                    await vscode.window.showWarningMessage(
+                      `❌ ${pushResult.error}\n\nTo enable automated prompt pushing on macOS, VS Code needs Accessibility permissions.`,
+                      "Open System Preferences",
+                      "Copy to Clipboard Only"
+                    );
+
                   if (enablePermissions === "Open System Preferences") {
-                    vscode.env.openExternal(vscode.Uri.parse("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"));
+                    vscode.env.openExternal(
+                      vscode.Uri.parse(
+                        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                      )
+                    );
                   }
                 } else if (pushResult.fallbackToClipboard) {
                   vscode.window.showWarningMessage(
@@ -432,6 +465,53 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
                 `Error pushing prompt to ${originalMessage.provider}: ${error}`
               );
             }
+          }
+          break;
+
+        case "testNewChat":
+          try {
+            // Step 1: Open the new agent chat
+            console.log("Executing 'composer.newAgentChat'...");
+            await vscode.commands.executeCommand("composer.newAgentChat");
+            vscode.window.showInformationMessage("✨ Agent Chat opened!");
+            console.log("'composer.newAgentChat' executed.");
+
+            // IMPORTANT: Wait for the chat to open and potentially focus its input field
+            // This delay is often necessary for the UI to update and focus to shift.
+            // You might need to adjust the duration.
+            await new Promise((resolve) => setTimeout(resolve, 375));
+
+            // Step 2: Execute the paste command
+            // This assumes that the input field of the newly opened chat
+            // has gained focus after the command and the delay.
+            console.log("Attempting to execute paste command...");
+            await vscode.commands.executeCommand(
+              "editor.action.clipboardPasteAction"
+            );
+            await new Promise((resolve) => setTimeout(resolve, 750));
+
+            // HERE! - Send Enter keystroke to submit the pasted content
+            console.log("Sending Enter keystroke...");
+            const execAsync = promisify(exec);
+            
+            const enterScript = `
+              tell application "System Events"
+                keystroke return
+              end tell
+            `;
+            
+            await execAsync(`osascript -e '${enterScript}'`);
+            console.log("Enter keystroke sent.");
+
+            vscode.window.showInformationMessage(
+              "✨ Prompt Tower sent to cursor!"
+            );
+            console.log("'editor.action.clipboardPasteAction' executed.");
+          } catch (error: any) {
+            vscode.window.showErrorMessage(
+              `Chat/Paste action failed: ${error.message || error}`
+            );
+            console.error("Error during testNewChatAndPaste:", error);
           }
           break;
       }

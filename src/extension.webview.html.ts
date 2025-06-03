@@ -82,6 +82,16 @@ export function getWebviewHtml(params: WebviewParams): string {
                   </div>
                 </div>
 
+                <!-- Test Group -->
+                <div class="action-group">
+                  <div class="action-buttons">
+                    <button id="testButton">Test New Chat</button>
+                  </div>
+                  <div class="action-options">
+                    <span style="font-size: 0.8em; color: var(--vscode-descriptionForeground);">Experimental feature</span>
+                  </div>
+                </div>
+
                 <!-- Push Prompt Group -->
                 <div class="action-group">
                   <div class="action-buttons">
@@ -447,6 +457,10 @@ export function getWebviewHtml(params: WebviewParams): string {
                     
                     document.getElementById('resetAllButton')?.addEventListener("click", () => {
                         vscode.postMessage({ command: "resetAll" });
+                    });
+                    
+                    document.getElementById('testButton')?.addEventListener("click", () => {
+                        vscode.postMessage({ command: "testNewChat" });
                     });
                     
                     // Preview action event listeners  
