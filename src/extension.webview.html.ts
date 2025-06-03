@@ -7,6 +7,7 @@ export interface WebviewParams {
   claudeLogo: string;
   geminiLogo: string;
   aistudioLogo: string;
+  cursorLogo: string;
   initialPrefix: string;
   initialSuffix: string;
 }
@@ -82,13 +83,45 @@ export function getWebviewHtml(params: WebviewParams): string {
                   </div>
                 </div>
 
-                <!-- Test Group -->
+                <!-- Send to Editor Group -->
                 <div class="action-group">
                   <div class="action-buttons">
-                    <button id="testButton">Test New Chat</button>
+                    <div class="send-to-editor-group">
+                      <button id="sendToEditorButton" class="send-to-editor-btn">
+                        <img src="${params.cursorLogo}" alt="Cursor" class="editor-logo">
+                        Send to Chat
+                      </button>
+                    </div>
                   </div>
                   <div class="action-options">
-                    <span style="font-size: 0.8em; color: var(--vscode-descriptionForeground);">Experimental feature</span>
+                    <div class="send-to-options">
+                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Send to:</span>
+                      <label class="radio-container">
+                        <input type="radio" name="sendTarget" value="agent" checked>
+                        <span class="radio-checkmark"></span>
+                        Agent
+                      </label>
+                      <label class="radio-container disabled">
+                        <input type="radio" name="sendTarget" value="ask" disabled>
+                        <span class="radio-checkmark"></span>
+                        Ask
+                        <span class="feature-badge">Soon</span>
+                      </label>
+                    </div>
+                    <div class="chat-target-options">
+                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Chat:</span>
+                      <label class="radio-container">
+                        <input type="radio" name="chatTarget" value="new" checked>
+                        <span class="radio-checkmark"></span>
+                        New
+                      </label>
+                      <label class="radio-container disabled">
+                        <input type="radio" name="chatTarget" value="current" disabled>
+                        <span class="radio-checkmark"></span>
+                        Current
+                        <span class="feature-badge">Soon</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -459,8 +492,22 @@ export function getWebviewHtml(params: WebviewParams): string {
                         vscode.postMessage({ command: "resetAll" });
                     });
                     
-                    document.getElementById('testButton')?.addEventListener("click", () => {
-                        vscode.postMessage({ command: "testNewChat" });
+                    document.getElementById('sendToEditorButton')?.addEventListener("click", () => {
+                        // Add shimmer effect like other buttons
+                        if (previewContainer) {
+                            previewContainer.classList.add('cyber-generating');
+                            // Remove effect after animation completes
+                            setTimeout(() => {
+                                previewContainer.classList.remove('cyber-generating');
+                            }, 750);
+                        }
+                        
+                        // Get selected target from radio buttons
+                        const selectedTarget = document.querySelector('input[name="sendTarget"]:checked')?.value || 'agent';
+                        vscode.postMessage({ 
+                            command: "sendToEditor",
+                            target: selectedTarget
+                        });
                     });
                     
                     // Preview action event listeners  

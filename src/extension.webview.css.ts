@@ -327,6 +327,85 @@ export function getWebviewStyles(): string {
             color: var(--vscode-textLink-activeForeground);
         }
         
+        /* Send to Editor button styling */
+        .send-to-editor-group {
+            display: flex;
+            align-items: center;
+        }
+        
+        .send-to-editor-btn {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: 1px solid var(--vscode-button-border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9em;
+            cursor: pointer;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-sizing: border-box;
+            transition: all 0.4s ease;
+        }
+        
+        .send-to-editor-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        
+        .editor-logo {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+        }
+        
+        /* Send to options styling */
+        .send-to-options {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        /* Chat target options styling */
+        .chat-target-options {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        
+        .radio-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin: 0;
+            white-space: nowrap;
+            position: relative;
+        }
+        
+        .radio-container input[type="radio"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--vscode-button-background);
+        }
+        
+        .radio-container.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .radio-container.disabled input {
+            cursor: not-allowed;
+        }
+        
         textarea {
           width: 100%;
           box-sizing: border-box;

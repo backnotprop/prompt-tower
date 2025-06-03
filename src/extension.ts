@@ -10,12 +10,11 @@ import { TokenCountingService } from "./services/TokenCountingService";
 import { IgnorePatternService } from "./services/IgnorePatternService";
 import { ContextGenerationService } from "./services/ContextGenerationService";
 import { PromptPushService, AIProvider } from "./services/PromptPushService";
+import { EditorAutomationService } from "./services/EditorAutomationService";
 import { FileNode } from "./models/FileNode";
 import { TokenUpdatePayload } from "./models/Events";
 import { GitHubConfigManager } from "./utils/githubConfig";
 import { getWebviewHtml, WebviewParams } from "./extension.webview.html";
-import { exec } from "child_process";
-import { promisify } from "util";
 
 // --- Webview Panel Handling ---
 let webviewPanel: vscode.WebviewPanel | undefined;
@@ -28,6 +27,7 @@ let fileDiscoveryService: FileDiscoveryService;
 let tokenCountingService: TokenCountingService;
 let contextGenerationService: ContextGenerationService;
 let promptPushService: PromptPushService;
+let editorAutomationService: EditorAutomationService;
 let multiRootProvider: MultiRootTreeProvider;
 let issuesProviderInstance: GitHubIssuesProvider | undefined;
 
@@ -81,6 +81,9 @@ function getWebviewContent(
   const aistudioLogo = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, "media", "aistudio.png")
   );
+  const cursorLogo = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "cursor.png")
+  );
 
   // Use the modular HTML generator
   const params: WebviewParams = {
@@ -90,6 +93,7 @@ function getWebviewContent(
     claudeLogo: claudeLogo.toString(),
     geminiLogo: geminiLogo.toString(),
     aistudioLogo: aistudioLogo.toString(),
+    cursorLogo: cursorLogo.toString(),
     initialPrefix,
     initialSuffix,
   };
@@ -468,50 +472,85 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
           }
           break;
 
-        case "testNewChat":
-          try {
-            // Step 1: Open the new agent chat
-            console.log("Executing 'composer.newAgentChat'...");
-            await vscode.commands.executeCommand("composer.newAgentChat");
-            vscode.window.showInformationMessage("✨ Agent Chat opened!");
-            console.log("'composer.newAgentChat' executed.");
+        case "sendToEditor":
+          if (
+            multiRootProvider &&
+            contextGenerationService &&
+            editorAutomationService
+          ) {
+            try {
+              // Generate context (similar to createContext flow)
+              const allRootNodes = multiRootProvider.getRootNodes();
+              const result = await contextGenerationService.generateContext(
+                allRootNodes,
+                {
+                  prefix: multiRootProvider.getPromptPrefix(),
+                  suffix: multiRootProvider.getPromptSuffix(),
+                }
+              );
 
-            // IMPORTANT: Wait for the chat to open and potentially focus its input field
-            // This delay is often necessary for the UI to update and focus to shift.
-            // You might need to adjust the duration.
-            await new Promise((resolve) => setTimeout(resolve, 375));
+              // Update preview if webview is active
+              if (webviewPanel) {
+                webviewPanel.webview.postMessage({
+                  command: "updatePreview",
+                  payload: { context: result.contextString },
+                });
+                isPreviewValid = true;
+              }
 
-            // Step 2: Execute the paste command
-            // This assumes that the input field of the newly opened chat
-            // has gained focus after the command and the delay.
-            console.log("Attempting to execute paste command...");
-            await vscode.commands.executeCommand(
-              "editor.action.clipboardPasteAction"
-            );
-            await new Promise((resolve) => setTimeout(resolve, 750));
+              // Get target from message or default to agent
+              const target = message.target || "agent";
 
-            // HERE! - Send Enter keystroke to submit the pasted content
-            console.log("Sending Enter keystroke...");
-            const execAsync = promisify(exec);
-            
-            const enterScript = `
-              tell application "System Events"
-                keystroke return
-              end tell
-            `;
-            
-            await execAsync(`osascript -e '${enterScript}'`);
-            console.log("Enter keystroke sent.");
+              // Send to Cursor using the service
+              const automationResult =
+                await editorAutomationService.sendToEditor(
+                  "cursor",
+                  target as any,
+                  result.contextString
+                );
 
-            vscode.window.showInformationMessage(
-              "✨ Prompt Tower sent to cursor!"
-            );
-            console.log("'editor.action.clipboardPasteAction' executed.");
-          } catch (error: any) {
-            vscode.window.showErrorMessage(
-              `Chat/Paste action failed: ${error.message || error}`
-            );
-            console.error("Error during testNewChatAndPaste:", error);
+              if (automationResult.success) {
+                vscode.window.showInformationMessage(
+                  `✨ Context sent to ${editorAutomationService.getEditorDisplayName(
+                    "cursor"
+                  )} ${editorAutomationService.getTargetDisplayName(
+                    target as any
+                  )}!`
+                );
+              } else {
+                // Handle different failure scenarios
+                if (automationResult.requiresPermissions) {
+                  const enablePermissions =
+                    await vscode.window.showWarningMessage(
+                      `❌ ${automationResult.error}\n\nTo enable editor automation on macOS, VS Code needs Accessibility permissions.`,
+                      "Open System Preferences",
+                      "Copy to Clipboard Only"
+                    );
+
+                  if (enablePermissions === "Open System Preferences") {
+                    vscode.env.openExternal(
+                      vscode.Uri.parse(
+                        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                      )
+                    );
+                  } else {
+                    // Fallback: just copy to clipboard
+                    await vscode.env.clipboard.writeText(result.contextString);
+                    vscode.window.showInformationMessage(
+                      "📋 Context copied to clipboard as fallback."
+                    );
+                  }
+                } else {
+                  vscode.window.showErrorMessage(
+                    `❌ Failed to send to editor chat: ${automationResult.error}`
+                  );
+                }
+              }
+            } catch (error) {
+              vscode.window.showErrorMessage(
+                `Error sending context to editor: ${error}`
+              );
+            }
           }
           break;
       }
@@ -540,6 +579,7 @@ export function activate(context: vscode.ExtensionContext) {
   tokenCountingService = new TokenCountingService();
   contextGenerationService = new ContextGenerationService();
   promptPushService = new PromptPushService();
+  editorAutomationService = new EditorAutomationService();
 
   // Check if we have workspaces
   if (!workspaceManager.hasWorkspaces()) {
