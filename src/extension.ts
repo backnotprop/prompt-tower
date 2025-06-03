@@ -9,6 +9,7 @@ import { FileDiscoveryService } from "./services/FileDiscoveryService";
 import { TokenCountingService } from "./services/TokenCountingService";
 import { IgnorePatternService } from "./services/IgnorePatternService";
 import { ContextGenerationService } from "./services/ContextGenerationService";
+import { PromptPushService, AIProvider } from "./services/PromptPushService";
 import { FileNode } from "./models/FileNode";
 import { TokenUpdatePayload } from "./models/Events";
 import { GitHubConfigManager } from "./utils/githubConfig";
@@ -24,6 +25,7 @@ let ignorePatternService: IgnorePatternService;
 let fileDiscoveryService: FileDiscoveryService;
 let tokenCountingService: TokenCountingService;
 let contextGenerationService: ContextGenerationService;
+let promptPushService: PromptPushService;
 let multiRootProvider: MultiRootTreeProvider;
 let issuesProviderInstance: GitHubIssuesProvider | undefined;
 
@@ -262,9 +264,22 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
           if (
             message.provider &&
             multiRootProvider &&
-            contextGenerationService
+            contextGenerationService &&
+            promptPushService
           ) {
             try {
+              // Check if this is the first time using automation
+              const isFirstTime = !context.globalState.get('promptTower.automationUsed', false);
+              
+              if (isFirstTime) {
+                // Show onboarding modal and return early
+                if (webviewPanel) {
+                  webviewPanel.webview.postMessage({
+                    command: "showOnboardingModal"
+                  });
+                }
+                return;
+              }
               const allRootNodes = multiRootProvider.getRootNodes();
               const result = await contextGenerationService.generateContext(
                 allRootNodes,
@@ -274,13 +289,44 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
                 }
               );
 
-              // Copy to clipboard
-              await vscode.env.clipboard.writeText(result.contextString);
+              // Validate provider type
+              const provider = message.provider as AIProvider;
+              const autoSubmit = message.autoSubmit ?? true;
+              
+              if (!promptPushService.getSupportedProviders().includes(provider)) {
+                throw new Error(`Unsupported provider: ${provider}`);
+              }
 
-              // Show success message with provider info
-              vscode.window.showInformationMessage(
-                `✨ Prompt pushed to ${message.provider.toUpperCase()} and copied to clipboard!`
-              );
+              // Attempt to push the prompt to the AI provider
+              const pushResult = await promptPushService.pushPrompt(provider, result.contextString, autoSubmit);
+
+              if (pushResult.success) {
+                // Show success message
+                vscode.window.showInformationMessage(
+                  `✨ Prompt successfully pushed to ${promptPushService.getProviderDisplayName(provider)}!`
+                );
+              } else {
+                // Handle different failure scenarios
+                if (pushResult.requiresPermissions) {
+                  const enablePermissions = await vscode.window.showWarningMessage(
+                    `❌ ${pushResult.error}\n\nTo enable automated prompt pushing on macOS, VS Code needs Accessibility permissions.`,
+                    "Open System Preferences",
+                    "Copy to Clipboard Only"
+                  );
+                  
+                  if (enablePermissions === "Open System Preferences") {
+                    vscode.env.openExternal(vscode.Uri.parse("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"));
+                  }
+                } else if (pushResult.fallbackToClipboard) {
+                  vscode.window.showWarningMessage(
+                    `⚠️ ${pushResult.error}\n\nPrompt copied to clipboard as fallback.`
+                  );
+                } else {
+                  vscode.window.showErrorMessage(
+                    `❌ Failed to push prompt: ${pushResult.error}`
+                  );
+                }
+              }
 
               // Update preview if webview is still active
               if (webviewPanel) {
@@ -293,6 +339,82 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
             } catch (error) {
               vscode.window.showErrorMessage(
                 `Error pushing prompt to ${message.provider}: ${error}`
+              );
+            }
+          }
+          break;
+
+        case "completeOnboarding":
+          // Mark automation as used and proceed with the original push prompt request
+          await context.globalState.update('promptTower.automationUsed', true);
+          
+          if (
+            message.originalRequest &&
+            multiRootProvider &&
+            contextGenerationService &&
+            promptPushService
+          ) {
+            // Re-execute the original push prompt request
+            const originalMessage = message.originalRequest;
+            try {
+              const allRootNodes = multiRootProvider.getRootNodes();
+              const result = await contextGenerationService.generateContext(
+                allRootNodes,
+                {
+                  prefix: multiRootProvider.getPromptPrefix(),
+                  suffix: multiRootProvider.getPromptSuffix(),
+                }
+              );
+
+              // Validate provider type
+              const provider = originalMessage.provider as AIProvider;
+              const autoSubmit = originalMessage.autoSubmit ?? true;
+              
+              if (!promptPushService.getSupportedProviders().includes(provider)) {
+                throw new Error(`Unsupported provider: ${provider}`);
+              }
+
+              // Attempt to push the prompt to the AI provider
+              const pushResult = await promptPushService.pushPrompt(provider, result.contextString, autoSubmit);
+
+              if (pushResult.success) {
+                vscode.window.showInformationMessage(
+                  `✨ Prompt successfully pushed to ${promptPushService.getProviderDisplayName(provider)}!`
+                );
+              } else {
+                // Handle failure scenarios (same as original handler)
+                if (pushResult.requiresPermissions) {
+                  const enablePermissions = await vscode.window.showWarningMessage(
+                    `❌ ${pushResult.error}\n\nTo enable automated prompt pushing on macOS, VS Code needs Accessibility permissions.`,
+                    "Open System Preferences",
+                    "Copy to Clipboard Only"
+                  );
+                  
+                  if (enablePermissions === "Open System Preferences") {
+                    vscode.env.openExternal(vscode.Uri.parse("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"));
+                  }
+                } else if (pushResult.fallbackToClipboard) {
+                  vscode.window.showWarningMessage(
+                    `⚠️ ${pushResult.error}\n\nPrompt copied to clipboard as fallback.`
+                  );
+                } else {
+                  vscode.window.showErrorMessage(
+                    `❌ Failed to push prompt: ${pushResult.error}`
+                  );
+                }
+              }
+
+              // Update preview
+              if (webviewPanel) {
+                webviewPanel.webview.postMessage({
+                  command: "updatePreview",
+                  payload: { context: result.contextString },
+                });
+                isPreviewValid = true;
+              }
+            } catch (error) {
+              vscode.window.showErrorMessage(
+                `Error pushing prompt to ${originalMessage.provider}: ${error}`
               );
             }
           }
@@ -322,6 +444,7 @@ export function activate(context: vscode.ExtensionContext) {
   fileDiscoveryService = new FileDiscoveryService(ignorePatternService);
   tokenCountingService = new TokenCountingService();
   contextGenerationService = new ContextGenerationService();
+  promptPushService = new PromptPushService();
 
   // Check if we have workspaces
   if (!workspaceManager.hasWorkspaces()) {

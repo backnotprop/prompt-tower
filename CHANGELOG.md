@@ -8,8 +8,30 @@
 
 ### Added
 
-- **Prompt Push UI:** Added provider dropdown (ChatGPT, Claude, Gemini, AI Studio) and "Push Prompt" button
-  - _TODO: Implement actual provider integrations and prompt pushing logic_
+- **Automated Prompt Pushing (macOS):** One-click automation to send prompts directly to AI providers
+  - Supports ChatGPT, Claude, Gemini, AI Studio with browser automation
+  - Auto-submit toggle: paste-only mode for unreliable scenarios  
+  - First-time onboarding modal with permissions guidance
+  - Configurable browser choice and automation timing delays
+  - _Note: macOS only for now, requires Accessibility permissions_
+
+- **Enhanced Action Groups UI:** Modern card-based layout for better organization
+  - Side-by-side Create Context and Push Prompt groups
+  - Tree type selector: Full repo / Selected files only / Directories only
+  - Copy to clipboard controls and future "Remove comments" option
+  - Professional VS Code theme integration
+
+- **Advanced Context Options:** More control over context generation
+  - Tree type selection affects project structure in output
+  - Copy to clipboard behavior can be controlled per action
+  - Modal help system with configuration guidance and troubleshooting
+
+### Technical Improvements
+
+- **Service Architecture:** Added PromptPushService for automation logic
+- **Settings Integration:** New promptTower.automation.* configuration options  
+- **Modal System:** Reusable modal infrastructure for onboarding and help
+- **Usage Tracking:** globalState integration for first-time user experience
 
 ### Changed
 

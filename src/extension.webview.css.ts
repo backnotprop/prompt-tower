@@ -73,24 +73,43 @@ export function getWebviewStyles(): string {
              background-color: var(--vscode-button-hoverBackground);
         }
         
-        /* Modern button container styling */
-        .button-container {
+        /* Modern action groups styling */
+        .action-groups {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: row;
+            gap: 16px;
             margin-bottom: 20px;
-            gap: 12px;
         }
         
-        .button-group-left {
+        .action-group {
             display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            background: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-editorWidget-border);
+            border-radius: 8px;
+            flex: 1;
+        }
+        
+        .action-buttons {
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
         
-        .button-group-right {
+        .push-prompt-group {
             display: flex;
             align-items: center;
-            gap: 0;
+        }
+        
+        .action-options {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9em;
+            color: var(--vscode-descriptionForeground);
+            flex-wrap: wrap;
         }
         
         /* Push Prompt button styling */
@@ -231,6 +250,83 @@ export function getWebviewStyles(): string {
             font-weight: 500;
         }
         
+        /* Action Options Styling */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin: 0;
+            white-space: nowrap;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .checkbox-container.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .checkbox-container.disabled input {
+            cursor: not-allowed;
+        }
+        
+        .tree-type-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        
+        .tree-type-selector label {
+            margin: 0;
+            font-weight: normal;
+            color: var(--vscode-descriptionForeground);
+        }
+        
+        .tree-type-selector select {
+            background: var(--vscode-dropdown-background);
+            color: var(--vscode-dropdown-foreground);
+            border: 1px solid var(--vscode-dropdown-border);
+            border-radius: 3px;
+            padding: 3px 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        
+        .feature-badge {
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 500;
+            margin-left: 4px;
+        }
+        
+        .option-separator {
+            font-weight: bold;
+            opacity: 0.5;
+            margin: 0 4px;
+        }
+        
+        .helpful-info-link {
+            color: var(--vscode-textLink-foreground);
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: inherit;
+            margin: 0;
+        }
+        
+        .helpful-info-link:hover {
+            color: var(--vscode-textLink-activeForeground);
+        }
+        
         textarea {
           width: 100%;
           box-sizing: border-box;
@@ -344,6 +440,101 @@ export function getWebviewStyles(): string {
                background-position: -200% 0;
                box-shadow: 0 0 5px rgba(var(--vscode-charts-blue), 0.05);
            }
+       }
+       
+       /* Modal System */
+       .modal-overlay {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(0, 0, 0, 0.6);
+           z-index: 10000;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           backdrop-filter: blur(3px);
+       }
+       
+       .modal-container {
+           background: var(--vscode-editor-background);
+           border: 1px solid var(--vscode-editorWidget-border);
+           border-radius: 8px;
+           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+           max-width: 600px;
+           min-width: 400px;
+           max-height: 80vh;
+           overflow: hidden;
+           display: flex;
+           flex-direction: column;
+       }
+       
+       .modal-header {
+           padding: 16px 20px;
+           border-bottom: 1px solid var(--vscode-editorWidget-border);
+           display: flex;
+           align-items: center;
+           justify-content: space-between;
+           background: var(--vscode-editorWidget-background);
+       }
+       
+       .modal-header h2 {
+           margin: 0;
+           font-size: 1.2em;
+           color: var(--vscode-foreground);
+       }
+       
+       .modal-close {
+           background: none;
+           border: none;
+           font-size: 24px;
+           color: var(--vscode-foreground);
+           cursor: pointer;
+           padding: 0;
+           width: 32px;
+           height: 32px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           border-radius: 4px;
+       }
+       
+       .modal-close:hover {
+           background: var(--vscode-toolbar-hoverBackground);
+       }
+       
+       .modal-content {
+           padding: 20px;
+           overflow-y: auto;
+           flex-grow: 1;
+           color: var(--vscode-foreground);
+           line-height: 1.5;
+       }
+       
+       .modal-content h3 {
+           margin-top: 0;
+           color: var(--vscode-textPreformat-foreground);
+       }
+       
+       .modal-content p {
+           margin: 12px 0;
+       }
+       
+       .modal-content code {
+           background: var(--vscode-textBlockQuote-background);
+           padding: 2px 6px;
+           border-radius: 3px;
+           font-family: var(--vscode-editor-font-family);
+       }
+       
+       .modal-footer {
+           padding: 16px 20px;
+           border-top: 1px solid var(--vscode-editorWidget-border);
+           display: flex;
+           gap: 12px;
+           justify-content: flex-end;
+           background: var(--vscode-editorWidget-background);
        }
     `;
 }

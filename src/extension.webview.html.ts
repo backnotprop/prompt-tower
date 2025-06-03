@@ -53,39 +53,77 @@ export function getWebviewHtml(params: WebviewParams): string {
                 <textarea id="prompt-suffix">${params.initialSuffix}</textarea>
               </div>
 
-              <div class="button-container">
-                <div class="button-group-left">
-                  <button id="createContextButton">Create Context</button>
-                  <button id="createAndCopyButton">Create & Copy to Clipboard</button>
-                </div>
-                
-                <div class="button-group-right">
-                  <button id="pushPromptButton" class="push-prompt-btn">Push Prompt</button>
-                  <div class="provider-dropdown">
-                    <button class="provider-dropdown-btn" id="providerDropdownBtn">
-                      <img id="selectedProviderLogo" src="${params.geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
-                      <svg viewBox="0 0 16 16">
-                        <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
-                      </svg>
-                    </button>
-                    <div class="provider-dropdown-content" id="providerDropdownContent">
-                      <button class="provider-option" data-provider="chatgpt">
-                        <img src="${params.chatgptLogo}" alt="ChatGPT" class="provider-logo">
-                        <span class="provider-name">ChatGPT</span>
-                      </button>
-                      <button class="provider-option" data-provider="claude">
-                        <img src="${params.claudeLogo}" alt="Claude" class="provider-logo">
-                        <span class="provider-name">Claude</span>
-                      </button>
-                      <button class="provider-option" data-provider="gemini">
-                        <img src="${params.geminiLogo}" alt="Gemini" class="provider-logo">
-                        <span class="provider-name">Gemini</span>
-                      </button>
-                      <button class="provider-option" data-provider="aistudio">
-                        <img src="${params.aistudioLogo}" alt="AI Studio" class="provider-logo">
-                        <span class="provider-name">AI Studio</span>
-                      </button>
+              <div class="action-groups">
+                <!-- Create Context Group -->
+                <div class="action-group">
+                  <div class="action-buttons">
+                    <button id="createContextButton">Create Context</button>
+                    <button id="createAndCopyButton">Create & Copy to Clipboard</button>
+                  </div>
+                  <div class="action-options">
+                    <label class="checkbox-container">
+                      <input type="checkbox" id="copyToClipboardCheckbox" checked>
+                      <span class="checkmark"></span>
+                      Copy to clipboard
+                    </label>
+                    <div class="tree-type-selector">
+                      <label for="treeTypeSelect">Tree:</label>
+                      <select id="treeTypeSelect">
+                        <option value="fullFilesAndDirectories">Full repo</option>
+                        <option value="selectedFilesOnly">Selected files only</option>
+                        <option value="fullDirectoriesOnly">Directories only</option>
+                      </select>
                     </div>
+                    <label class="checkbox-container disabled">
+                      <input type="checkbox" id="removeCommentsCheckbox" disabled>
+                      <span class="checkmark"></span>
+                      Remove comments
+                      <span class="feature-badge">Soon</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Push Prompt Group -->
+                <div class="action-group">
+                  <div class="action-buttons">
+                    <div class="push-prompt-group">
+                      <button id="pushPromptButton" class="push-prompt-btn">Push Prompt</button>
+                      <div class="provider-dropdown">
+                        <button class="provider-dropdown-btn" id="providerDropdownBtn">
+                          <img id="selectedProviderLogo" src="${params.geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
+                          <svg viewBox="0 0 16 16">
+                            <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
+                          </svg>
+                        </button>
+                        <div class="provider-dropdown-content" id="providerDropdownContent">
+                          <button class="provider-option" data-provider="chatgpt">
+                            <img src="${params.chatgptLogo}" alt="ChatGPT" class="provider-logo">
+                            <span class="provider-name">ChatGPT</span>
+                          </button>
+                          <button class="provider-option" data-provider="claude">
+                            <img src="${params.claudeLogo}" alt="Claude" class="provider-logo">
+                            <span class="provider-name">Claude</span>
+                          </button>
+                          <button class="provider-option" data-provider="gemini">
+                            <img src="${params.geminiLogo}" alt="Gemini" class="provider-logo">
+                            <span class="provider-name">Gemini</span>
+                          </button>
+                          <button class="provider-option" data-provider="aistudio">
+                            <img src="${params.aistudioLogo}" alt="AI Studio" class="provider-logo">
+                            <span class="provider-name">AI Studio</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="action-options">
+                    <label class="checkbox-container">
+                      <input type="checkbox" id="autoSubmitCheckbox" checked>
+                      <span class="checkmark"></span>
+                      Auto-submit
+                    </label>
+                    <span class="option-separator">•</span>
+                    <a href="#" id="helpfulInfoLink" class="helpful-info-link">helpful info</a>
                   </div>
                 </div>
               </div>
@@ -97,6 +135,22 @@ export function getWebviewHtml(params: WebviewParams): string {
                   </label>
                   <span id="preview-status"></span>
                   <textarea id="context-preview"></textarea>
+              </div>
+            </div>
+            
+            <!-- Modal Overlay -->
+            <div id="modal-overlay" class="modal-overlay" style="display: none;">
+              <div class="modal-container">
+                <div class="modal-header">
+                  <h2 id="modal-title">Modal Title</h2>
+                  <button id="modal-close" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-content" id="modal-content">
+                  <!-- Dynamic content will be inserted here -->
+                </div>
+                <div class="modal-footer" id="modal-footer">
+                  <!-- Optional footer buttons -->
+                </div>
               </div>
             </div>
             <script nonce="${params.nonce}">
@@ -111,6 +165,22 @@ export function getWebviewHtml(params: WebviewParams): string {
                     const previewTextArea = document.getElementById("context-preview");
                     const previewContainer = document.getElementById("preview-container");
                     const previewStatusElement = document.getElementById("preview-status");
+                    
+                    // Create Context controls
+                    const copyToClipboardCheckbox = document.getElementById('copyToClipboardCheckbox');
+                    const treeTypeSelect = document.getElementById('treeTypeSelect');
+                    const removeCommentsCheckbox = document.getElementById('removeCommentsCheckbox');
+                    
+                    // Push Prompt controls
+                    const autoSubmitCheckbox = document.getElementById('autoSubmitCheckbox');
+                    const helpfulInfoLink = document.getElementById('helpfulInfoLink');
+                    
+                    // Modal elements
+                    const modalOverlay = document.getElementById('modal-overlay');
+                    const modalTitle = document.getElementById('modal-title');
+                    const modalContent = document.getElementById('modal-content');
+                    const modalFooter = document.getElementById('modal-footer');
+                    const modalClose = document.getElementById('modal-close');
                     
                     // Provider dropdown functionality
                     const providerDropdownBtn = document.getElementById('providerDropdownBtn');
@@ -165,10 +235,84 @@ export function getWebviewHtml(params: WebviewParams): string {
                             }, 750);
                         }
                         
-                        vscode.postMessage({ 
+                        const pushRequest = { 
                             command: "pushPrompt", 
-                            provider: selectedProvider 
-                        });
+                            provider: selectedProvider,
+                            autoSubmit: autoSubmitCheckbox?.checked ?? true
+                        };
+                        
+                        // Store the request for potential onboarding flow
+                        window.lastPushPromptRequest = pushRequest;
+                        
+                        vscode.postMessage(pushRequest);
+                    });
+                    
+                    // Modal functionality
+                    function showModal(type, title, content, footerButtons = []) {
+                        if (modalOverlay && modalTitle && modalContent && modalFooter) {
+                            modalTitle.textContent = title;
+                            modalContent.innerHTML = content;
+                            
+                            // Clear and add footer buttons
+                            modalFooter.innerHTML = '';
+                            footerButtons.forEach(button => {
+                                const btn = document.createElement('button');
+                                btn.textContent = button.text;
+                                btn.onclick = button.onClick;
+                                if (button.primary) {
+                                    btn.style.background = 'var(--vscode-button-background)';
+                                    btn.style.color = 'var(--vscode-button-foreground)';
+                                }
+                                modalFooter.appendChild(btn);
+                            });
+                            
+                            modalOverlay.style.display = 'flex';
+                        }
+                    }
+                    
+                    function hideModal() {
+                        if (modalOverlay) {
+                            modalOverlay.style.display = 'none';
+                        }
+                    }
+                    
+                    // Modal event handlers
+                    modalClose?.addEventListener('click', hideModal);
+                    modalOverlay?.addEventListener('click', (e) => {
+                        if (e.target === modalOverlay) {
+                            hideModal();
+                        }
+                    });
+                    
+                    // Helpful info link handler
+                    helpfulInfoLink?.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        showModal('help', 'Automation Help', \`
+                            <h3>Prompt Pushing Settings</h3>
+                            <p><strong>Auto-submit:</strong> When checked (default), prompts are automatically submitted after pasting. When unchecked, prompts are only pasted - you submit manually.</p>
+                            
+                            <h3>Configuration</h3>
+                            <p>You can customize automation behavior in VS Code settings:</p>
+                            <ul>
+                                <li><code>promptTower.automation.defaultBrowser</code> - Choose Chrome or system default</li>
+                                <li><code>promptTower.automation.automationDelay</code> - Delay before automation (increase if pages load slowly)</li>
+                                <li><code>promptTower.automation.focusDelay</code> - Delay between automation steps</li>
+                            </ul>
+                            
+                            <h3>macOS Permissions</h3>
+                            <p>Automation requires Accessibility permissions for VS Code. If automation fails, check System Preferences → Security & Privacy → Privacy → Accessibility.</p>
+                            
+                            <h3>Troubleshooting</h3>
+                            <p>If automation doesn't work:</p>
+                            <ul>
+                                <li>Increase automation delays in settings</li>
+                                <li>Try unchecking auto-submit and submit manually</li>
+                                <li>Ensure you're logged into the AI service</li>
+                                <li>Check that the browser page loaded completely</li>
+                            </ul>
+                        \`, [
+                            { text: 'Close', onClick: hideModal }
+                        ]);
                     });
                     
                     // Event listeners
@@ -215,6 +359,49 @@ export function getWebviewHtml(params: WebviewParams): string {
                                     previewStatusElement.textContent = '⚠️ Context may be out of sync. Click "Create Context" to update.';
                                 }
                                 break;
+                            case 'showOnboardingModal':
+                                // Show the first-time onboarding modal
+                                showModal('onboarding', 'Welcome to Automated Prompt Pushing!', \`
+                                    <h3>🚀 Getting Started</h3>
+                                    <p>You're about to use automated prompt pushing for the first time! This feature will:</p>
+                                    <ul>
+                                        <li>Open your selected AI provider in the browser</li>
+                                        <li>Automatically paste your generated prompt</li>
+                                        <li>Submit it for you (if auto-submit is enabled)</li>
+                                    </ul>
+                                    
+                                    <h3>⚠️ macOS Permissions Required</h3>
+                                    <p><strong>Important:</strong> On macOS, this feature requires Accessibility permissions for VS Code to control your browser.</p>
+                                    <p>If automation fails, you'll be guided to enable these permissions in System Preferences.</p>
+                                    
+                                    <h3>💡 Tips</h3>
+                                    <ul>
+                                        <li>Make sure you're logged into your AI provider</li>
+                                        <li>The "Auto-submit" checkbox controls whether prompts are submitted automatically</li>
+                                        <li>Click "helpful info" anytime for more configuration options</li>
+                                    </ul>
+                                    
+                                    <p><strong>Ready to try it?</strong> Click "Continue" to proceed with your prompt push!</p>
+                                \`, [
+                                    { 
+                                        text: 'Continue', 
+                                        primary: true,
+                                        onClick: () => {
+                                            hideModal();
+                                            // Store the original request and send it after onboarding completion
+                                            const originalRequest = window.lastPushPromptRequest;
+                                            vscode.postMessage({ 
+                                                command: 'completeOnboarding',
+                                                originalRequest: originalRequest
+                                            });
+                                        }
+                                    },
+                                    { 
+                                        text: 'Cancel', 
+                                        onClick: hideModal 
+                                    }
+                                ]);
+                                break;
                         }
                     });
                     
@@ -244,11 +431,25 @@ export function getWebviewHtml(params: WebviewParams): string {
                             }, 750);
                         }
                         
-                        vscode.postMessage({ command: "createContext" });
+                        vscode.postMessage({ 
+                            command: "createContext",
+                            options: {
+                                treeType: treeTypeSelect?.value || 'fullFilesAndDirectories',
+                                copyToClipboard: copyToClipboardCheckbox?.checked ?? true,
+                                removeComments: removeCommentsCheckbox?.checked ?? false
+                            }
+                        });
                     });
                     
                     document.getElementById('createAndCopyButton')?.addEventListener("click", () => {
-                        vscode.postMessage({ command: "createAndCopyToClipboard" });
+                        vscode.postMessage({ 
+                            command: "createAndCopyToClipboard",
+                            options: {
+                                treeType: treeTypeSelect?.value || 'fullFilesAndDirectories',
+                                copyToClipboard: true, // Always true for this button
+                                removeComments: removeCommentsCheckbox?.checked ?? false
+                            }
+                        });
                     });
                     
                     document.getElementById('clearButton')?.addEventListener("click", () => {
