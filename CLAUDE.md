@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Project Management:
+
+Use the lnr work project management system.
+Read @_context/CLAUDE.md
+
 ## Development Commands
 
 ```bash

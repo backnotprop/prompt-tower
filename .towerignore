@@ -6,7 +6,7 @@ extension-assets
 
 .vscodeignore
 
-CHANGELOG.md
+
 esbuild.js
 eslint.config.mjs
 tsconfig.json

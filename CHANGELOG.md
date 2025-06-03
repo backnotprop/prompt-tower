@@ -1,5 +1,57 @@
 # Change Log
 
+## [Version 1.4.0] -
+
+### Fixed
+
+- **Reset All Button:** Fixed regression where "Reset All" only cleared file selections instead of resetting everything (selections, prompt prefix/suffix, context preview, error states)
+
+### Added (Mac only)
+
+New feature added: "Prompt Push" ideated by @arthurwolf in [#19](https://github.com/backnotprop/prompt-tower/issues/19)
+
+- **Automated Prompt Pushing (macOS):** One-click automation to send prompts directly to AI providers
+
+  - Supports ChatGPT, Claude, Gemini, AI Studio with browser automation
+  - Auto-submit toggle: paste-only mode for unreliable scenarios
+  - First-time onboarding modal with permissions guidance
+  - Configurable browser choice and automation timing delays
+  - _Note: macOS only for now, requires Accessibility permissions_
+
+- **Enhanced Action Groups UI:** Modern card-based layout for better organization
+
+  - Side-by-side Create Context and Push Prompt groups
+  - Tree type selector: Full repo / Selected files only / Directories only
+  - Copy to clipboard controls and future "Remove comments" option
+  - Professional VS Code theme integration
+
+- **Advanced Context Options:** More control over context generation
+
+  - Tree type selection affects project structure in output
+  - Copy to clipboard behavior can be controlled per action
+  - Modal help system with configuration guidance and troubleshooting
+
+- **Send to Editor Features:** Direct integration with code editors
+  - Cursor logo button with agent/ask targeting options
+  - Chat targeting: new vs current session selection
+  - Full context generation → animation → send workflow
+  - Platform-aware UX (macOS working, Windows preview, Linux hidden)
+
+### Technical Improvements
+
+- **EditorAutomationService:** Clean service architecture for cross-platform editor automation
+- **Platform Detection:** Smart OS-based UX preventing Windows user frustration
+- **Service Architecture:** Added PromptPushService for browser automation logic
+- **Settings Integration:** New promptTower.automation.\* configuration options
+- **Modal System:** Reusable modal infrastructure for onboarding and help
+- **Usage Tracking:** globalState integration for first-time user experience
+
+### Changed
+
+- **Code Organization:** Extracted webview HTML/CSS into separate modular files for better maintainability
+  - `src/extension.webview.html.ts`
+  - `src/extension.webview.css.ts`
+
 ## [Version 1.3.2] - Unreleased
 
 ### Fixed

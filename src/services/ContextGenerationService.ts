@@ -88,10 +88,14 @@ export class ContextGenerationService {
       prefix?: string;
       suffix?: string;
       primaryWorkspaceRoot?: string;
+      treeType?: string;
     }
   ): Promise<ContextGenerationResult> {
     const checkedFiles = FileNodeUtils.getCheckedFiles(fileNodes);
     const fileCount = checkedFiles.length;
+    
+    // Use provided treeType or fall back to config default
+    const effectiveTreeType = options?.treeType || this.config.projectTree.type;
 
     // Check if we have GitHub issues selected
     let hasSelectedIssues = false;
@@ -109,12 +113,13 @@ export class ContextGenerationService {
       // If project tree is enabled and configured to show all files, generate tree-only context
       if (
         this.config.projectTree.enabled &&
-        (this.config.projectTree.type === "fullFilesAndDirectories" ||
-          this.config.projectTree.type === "fullDirectoriesOnly")
+        (effectiveTreeType === "fullFilesAndDirectories" ||
+          effectiveTreeType === "fullDirectoriesOnly")
       ) {
         const fileTree = await this.generateProjectTree(
           fileNodes,
-          options?.primaryWorkspaceRoot
+          options?.primaryWorkspaceRoot,
+          effectiveTreeType
         );
         let treeOnlyContext = this.config.projectTree.template.replace(
           "{projectTree}",
@@ -144,7 +149,8 @@ export class ContextGenerationService {
       // Generate project tree
       const projectTreePromise = this.generateProjectTree(
         fileNodes,
-        options?.primaryWorkspaceRoot
+        options?.primaryWorkspaceRoot,
+        effectiveTreeType
       );
 
       // Generate GitHub issues if provider is available
@@ -262,15 +268,19 @@ export class ContextGenerationService {
    */
   private async generateProjectTree(
     fileNodes: FileNode[],
-    primaryWorkspaceRoot?: string
+    primaryWorkspaceRoot?: string,
+    treeType?: string
   ): Promise<string> {
     if (!this.config.projectTree.enabled) {
       return "";
     }
 
+    // Use provided treeType or fall back to config default
+    const effectiveTreeType = treeType || this.config.projectTree.type;
+
     let filesToInclude: StructuredFilePath[];
 
-    if (this.config.projectTree.type === "selectedFilesOnly") {
+    if (effectiveTreeType === "selectedFilesOnly") {
       // Use only selected files
       const checkedFiles = FileNodeUtils.getCheckedFiles(fileNodes);
       filesToInclude = checkedFiles.map((node) => ({
@@ -279,7 +289,7 @@ export class ContextGenerationService {
       }));
     } else {
       // Use all files from all workspaces
-      filesToInclude = await this.getAllWorkspaceFiles(fileNodes);
+      filesToInclude = await this.getAllWorkspaceFiles(fileNodes, effectiveTreeType);
     }
 
     // Determine workspace root for tree generation
@@ -292,7 +302,7 @@ export class ContextGenerationService {
       undefined, // Use default print lines limit
       {
         showFileSize:
-          this.config.projectTree.type === "fullDirectoriesOnly"
+          effectiveTreeType === "fullDirectoriesOnly"
             ? false
             : this.config.projectTree.showFileSize,
       }
@@ -303,13 +313,14 @@ export class ContextGenerationService {
    * Get all files from all workspaces
    */
   private async getAllWorkspaceFiles(
-    fileNodes: FileNode[]
+    fileNodes: FileNode[],
+    treeType: string
   ): Promise<StructuredFilePath[]> {
     const allFiles: StructuredFilePath[] = [];
 
     for (const rootNode of fileNodes) {
       if (rootNode.type === "workspace-root") {
-        this.collectFilesFromNode(rootNode, allFiles);
+        this.collectFilesFromNode(rootNode, allFiles, treeType);
       }
     }
 
@@ -321,17 +332,15 @@ export class ContextGenerationService {
    */
   private collectFilesFromNode(
     node: FileNode,
-    files: StructuredFilePath[]
+    files: StructuredFilePath[],
+    treeType: string
   ): void {
-    if (node.type === "file") {
+    if (node.type === "file" && treeType !== "fullDirectoriesOnly") {
       files.push({
         origin: node.absolutePath,
         tree: node.relativePath,
       });
-    } else if (
-      node.type === "directory" &&
-      this.config.projectTree.type === "fullDirectoriesOnly"
-    ) {
+    } else if (node.type === "directory") {
       files.push({
         origin: node.absolutePath + "/",
         tree: node.relativePath + "/",
@@ -340,7 +349,7 @@ export class ContextGenerationService {
 
     if (node.children) {
       for (const child of node.children) {
-        this.collectFilesFromNode(child, files);
+        this.collectFilesFromNode(child, files, treeType);
       }
     }
   }
