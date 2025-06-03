@@ -406,6 +406,48 @@ export function getWebviewStyles(): string {
             cursor: not-allowed;
         }
         
+        /* Windows preview styling */
+        .windows-preview {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+        
+        .windows-preview::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent;
+            z-index: 1;
+        }
+        
+        .windows-preview button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(20%);
+        }
+        
+        .windows-preview .send-to-editor-btn.disabled {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            opacity: 0.5;
+        }
+        
+        .windows-preview .push-prompt-btn.disabled {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            opacity: 0.5;
+        }
+        
+        .windows-preview .provider-dropdown-btn.disabled {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            opacity: 0.5;
+        }
+        
         textarea {
           width: 100%;
           box-sizing: border-box;

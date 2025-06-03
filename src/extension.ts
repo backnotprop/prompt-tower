@@ -96,6 +96,7 @@ function getWebviewContent(
     cursorLogo: cursorLogo.toString(),
     initialPrefix,
     initialSuffix,
+    platform: process.platform,
   };
 
   return getWebviewHtml(params);

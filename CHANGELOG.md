@@ -26,9 +26,17 @@
   - Copy to clipboard behavior can be controlled per action
   - Modal help system with configuration guidance and troubleshooting
 
+- **Send to Editor Features:** Direct integration with code editors
+  - Cursor logo button with agent/ask targeting options
+  - Chat targeting: new vs current session selection
+  - Full context generation → animation → send workflow
+  - Platform-aware UX (macOS working, Windows preview, Linux hidden)
+
 ### Technical Improvements
 
-- **Service Architecture:** Added PromptPushService for automation logic
+- **EditorAutomationService:** Clean service architecture for cross-platform editor automation
+- **Platform Detection:** Smart OS-based UX preventing Windows user frustration
+- **Service Architecture:** Added PromptPushService for browser automation logic
 - **Settings Integration:** New promptTower.automation.* configuration options  
 - **Modal System:** Reusable modal infrastructure for onboarding and help
 - **Usage Tracking:** globalState integration for first-time user experience

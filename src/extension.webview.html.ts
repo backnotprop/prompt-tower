@@ -10,6 +10,7 @@ export interface WebviewParams {
   cursorLogo: string;
   initialPrefix: string;
   initialSuffix: string;
+  platform: string;
 }
 
 export function getWebviewHtml(params: WebviewParams): string {
@@ -83,7 +84,8 @@ export function getWebviewHtml(params: WebviewParams): string {
                   </div>
                 </div>
 
-                <!-- Send to Editor Group -->
+                <!-- Send to Editor Group (macOS working, Windows coming soon) -->
+                ${params.platform === 'darwin' ? `
                 <div class="action-group">
                   <div class="action-buttons">
                     <div class="send-to-editor-group">
@@ -124,8 +126,52 @@ export function getWebviewHtml(params: WebviewParams): string {
                     </div>
                   </div>
                 </div>
+                ` : params.platform === 'win32' ? `
+                <div class="action-group windows-preview">
+                  <div class="action-buttons">
+                    <div class="send-to-editor-group">
+                      <button class="send-to-editor-btn disabled" disabled>
+                        <img src="${params.cursorLogo}" alt="Cursor" class="editor-logo">
+                        Send to Chat
+                        <span class="feature-badge">Windows Soon</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="action-options">
+                    <div class="send-to-options">
+                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Send to:</span>
+                      <label class="radio-container disabled">
+                        <input type="radio" name="sendTarget" value="agent" checked disabled>
+                        <span class="radio-checkmark"></span>
+                        Agent
+                      </label>
+                      <label class="radio-container disabled">
+                        <input type="radio" name="sendTarget" value="ask" disabled>
+                        <span class="radio-checkmark"></span>
+                        Ask
+                        <span class="feature-badge">Soon</span>
+                      </label>
+                    </div>
+                    <div class="chat-target-options">
+                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Chat:</span>
+                      <label class="radio-container disabled">
+                        <input type="radio" name="chatTarget" value="new" checked disabled>
+                        <span class="radio-checkmark"></span>
+                        New
+                      </label>
+                      <label class="radio-container disabled">
+                        <input type="radio" name="chatTarget" value="current" disabled>
+                        <span class="radio-checkmark"></span>
+                        Current
+                        <span class="feature-badge">Soon</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                ` : ''}
 
-                <!-- Push Prompt Group -->
+                <!-- Push Prompt Group (macOS working, Windows coming soon) -->
+                ${params.platform === 'darwin' ? `
                 <div class="action-group">
                   <div class="action-buttons">
                     <div class="push-prompt-group">
@@ -168,6 +214,44 @@ export function getWebviewHtml(params: WebviewParams): string {
                     <a href="#" id="helpfulInfoLink" class="helpful-info-link">helpful info</a>
                   </div>
                 </div>
+                ` : params.platform === 'win32' ? `
+                <div class="action-group windows-preview">
+                  <div class="action-buttons">
+                    <div class="push-prompt-group">
+                      <button class="push-prompt-btn disabled" disabled>
+                        Push Prompt
+                        <span class="feature-badge">Windows Soon</span>
+                      </button>
+                      <button class="provider-dropdown-btn disabled" disabled>
+                        <img src="${params.geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
+                        <svg viewBox="0 0 16 16">
+                          <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="action-options">
+                    <label class="checkbox-container disabled">
+                      <input type="checkbox" checked disabled>
+                      <span class="checkmark"></span>
+                      Auto-submit
+                    </label>
+                    <span class="option-separator">•</span>
+                    <span style="color: var(--vscode-descriptionForeground); font-size: 0.9em;">helpful info</span>
+                  </div>
+                </div>
+                ` : ''}
+                
+                <!-- Linux users notice -->
+                ${params.platform !== 'darwin' && params.platform !== 'win32' ? `
+                <div class="action-group">
+                  <div style="padding: 12px; text-align: center; color: var(--vscode-descriptionForeground); font-style: italic;">
+                    Editor automation features are available on macOS and Windows only.
+                    <br>
+                    Use "Create Context" to copy content manually.
+                  </div>
+                </div>
+                ` : ''}
               </div>
 
               <div id="preview-container">
@@ -267,7 +351,12 @@ export function getWebviewHtml(params: WebviewParams): string {
                     });
                     
                     // Push Prompt button functionality
-                    pushPromptButton?.addEventListener('click', () => {
+                    pushPromptButton?.addEventListener('click', (e) => {
+                        // Prevent action if button is disabled (Windows preview)
+                        if (e.target.disabled || e.target.closest('.windows-preview')) {
+                            return;
+                        }
+                        
                         // Add shimmer effect like create context
                         if (previewContainer) {
                             previewContainer.classList.add('cyber-generating');
@@ -492,7 +581,12 @@ export function getWebviewHtml(params: WebviewParams): string {
                         vscode.postMessage({ command: "resetAll" });
                     });
                     
-                    document.getElementById('sendToEditorButton')?.addEventListener("click", () => {
+                    document.getElementById('sendToEditorButton')?.addEventListener("click", (e) => {
+                        // Prevent action if button is disabled (Windows preview)
+                        if (e.target.disabled || e.target.closest('.windows-preview')) {
+                            return;
+                        }
+                        
                         // Add shimmer effect like other buttons
                         if (previewContainer) {
                             previewContainer.classList.add('cyber-generating');
