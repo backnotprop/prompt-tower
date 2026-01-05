@@ -40,7 +40,6 @@ export const ALWAYS_IGNORE = [
   "dist/",
   "**/dist/**",
   "build/",
-  "**/build/**",
   "out/",
   "target/",
   ".next/",
