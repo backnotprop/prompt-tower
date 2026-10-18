@@ -97,6 +97,8 @@ Use the full 1M context window. Select entire modules, include architectural dec
 
 ## Configuration
 
+With `promptTower.useGitignore` enabled (the default), `.gitignore` files in the workspace root and subdirectories are respected. Nested rules apply only within their directory; deeper rules can override earlier rules, but cannot re-include files inside an excluded parent directory. The root `.towerignore` takes precedence over these rules.
+
 **Create `.towerignore`** in your project root (works like `.gitignore`):
 
 ```gitignore

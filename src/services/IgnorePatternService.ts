@@ -11,6 +11,10 @@ import { ALWAYS_IGNORE } from "../utils/alwaysIgnore";
 export class IgnorePatternService {
   private ignoreInstanceCache = new Map<string, ignore.Ignore>();
   private patternCache = new Map<string, IgnorePatterns>();
+  private scopedIgnoreCache = new Map<string, Map<string, {
+    git: ignore.Ignore;
+    all: ignore.Ignore;
+  }>>();
   private fileWatchers = new Map<string, vscode.FileSystemWatcher[]>();
   
   constructor(private context: vscode.ExtensionContext) {
@@ -47,13 +51,78 @@ export class IgnorePatternService {
    * Check if a path should be ignored in a specific workspace
    */
   isPathIgnored(absolutePath: string, workspace: Workspace): boolean {
-    const ignoreInstance = this.getIgnoreInstance(workspace);
     const relativePath = path.relative(workspace.rootPath, absolutePath);
-    
-    // Normalize path separators for cross-platform compatibility
+    if (!relativePath) {
+      return false;
+    }
+    if (relativePath === ".." || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
+      return true;
+    }
     const normalizedPath = relativePath.replace(/\\/g, '/');
-    
-    return ignoreInstance.ignores(normalizedPath);
+    const patterns = this.getIgnorePatterns(workspace);
+    let scopes = this.scopedIgnoreCache.get(workspace.id);
+    if (!scopes) {
+      scopes = new Map();
+      scopes.set('', {
+        git: ignore().add(patterns.builtin).add(patterns.gitignore),
+        all: this.getIgnoreInstance(workspace)
+      });
+      this.scopedIgnoreCache.set(workspace.id, scopes);
+    }
+
+    let scope = scopes.get('')!;
+    const useGitIgnore = vscode.workspace.getConfiguration("promptTower")
+      .get<boolean>("useGitignore", true);
+    const parts = normalizedPath.split('/');
+    if (useGitIgnore) {
+      for (let i = 1; i < parts.length; i++) {
+        const directory = parts.slice(0, i).join('/');
+        // Git never reads ignore files inside an excluded parent directory.
+        if (scope.all.ignores(`${directory}/`)) {
+          return true;
+        }
+        let nested = scopes.get(directory);
+        if (!nested) {
+          const nestedPatterns = this.loadIgnoreFile(
+            path.join(workspace.rootPath, directory, '.gitignore')
+          );
+          const git = ignore().add(scope.git)
+            .add(this.scopePatterns(nestedPatterns, directory));
+          nested = {
+            git,
+            all: ignore().add(git).add(patterns.towerignore).add(patterns.manual)
+          };
+          scopes.set(directory, nested);
+        }
+        scope = nested;
+      }
+    }
+
+    let isDirectory = false;
+    try {
+      isDirectory = fs.statSync(absolutePath).isDirectory();
+    } catch {
+      // A file may disappear between discovery and filtering.
+    }
+    return scope.all.ignores(normalizedPath + (isDirectory ? '/' : ''));
+  }
+
+  /** Rebase nested Git patterns without changing their anchoring or negation. */
+  private scopePatterns(patterns: string[], directory: string): string[] {
+    // ignore does not support escaping '?' in prefixes. A bare '?' is safe:
+    // this matcher is only queried within its literal cached directory.
+    const prefix = directory.replace(/([*\[\]\\])/g, '\\$1');
+    return patterns.flatMap(pattern => {
+      const negated = pattern.startsWith('!');
+      const original = negated ? pattern.slice(1) : pattern;
+      const anchored = original.startsWith('/');
+      const relative = anchored ? original.slice(1) : original;
+      if (!relative) {
+        return [];
+      }
+      const basename = !relative.replace(/\/$/, '').includes('/');
+      return [`${negated ? '!' : ''}/${prefix}/${!anchored && basename ? '**/' : ''}${relative}`];
+    });
   }
   
   /**
@@ -67,9 +136,9 @@ export class IgnorePatternService {
     
     const watchers: vscode.FileSystemWatcher[] = [];
     
-    // Watch .gitignore
+    // Watch root and nested .gitignore files
     const gitignoreWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(workspace.rootPath, ".gitignore")
+      new vscode.RelativePattern(workspace.rootPath, "**/.gitignore")
     );
     
     // Watch .towerignore
@@ -177,6 +246,7 @@ export class IgnorePatternService {
   private invalidateCache(workspace: Workspace): void {
     this.patternCache.delete(workspace.id);
     this.ignoreInstanceCache.delete(workspace.id);
+    this.scopedIgnoreCache.delete(workspace.id);
   }
   
   /**
@@ -188,6 +258,7 @@ export class IgnorePatternService {
         // Clear all caches when configuration changes
         this.patternCache.clear();
         this.ignoreInstanceCache.clear();
+        this.scopedIgnoreCache.clear();
         console.log("Ignore pattern configuration changed, clearing cache");
       }
     });
@@ -200,7 +271,7 @@ export class IgnorePatternService {
     const patterns = this.getIgnorePatterns(workspace);
     const allPatterns = [
       ...patterns.builtin,
-      ...patterns.gitignore,
+      // Git rules need scoped evaluation: a nested negation may re-include a file.
       ...patterns.towerignore,
       ...patterns.manual
     ];
@@ -246,6 +317,7 @@ export class IgnorePatternService {
     // Clear caches
     this.patternCache.delete(workspace.id);
     this.ignoreInstanceCache.delete(workspace.id);
+    this.scopedIgnoreCache.delete(workspace.id);
   }
   
   /**
@@ -261,5 +333,6 @@ export class IgnorePatternService {
     // Clear all caches
     this.patternCache.clear();
     this.ignoreInstanceCache.clear();
+    this.scopedIgnoreCache.clear();
   }
 }
